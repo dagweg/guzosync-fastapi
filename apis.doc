@@ -1,31 +1,209 @@
-Database Design
+POST /api/accounts/register
 
-ControlCenterAdmin (id: UUID, userId: UUID (refers to User collection))
 
-Feedback (id: UUID, submittedByUserId: UUID (refers to User collection), content: string, rating: number (optional), relatedTripId: UUID (refers to Trip collection, optional), relatedBusId: UUID (refers to Bus collection, optional), createdAt: Date, updatedAt: Date)
+POST /api/accounts/login
 
-Incident (id: UUID, reportedByUserId: UUID (refers to User collection), description: string, location: object (optional, with latitude: number, longitude: number), relatedBusId: UUID (refers to Bus collection, optional), relatedRouteId: UUID (refers to Route collection, optional), isResolved: boolean, resolutionNotes: string (optional), severity: string (enum: 'LOW', 'MEDIUM', 'HIGH', 'CRITICAL'), createdAt: Date, updatedAt: Date)
 
-Notification (id: UUID, userId: UUID (refers to User collection), title: string, message: string, type: string (enum: 'ALERT', 'UPDATE', 'PROMOTION', 'REMINDER'), isRead: boolean, relatedEntity: object (optional, with entityType: string, entityId: string), createdAt: Date, updatedAt: Date)
+POST /api/accounts/logout
 
-NotificationSettings (id: UUID, emailEnabled: boolean, userId: UUID (refers to User collection))
 
-Passenger (id: UUID, userId: UUID (refers to User collection), preferredLanguage: string (optional))
+POST /api/accounts/password/reset/request
 
-QueueRegulator (id: UUID, userId: UUID (refers to User collection), assignedStopId: UUID (refers to BusStop collection, optional))
 
-Route (id: UUID, name: string, description: string (optional), stopIds: array of UUID (refers to BusStop collection), totalDistance: number (optional), estimatedDuration: number (optional), isActive: boolean, createdAt: Date, updatedAt: Date)
+POST /api/accounts/password/reset/confirm
 
-Schedule (id: UUID, routeId: UUID (refers to Route collection), schedulePattern: string, departureTimes: array of string, assignedBusId: UUID (refers to Bus collection, optional), assignedDriverId: UUID (refers to User collection, optional), validFrom: Date, validUntil: Date (optional), isActive: boolean, createdAt: Date, updatedAt: Date)
 
-Trip (id: UUID, busId: UUID (refers to Bus collection), routeId: UUID (refers to Route collection), driverId: UUID (refers to User collection, optional), scheduleId: UUID (refers to Schedule collection, optional), actualDepartureTime: Date (optional), actualArrivalTime: Date (optional), estimatedArrivalTime: Date (optional), status: string (enum: 'SCHEDULED', 'IN_PROGRESS', 'COMPLETED', 'CANCELLED', 'DELAYED'), passengerIds: array of UUID (refers to User collection, optional), feedbackIds: array of UUID (refers to Feedback collection, optional), createdAt: Date, updatedAt: Date)
+GET /api/account/me
 
-User (id: UUID, firstName: string, lastName: string, email: string (unique), password: string, role: string (enum: 'PASSENGER', 'BUS_DRIVER', 'QUEUE_REGULATOR', 'CONTROL_CENTER_ADMIN', 'REGULATOR'), phoneNumber: string, profileImage: string (optional), createdAt: Date, updatedAt: Date, passwordResetToken: string (unique, optional), passwordResetExpires: Date (optional), isActive: boolean)
 
-Alert (id: UUID, title: string, severity: string (enum: 'INFO', 'WARNING', 'CRITICAL'), description: string, affectedRouteIds: array of UUID (refers to Route collection, optional), affectedBusStopIds: array of UUID (refers to BusStop collection, optional), activeFrom: Date, activeUntil: Date (optional), createdByUserId: UUID (refers to User collection, optional), createdAt: Date, updatedAt: Date)
+PUT /api/account/me
 
-Bus (id: UUID, licensePlate: string (unique), busType: string (enum: 'STANDARD', 'ARTICULATED', 'MINIBUS'), capacity: number, currentLocation: object (optional, with latitude: number, longitude: number), lastLocationUpdate: Date (optional), heading: number (optional), speed: number (optional), locationAccuracy: number (optional), currentAddress: string (optional), assignedRouteId: UUID (refers to Route collection, optional), assignedDriverId: UUID (refers to User collection, optional), busStatus: string (enum: 'OPERATIONAL', 'MAINTENANCE', 'BREAKDOWN', 'IDLE'), manufactureYear: number (optional), busModel: string (optional), createdAt: Date, updatedAt: Date)
 
-BusDriver (id: UUID, userId: UUID (refers to User collection), assignedBusId: UUID (refers to Bus collection, optional))
+GET /api/notifications
 
-BusStop (id: UUID, name: string, location: object (with latitude: number, longitude: number), capacity: number (optional), isActive: boolean, createdAt: Date, updatedAt: Date)
+
+POST /api/notifications/mark-read/{notificationId}
+
+
+PUT /api/account/notification-settings
+
+
+POST /api/notifications/broadcast
+
+
+PUT /api/account/language
+
+
+GET /api/config/languages
+
+GET /api/buses/{busId}
+
+
+GET /api/routes/{routeId}
+
+
+GET /api/buses/stops
+
+
+GET /api/buses/stops/{busStopId}
+
+
+GET /api/alerts
+
+
+POST /api/alerts
+
+
+PUT /api/alerts/{alertId}
+
+
+DELETE /api/alerts/{alertId}
+
+
+POST /api/trip/feedback
+
+
+GET /api/trip/feedback
+
+
+GET /api/buses/stops?search={searchTerm}&filterBy={filterTerm}&pn=1&ps=10
+
+GET /api/buses/stops/{busStopId}/incoming-buses
+
+
+GET /api/regulators/bus-stops/{busStopId}
+
+
+POST /api/buses/reallocate
+
+
+GET /api/buses/reallocation/requests
+
+
+POST /api/issues/report
+
+
+GET /api/issues
+
+
+POST /api/attendance
+
+
+GET /api/attendance/today
+
+
+GET /api/conversations/{conversationId}/messages
+
+
+GET /api/conversations
+
+POST /api/drivers/attendance
+
+
+GET /api/drivers/attendance/today
+
+
+POST /api/drivers/incidents
+
+
+GET /api/drivers/incidents
+
+
+POST /api/drivers/route-change-requests
+
+
+GET /api/drivers/route-change-requests
+
+
+GET /api/drivers/schedules
+
+
+GET /api/drivers/routes/{routeId}/schedule
+
+
+GET /api/drivers/instructions
+
+
+PUT /api/drivers/instructions/{instructionId}/acknowledge
+POST /api/control-center/personnel/register
+
+
+GET /api/control-center/personnel/queue-regulators
+
+
+GET /api/control-center/personnel/queue-regulators/{regulatorId}
+
+
+PUT /api/control-center/personnel/queue-regulators/{regulatorId}
+
+
+DELETE /api/control-center/personnel/queue-regulators/{regulatorId}
+
+
+PUT /api/control-center/personnel/queue-regulators/{regulatorId}/assign/bus-stop/{busStopId}
+
+
+GET /api/control-center/personnel/bus-drivers
+
+
+GET /api/control-center/personnel/bus-drivers/{driverId}
+
+
+PUT /api/control-center/personnel/bus-drivers/{driverId}
+
+
+DELETE /api/control-center/personnel/bus-drivers/{driverId}
+
+
+PUT /api/control-center/personnel/bus-drivers/{driverId}/assign-bus/{busId}
+
+
+POST /api/control-center/bus-stops
+
+
+GET /api/control-center/bus-stops
+
+
+GET /api/control-center/bus-stops/{busStopId}
+
+
+PUT /api/control-center/bus-stops/{busStopId}
+
+
+DELETE /api/control-center/bus-stops/{busStopId}
+
+
+GET /api/control-center/buses
+
+
+GET /api/control-center/buses/{busId}
+
+
+PUT /api/control-center/buses/{busId}
+
+
+PUT /api/control-center/buses/{busId}/assign-route/{routeId}
+
+
+PUT /api/control-center/buses/{busId}/reallocate-route/{routeId}
+
+
+POST /api/control-center/buses/deploy-stationary
+
+
+POST /api/control-center/routes
+
+
+GET /api/control-center/routes
+
+
+GET /api/control-center/routes/{routeId}
+
+
+PUT /api/control-center/routes/{routeId}
+
+
+DELETE /api/control-center/routes/{routeId}
+
+
+GET /api/control-center/reallocation-requests

@@ -1,0 +1,517 @@
+// =========================================================================
+// Shared Types
+// =========================================================================
+
+type UUID = string;
+type DateString = string; // Represents ISO 8601 date string
+
+interface Location {
+  latitude: number;
+  longitude: number;
+}
+
+// =========================================================================
+// Database Models and their API Request/Response Models
+// =========================================================================
+
+// --- User ---
+// DB: User (id: UUID, firstName: string, lastName: string, email: string (unique), password: string, role: string (enum: 'PASSENGER', 'BUS_DRIVER', 'QUEUE_REGULATOR', 'CONTROL_CENTER_ADMIN', 'REGULATOR'), phoneNumber: string, profileImage: string (optional), createdAt: Date, updatedAt: Date, passwordResetToken: string (unique, optional), passwordResetExpires: Date (optional), isActive: boolean)
+
+interface RegisterUserRequest { // POST /api/accounts/register, POST /api/control-center/personnel/register
+  first_name: string;
+  last_name: string;
+  email: string;
+  password: string;
+  role: 'PASSENGER' | 'BUS_DRIVER' | 'QUEUE_REGULATOR' | 'CONTROL_CENTER_ADMIN' | 'REGULATOR';
+  phone_number: string;
+  profile_image?: string;
+}
+
+interface LoginRequest { // POST /api/accounts/login
+  email: string;
+  password: string;
+}
+
+interface ForgotPasswordRequest { // POST /api/accounts/password/reset/request
+  email: string;
+}
+
+interface ResetPasswordRequest { // POST /api/accounts/password/reset/confirm
+  token: string;
+  new_password: string;
+}
+
+interface UpdateUserRequest { // PUT /api/account/me
+  first_name?: string;
+  last_name?: string;
+  email?: string;
+  phone_number?: string;
+  profile_image?: string;
+}
+
+interface UserResponse { // GET /api/account/me, returned in lists like personnel endpoints
+  id: UUID;
+  first_name: string;
+  last_name: string;
+  email: string;
+  role: 'PASSENGER' | 'BUS_DRIVER' | 'QUEUE_REGULATOR' | 'CONTROL_CENTER_ADMIN' | 'REGULATOR';
+  phone_number: string;
+  profile_image?: string;
+  is_active: boolean;
+  created_at: DateString;
+  updated_at: DateString;
+}
+
+// --- Passenger ---
+// DB: Passenger (id: UUID, userId: UUID, preferredLanguage: string (optional))
+
+interface UpdatePreferredLanguageRequest { // PUT /api/account/language
+  preferred_language: string;
+}
+// No specific PassengerResponse, as it's typically an extension of UserResponse or handled via User profile.
+
+// --- BusDriver ---
+// DB: BusDriver (id: UUID, userId: UUID, assignedBusId: UUID (optional))
+
+interface UpdateBusDriverPersonnelRequest { // PUT /api/control-center/personnel/bus-drivers/{driverId}
+  assigned_bus_id?: UUID;
+  // If this endpoint also allows updating user details, then:
+  user_details?: UpdateUserRequest;
+}
+
+interface BusDriverResponse { // GET /api/control-center/personnel/bus-drivers
+  id: UUID;
+  user_id: UUID;
+  assigned_bus_id?: UUID;
+  // Often, admin panels might embed user details for convenience
+  user_details?: UserResponse;
+}
+
+// --- QueueRegulator ---
+// DB: QueueRegulator (id: UUID, userId: UUID, assignedStopId: UUID (optional))
+
+interface UpdateQueueRegulatorPersonnelRequest { // PUT /api/control-center/personnel/queue-regulators/{regulatorId}
+  assigned_stop_id?: UUID;
+  // If this endpoint also allows updating user details, then:
+  user_details?: UpdateUserRequest;
+}
+
+interface QueueRegulatorResponse { // GET /api/control-center/personnel/queue-regulators
+  id: UUID;
+  user_id: UUID;
+  assigned_stop_id?: UUID;
+  user_details?: UserResponse;
+}
+
+
+// --- ControlCenterAdmin ---
+// DB: ControlCenterAdmin (id: UUID, userId: UUID)
+// No specific Request/Response models beyond the User model for its role.
+
+
+// --- Feedback ---
+// DB: Feedback (id: UUID, submittedByUserId: UUID, content: string, rating: number (optional), relatedTripId: UUID (optional), relatedBusId: UUID (optional), createdAt: Date, updatedAt: Date)
+
+interface SubmitFeedbackRequest { // POST /api/trip/feedback
+  content: string;
+  rating?: number;
+  related_trip_id?: UUID;
+  related_bus_id?: UUID;
+}
+
+interface FeedbackResponse { // GET /api/trip/feedback
+  id: UUID;
+  submitted_by_user_id: UUID;
+  content: string;
+  rating?: number;
+  related_trip_id?: UUID;
+  related_bus_id?: UUID;
+  created_at: DateString;
+  updated_at: DateString;
+}
+
+// --- Incident ---
+// DB: Incident (id: UUID, reportedByUserId: UUID, description: string, location: object (optional), relatedBusId: UUID (optional), relatedRouteId: UUID (optional), isResolved: boolean, resolutionNotes: string (optional), severity: string (enum: 'LOW', 'MEDIUM', 'HIGH', 'CRITICAL'), createdAt: Date, updatedAt: Date)
+
+interface ReportIncidentRequest { // POST /api/issues/report, POST /api/drivers/incidents
+  description: string;
+  location?: Location;
+  related_bus_id?: UUID;
+  related_route_id?: UUID;
+  severity: 'LOW' | 'MEDIUM' | 'HIGH' | 'CRITICAL';
+}
+
+interface UpdateIncidentRequest { // For admin resolving/updating incidents
+  description?: string;
+  location?: Location;
+  related_bus_id?: UUID;
+  related_route_id?: UUID;
+  is_resolved?: boolean;
+  resolution_notes?: string;
+  severity?: 'LOW' | 'MEDIUM' | 'HIGH' | 'CRITICAL';
+}
+
+interface IncidentResponse { // GET /api/issues, GET /api/drivers/incidents
+  id: UUID;
+  reported_by_user_id: UUID;
+  description: string;
+  location?: Location;
+  related_bus_id?: UUID;
+  related_route_id?: UUID;
+  is_resolved: boolean;
+  resolution_notes?: string;
+  severity: 'LOW' | 'MEDIUM' | 'HIGH' | 'CRITICAL';
+  created_at: DateString;
+  updated_at: DateString;
+}
+
+// --- Notification ---
+// DB: Notification (id: UUID, userId: UUID, title: string, message: string, type: string (enum: 'ALERT', 'UPDATE', 'PROMOTION', 'REMINDER'), isRead: boolean, relatedEntity: object (optional, with entityType: string, entityId: string), createdAt: Date, updatedAt: Date)
+
+interface RelatedEntity {
+  entity_type: string;
+  entity_id: string; // Entity ID could be UUID or other identifier
+}
+
+interface BroadcastNotificationRequest { // POST /api/notifications/broadcast
+  title: string;
+  message: string;
+  type: 'ALERT' | 'UPDATE' | 'PROMOTION' | 'REMINDER';
+  target_user_ids?: UUID[]; // Optional: for targeting specific users
+  target_roles?: ('PASSENGER' | 'BUS_DRIVER' | 'QUEUE_REGULATOR' | 'CONTROL_CENTER_ADMIN' | 'REGULATOR')[]; // Optional: for targeting roles
+  related_entity?: RelatedEntity;
+}
+
+interface NotificationResponse { // GET /api/notifications
+  id: UUID;
+  user_id: UUID;
+  title: string;
+  message: string;
+  type: 'ALERT' | 'UPDATE' | 'PROMOTION' | 'REMINDER';
+  is_read: boolean;
+  related_entity?: RelatedEntity;
+  created_at: DateString;
+  updated_at: DateString;
+}
+
+// --- NotificationSettings ---
+// DB: NotificationSettings (id: UUID, emailEnabled: boolean, userId: UUID)
+
+interface UpdateNotificationSettingsRequest { // PUT /api/account/notification-settings
+  email_enabled: boolean;
+}
+
+interface NotificationSettingsResponse {
+  id: UUID;
+  user_id: UUID;
+  email_enabled: boolean;
+}
+
+// --- Route ---
+// DB: Route (id: UUID, name: string, description: string (optional), stopIds: array of UUID, totalDistance: number (optional), estimatedDuration: number (optional), isActive: boolean, createdAt: Date, updatedAt: Date)
+
+interface CreateRouteRequest { // POST /api/control-center/routes
+  name: string;
+  description?: string;
+  stop_ids: UUID[];
+  total_distance?: number;
+  estimated_duration?: number;
+  is_active: boolean;
+}
+
+interface UpdateRouteRequest { // PUT /api/control-center/routes/{routeId}
+  name?: string;
+  description?: string;
+  stop_ids?: UUID[];
+  total_distance?: number;
+  estimated_duration?: number;
+  is_active?: boolean;
+}
+
+interface RouteResponse { // GET /api/routes/{routeId}, GET /api/control-center/routes
+  id: UUID;
+  name: string;
+  description?: string;
+  stop_ids: UUID[];
+  total_distance?: number;
+  estimated_duration?: number;
+  is_active: boolean;
+  created_at: DateString;
+  updated_at: DateString;
+}
+
+// --- Schedule ---
+// DB: Schedule (id: UUID, routeId: UUID, schedulePattern: string, departureTimes: array of string, assignedBusId: UUID (optional), assignedDriverId: UUID (optional), validFrom: Date, validUntil: Date (optional), isActive: boolean, createdAt: Date, updatedAt: Date)
+// No direct API for creation/update based on provided endpoints.
+
+interface ScheduleResponse { // GET /api/drivers/schedules, GET /api/drivers/routes/{routeId}/schedule
+  id: UUID;
+  route_id: UUID;
+  schedule_pattern: string;
+  departure_times: string[]; // e.g., "HH:mm" time strings
+  assigned_bus_id?: UUID;
+  assigned_driver_id?: UUID;
+  valid_from: DateString;
+  valid_until?: DateString;
+  is_active: boolean;
+  created_at: DateString;
+  updated_at: DateString;
+}
+
+// --- Trip ---
+// DB: Trip (id: UUID, busId: UUID, routeId: UUID, driverId: UUID (optional), scheduleId: UUID (optional), actualDepartureTime: Date (optional), actualArrivalTime: Date (optional), estimatedArrivalTime: Date (optional), status: string, passengerIds: array of UUID (optional), feedbackIds: array of UUID (optional), createdAt: Date, updatedAt: Date)
+// No direct API for creation/update based on provided endpoints.
+
+interface SimplifiedTripResponse { // For GET /api/buses/stops/{busStopId}/incoming-buses
+  id: UUID;
+  bus_id: UUID;
+  route_id: UUID;
+  driver_id?: UUID;
+  estimated_arrival_time?: DateString;
+  status: 'SCHEDULED' | 'IN_PROGRESS' | 'COMPLETED' | 'CANCELLED' | 'DELAYED';
+}
+
+interface TripResponse { // Full response, might be used by internal systems or admin tools
+  id: UUID;
+  bus_id: UUID;
+  route_id: UUID;
+  driver_id?: UUID;
+  schedule_id?: UUID;
+  actual_departure_time?: DateString;
+  actual_arrival_time?: DateString;
+  estimated_arrival_time?: DateString;
+  status: 'SCHEDULED' | 'IN_PROGRESS' | 'COMPLETED' | 'CANCELLED' | 'DELAYED';
+  passenger_ids?: UUID[];
+  feedback_ids?: UUID[];
+  created_at: DateString;
+  updated_at: DateString;
+}
+
+// --- Alert ---
+// DB: Alert (id: UUID, title: string, severity: string (enum: 'INFO', 'WARNING', 'CRITICAL'), description: string, affectedRouteIds: array of UUID (optional), affectedBusStopIds: array of UUID (optional), activeFrom: Date, activeUntil: Date (optional), createdByUserId: UUID (optional), createdAt: Date, updatedAt: Date)
+
+interface CreateAlertRequest { // POST /api/alerts
+  title: string;
+  severity: 'INFO' | 'WARNING' | 'CRITICAL';
+  description: string;
+  affected_route_ids?: UUID[];
+  affected_bus_stop_ids?: UUID[];
+  active_from: DateString;
+  active_until?: DateString;
+}
+
+interface UpdateAlertRequest { // PUT /api/alerts/{alertId}
+  title?: string;
+  severity?: 'INFO' | 'WARNING' | 'CRITICAL';
+  description?: string;
+  affected_route_ids?: UUID[];
+  affected_bus_stop_ids?: UUID[];
+  active_from?: DateString;
+  active_until?: DateString;
+}
+
+interface AlertResponse { // GET /api/alerts
+  id: UUID;
+  title: string;
+  severity: 'INFO' | 'WARNING' | 'CRITICAL';
+  description: string;
+  affected_route_ids?: UUID[];
+  affected_bus_stop_ids?: UUID[];
+  active_from: DateString;
+  active_until?: DateString;
+  created_by_user_id?: UUID;
+  created_at: DateString;
+  updated_at: DateString;
+}
+
+// --- Bus ---
+// DB: Bus (id: UUID, licensePlate: string (unique), busType: string (enum: 'STANDARD', 'ARTICULATED', 'MINIBUS'), capacity: number, currentLocation: object (optional), lastLocationUpdate: Date (optional), heading: number (optional), speed: number (optional), locationAccuracy: number (optional), currentAddress: string (optional), assignedRouteId: UUID (optional), assignedDriverId: UUID (optional), busStatus: string (enum: 'OPERATIONAL', 'MAINTENANCE', 'BREAKDOWN', 'IDLE'), manufactureYear: number (optional), busModel: string (optional), createdAt: Date, updatedAt: Date)
+
+interface CreateBusRequest { // POST /api/control-center/buses
+  license_plate: string;
+  bus_type: 'STANDARD' | 'ARTICULATED' | 'MINIBUS';
+  capacity: number;
+  manufacture_year?: number;
+  bus_model?: string;
+  bus_status: 'OPERATIONAL' | 'MAINTENANCE' | 'BREAKDOWN' | 'IDLE'; // Initial status
+}
+
+interface UpdateBusRequest { // PUT /api/control-center/buses/{busId}
+  license_plate?: string;
+  bus_type?: 'STANDARD' | 'ARTICULATED' | 'MINIBUS';
+  capacity?: number;
+  current_location?: Location;
+  last_location_update?: DateString;
+  heading?: number;
+  speed?: number;
+  location_accuracy?: number;
+  current_address?: string;
+  assigned_route_id?: UUID;
+  assigned_driver_id?: UUID;
+  bus_status?: 'OPERATIONAL' | 'MAINTENANCE' | 'BREAKDOWN' | 'IDLE';
+  manufacture_year?: number;
+  bus_model?: string;
+}
+
+// Specific requests for assignments/reallocation where ID is in URL
+interface AssignBusRouteRequest { // PUT /api/control-center/buses/{busId}/assign-route/{routeId}
+  // No body needed if routeId is solely from URL, but can specify any additional info.
+  // For now, assuming only path params:
+  // route_id: UUID; // Passed as path parameter
+}
+
+interface ReallocateBusRouteRequest { // PUT /api/control-center/buses/{busId}/reallocate-route/{routeId}
+  // No body needed if routeId is solely from URL, but can specify additional info.
+  reason?: string; // e.g., Reason for reallocation
+}
+
+interface DeployStationaryBusRequest { // POST /api/control-center/buses/deploy-stationary
+  bus_id: UUID;
+  location: Location;
+  current_address?: string;
+  bus_status: 'IDLE' | 'MAINTENANCE'; // Typically stationary deployment means these statuses
+}
+
+interface DriverBusReallocationRequest { // POST /api/buses/reallocate (Driver initiating a request)
+  current_route_id: UUID;
+  requested_new_route_id: UUID;
+  reason: string;
+}
+
+interface BusReallocationRequestResponse { // GET /api/buses/reallocation/requests, GET /api/control-center/reallocation-requests
+  id: UUID;
+  bus_id: UUID;
+  driver_id: UUID; // Assuming the request is linked to a driver
+  current_route_id: UUID;
+  requested_new_route_id: UUID;
+  reason: string;
+  status: 'PENDING' | 'APPROVED' | 'REJECTED';
+  created_at: DateString;
+  updated_at: DateString;
+}
+
+interface BusResponse { // GET /api/buses/{busId}, GET /api/control-center/buses
+  id: UUID;
+  license_plate: string;
+  bus_type: 'STANDARD' | 'ARTICULATED' | 'MINIBUS';
+  capacity: number;
+  current_location?: Location;
+  last_location_update?: DateString;
+  heading?: number;
+  speed?: number;
+  location_accuracy?: number;
+  current_address?: string;
+  assigned_route_id?: UUID;
+  assigned_driver_id?: UUID;
+  bus_status: 'OPERATIONAL' | 'MAINTENANCE' | 'BREAKDOWN' | 'IDLE';
+  manufacture_year?: number;
+  bus_model?: string;
+  created_at: DateString;
+  updated_at: DateString;
+}
+
+// --- BusStop ---
+// DB: BusStop (id: UUID, name: string, location: object, capacity: number (optional), isActive: boolean, createdAt: Date, updatedAt: Date)
+
+interface CreateBusStopRequest { // POST /api/control-center/bus-stops
+  name: string;
+  location: Location;
+  capacity?: number;
+  is_active: boolean;
+}
+
+interface UpdateBusStopRequest { // PUT /api/control-center/bus-stops/{busStopId}
+  name?: string;
+  location?: Location;
+  capacity?: number;
+  is_active?: boolean;
+}
+
+interface BusStopResponse { // GET /api/buses/stops, GET /api/buses/stops/{busStopId}, GET /api/control-center/bus-stops
+  id: UUID;
+  name: string;
+  location: Location;
+  capacity?: number;
+  is_active: boolean;
+  created_at: DateString;
+  updated_at: DateString;
+}
+
+
+// =========================================================================
+// Implied Models from API Endpoints (not directly from explicit DB schema)
+// =========================================================================
+
+// --- Attendance ---
+// Implied DB: Attendance (id: UUID, userId: UUID, timestamp: Date, type: 'CHECK_IN' | 'CHECK_OUT', location: Location (optional))
+
+interface CreateAttendanceRecordRequest { // POST /api/attendance, POST /api/drivers/attendance
+  type: 'CHECK_IN' | 'CHECK_OUT';
+  location?: Location;
+}
+
+interface AttendanceRecordResponse { // GET /api/attendance/today, GET /api/drivers/attendance/today
+  id: UUID;
+  user_id: UUID;
+  timestamp: DateString;
+  type: 'CHECK_IN' | 'CHECK_OUT';
+  location?: Location;
+}
+
+// --- Conversations and Messages ---
+// Implied DB: Conversation (id: UUID, participants: UUID[], lastMessageAt: Date)
+// Implied DB: Message (id: UUID, conversationId: UUID, senderId: UUID, content: string, createdAt: Date)
+
+interface MessageResponse { // GET /api/conversations/{conversationId}/messages
+  id: UUID;
+  conversation_id: UUID;
+  sender_id: UUID;
+  content: string;
+  created_at: DateString;
+}
+
+interface ConversationResponse { // GET /api/conversations
+  id: UUID;
+  participants: UUID[];
+  last_message_at?: DateString;
+}
+
+// --- Route Change Requests (Driver initiated) ---
+// Implied DB: RouteChangeRequest (id: UUID, driverId: UUID, currentRouteId: UUID, requestedRouteId: UUID, reason: string, status: 'PENDING' | 'APPROVED' | 'REJECTED', createdAt: Date, updatedAt: Date)
+
+interface CreateRouteChangeRequest { // POST /api/drivers/route-change-requests
+  current_route_id: UUID;
+  requested_route_id: UUID;
+  reason: string;
+}
+
+interface RouteChangeRequestResponse { // GET /api/drivers/route-change-requests, GET /api/control-center/reallocation-requests
+  id: UUID;
+  driver_id: UUID;
+  current_route_id: UUID;
+  requested_route_id: UUID;
+  reason: string;
+  status: 'PENDING' | 'APPROVED' | 'REJECTED';
+  created_at: DateString;
+  updated_at: DateString;
+}
+
+// --- Instructions (for Drivers) ---
+// Implied DB: Instruction (id: UUID, driverId: UUID, title: string, content: string, issuedByUserId: UUID, isAcknowledged: boolean, issuedAt: Date, acknowledgedAt: Date (optional))
+
+interface InstructionResponse { // GET /api/drivers/instructions
+  id: UUID;
+  driver_id: UUID;
+  title: string;
+  content: string;
+  issued_by_user_id: UUID;
+  is_acknowledged: boolean;
+  issued_at: DateString;
+  acknowledged_at?: DateString;
+}
+
+// --- General Configuration ---
+interface LanguageConfigResponse { // GET /api/config/languages
+  code: string; // e.g., "en", "es"
+  name: string; // e.g., "English", "Español"
+}
