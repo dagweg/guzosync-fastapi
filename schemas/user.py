@@ -1,4 +1,4 @@
-from typing import Optional
+from typing import Literal, Optional
 from pydantic import BaseModel, EmailStr
 from uuid import UUID
 from enum import Enum
@@ -8,15 +8,15 @@ class UserRole(str, Enum):
     PASSENGER = "PASSENGER"
     BUS_DRIVER = "BUS_DRIVER"
     QUEUE_REGULATOR = "QUEUE_REGULATOR"
-    CONTROL_CENTER_ADMIN = "CONTROL_CENTER_ADMIN"
-    REGULATOR = "REGULATOR"
+    CONTROL_STAFF = "CONTROL_STAFF"
+    CONTROL_ADMIN = "CONTROL_ADMIN"
 
 class RegisterUserRequest(BaseModel):
     first_name: str
     last_name: str
     email: EmailStr
     password: str
-    role: UserRole
+    role: Literal[UserRole.PASSENGER, UserRole.CONTROL_STAFF]
     phone_number: str
     profile_image: Optional[str] = None
 
