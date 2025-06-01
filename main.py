@@ -11,7 +11,10 @@ import os
 from core.logger import setup_logging, get_logger
 
 # Import routers
-from routers import accounts, account, notifications, config, buses, routes, feedback, issues, attendance
+from routers import (
+    accounts, account, notifications, config, buses, routes, feedback, issues, attendance,
+    alerts, conversations, drivers, regulators, control_center, trip
+)
 
 # Load environment variables
 load_dotenv()
@@ -84,8 +87,14 @@ app.include_router(config.router)
 app.include_router(buses.router)
 app.include_router(routes.router)
 app.include_router(feedback.router)
+app.include_router(trip.router)
 app.include_router(issues.router)
 app.include_router(attendance.router)
+app.include_router(alerts.router)
+app.include_router(conversations.router)
+app.include_router(drivers.router)
+app.include_router(regulators.router)
+app.include_router(control_center.router)
 
 @app.get("/")
 async def root():

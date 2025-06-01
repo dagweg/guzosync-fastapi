@@ -75,3 +75,64 @@ class BusStopResponse(DateTimeModelMixin):
     location: Location
     capacity: Optional[int] = None
     is_active: bool
+
+# Alert schemas
+class AlertType(str, Enum):
+    TRAFFIC = "TRAFFIC"
+    WEATHER = "WEATHER"
+    MAINTENANCE = "MAINTENANCE"
+    EMERGENCY = "EMERGENCY"
+    ROUTE_CHANGE = "ROUTE_CHANGE"
+    SERVICE_UPDATE = "SERVICE_UPDATE"
+
+class AlertSeverity(str, Enum):
+    LOW = "LOW"
+    MEDIUM = "MEDIUM"
+    HIGH = "HIGH"
+    CRITICAL = "CRITICAL"
+
+class CreateAlertRequest(BaseModel):
+    title: str
+    message: str
+    alert_type: AlertType
+    severity: AlertSeverity
+    affected_routes: Optional[List[UUID]] = None
+    affected_bus_stops: Optional[List[UUID]] = None
+
+class UpdateAlertRequest(BaseModel):
+    title: Optional[str] = None
+    message: Optional[str] = None
+    alert_type: Optional[AlertType] = None
+    severity: Optional[AlertSeverity] = None
+    affected_routes: Optional[List[UUID]] = None
+    affected_bus_stops: Optional[List[UUID]] = None
+    is_active: Optional[bool] = None
+
+class AlertResponse(DateTimeModelMixin):
+    id: UUID
+    title: str
+    message: str
+    alert_type: AlertType
+    severity: AlertSeverity
+    affected_routes: Optional[List[UUID]] = None
+    affected_bus_stops: Optional[List[UUID]] = None
+    is_active: bool
+    created_by: UUID
+
+# Instruction schemas
+class InstructionType(str, Enum):
+    ROUTE_CHANGE = "ROUTE_CHANGE"
+    SPEED_LIMIT = "SPEED_LIMIT"
+    MAINTENANCE = "MAINTENANCE"
+    EMERGENCY = "EMERGENCY"
+    GENERAL = "GENERAL"
+
+class InstructionResponse(DateTimeModelMixin):
+    id: UUID
+    title: str
+    content: str
+    instruction_type: InstructionType
+    target_driver_id: UUID
+    priority: str
+    acknowledged: bool
+    acknowledged_at: Optional[datetime] = None

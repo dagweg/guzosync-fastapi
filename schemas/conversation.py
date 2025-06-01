@@ -9,8 +9,14 @@ class MessageResponse(DateTimeModelMixin):
     conversation_id: UUID
     sender_id: UUID
     content: str
+    message_type: Optional[str] = "TEXT"
+    sent_at: datetime
 
 class ConversationResponse(BaseModel):
     id: UUID
     participants: List[UUID]
     last_message_at: Optional[datetime] = None
+
+class SendMessageRequest(BaseModel):
+    content: str
+    message_type: Optional[str] = "TEXT"

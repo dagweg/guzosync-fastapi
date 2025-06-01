@@ -39,3 +39,21 @@ class ScheduleResponse(DateTimeModelMixin):
     valid_from: datetime
     valid_until: Optional[datetime] = None
     is_active: bool
+
+# Route change request schemas
+class RouteChangeRequestRequest(BaseModel):
+    current_route_id: UUID
+    requested_route_id: UUID
+    reason: str
+
+class RouteChangeResponse(DateTimeModelMixin):
+    id: UUID
+    driver_id: UUID
+    current_route_id: UUID
+    requested_route_id: UUID
+    reason: str
+    status: str  # PENDING, APPROVED, REJECTED
+    requested_at: datetime
+    reviewed_by: Optional[UUID] = None
+    reviewed_at: Optional[datetime] = None
+    review_notes: Optional[str] = None

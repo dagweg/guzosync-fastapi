@@ -5,10 +5,13 @@ from .user import (
 )
 from .transport import (
     BusType, BusStatus, CreateBusRequest, UpdateBusRequest, BusResponse,
-    CreateBusStopRequest, UpdateBusStopRequest, BusStopResponse
+    CreateBusStopRequest, UpdateBusStopRequest, BusStopResponse,
+    AlertType, AlertSeverity, CreateAlertRequest, UpdateAlertRequest, AlertResponse,
+    InstructionType, InstructionResponse
 )
 from .route import (
-    CreateRouteRequest, UpdateRouteRequest, RouteResponse, ScheduleResponse
+    CreateRouteRequest, UpdateRouteRequest, RouteResponse, ScheduleResponse,
+    RouteChangeRequestRequest, RouteChangeResponse
 )
 from .trip import TripStatus, SimplifiedTripResponse, TripResponse
 from .notification import (

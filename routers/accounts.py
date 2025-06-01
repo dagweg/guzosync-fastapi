@@ -83,6 +83,15 @@ async def login(
             detail="Error generating access token"
         )
 
+@router.post("/logout")
+async def logout(current_user: User = Depends(get_current_user)):
+    """Logout user (invalidate token)"""
+    # In a real implementation, you would invalidate the token
+    # For now, we'll just return a success message since JWT tokens
+    # are stateless and would need to be blacklisted
+    logger.info(f"User logout: {current_user.email}")
+    return {"message": "Logged out successfully"}
+
 @router.post("/password/reset/request")
 async def request_password_reset(
     request: Request, 
