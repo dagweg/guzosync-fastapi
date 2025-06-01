@@ -1,0 +1,356 @@
+Direct Charge
+Initiate Payment
+Initiate Payments
+This document covers payment transaction and its establishment with the help of our Direct charges API, or our SDKs.
+
+This solution is specifically designed for physical stores and integrated Enterprise Resource Planning software.
+Chapa Inline, Standard, and HTML checkout make it easy for you to collect payments via card, bank, or any of our supported methods with one integration. However, they’re bundled with the Chapa UI, branding and experience.
+
+Sometimes you want more control, or a custom solution that fits in with your app. That’s where direct charge comes in. We provide the APIs to charge customers, but you collect their payment information yourself and bring your own UI and payment flow. This means you can customize and control the customer’s experience as you wish.
+
+With direct charge, you’ll have to integrate separately for each payment method you want to support, which can be tasking. Use direct charge only when your customers will be using a specific payment method (like cards or banks).
+
+How does direct charge work?
+There are three main stages in direct charge:
+
+Initiate the payment: You send the transaction details and the customer’s payment details to the appropriate charge endpoints.
+Authorize the charge: The customer authorizes the charge with their payment provider, such as their mobile wallet issuer or bank. This completes the charge.
+Verify the payment: As a failsafe, you’ll call our API to verify that the payment was successful before giving value (the verify transaction endpoint).
+These steps vary depending on the payment method (for example, some mobile money charge may include multiple authorization steps including OTPs). We’ll explain what applies to each method in its guide.
+
+Direct charge options
+Here are the different options for collecting payments via direct charge. Each type of direct charge has its own unique requirements and authorization flow. Follow the links to view detailed guides for each type:
+
+telebirr
+mpesa
+CBEBirr
+Coopay-Ebirr
+Enat Bank (Use portal view)
+Query
+Parameter	Required	Type	Description
+type	yes	string	The payment method you are interested to charge your customer with. Allowed values are telebirr, mpesa, cbebirr, ebirr, enat_bank.
+Body Params
+Before carrying out the transaction, a user must provide required information such as full name, email address, the amount to transfer, etc. Below you will find a list of parameter needed:
+
+Parameter	Required	Type	Description
+key	yes	Bearer Key	This will be your private key from Chapa. When on test mode use the test key, and when on live mode use the live key.
+amount	yes	digits	The amount you will be charging your customer.
+mobile	yes	digits	The customer’s phone number.
+tx_ref	yes	string	A unique reference given to each transaction.
+currency	yes	string	The currency in which all the charges are made. Currency allowed is ETB.
+Initialize the Transaction and Get a response
+Once all the information needed to proceed with the transaction is retrieved, the action taken further would be to associate the following information into the javascript function(chosen language) which will innately display the checkout.
+
+Endpoint https://api.chapa.co/v1/charges?type={payment_method_name}
+
+Method POST
+
+
+python
+
+import requests
+    
+  url = "https://api.chapa.co/v1/charges?type=telebirr"
+  dataList = []
+  boundary = 'wL36Yn8afVp8Ag7AmP8qZ0SA4n1v9T'
+  dataList.append('--' + boundary)
+  dataList.append('Content-Disposition: form-data; name="amount"')
+  dataList.append('')
+  dataList.append('10')
+  dataList.append('--' + boundary)
+  dataList.append('Content-Disposition: form-data; name="currency"')
+  dataList.append('')
+  dataList.append('ETB')
+  dataList.append('--' + boundary)
+  dataList.append('Content-Disposition: form-data; name="tx_ref"')
+  dataList.append('')
+  dataList.append('12311se2319ud4')
+  dataList.append('--' + boundary)
+  dataList.append('Content-Disposition: form-data; name="mobile"')
+  dataList.append('')
+  dataList.append('09xxxxxxxx')
+  dataList.append('--' + boundary + '--')
+  dataList.append('')
+  body = '
+'.join(dataList)
+  payload = body.encode('utf-8')
+  headers = {
+      'Authorization': 'Bearer CHASECK-xxxxxxxxxxxxxxxx',
+      'Content-type': 'multipart/form-data; boundary={}'.format(boundary)
+  }
+  response = requests.post(url, data=payload, headers=headers)
+  data = response.text
+  print(data)
+      
+Successful Response
+  {
+    "message": "Charge initiated",
+    "status": "success",
+    "data": {
+        "auth_type": "ussd",
+        "requestID": "66dPW486w0z6uibrcraZ2diYztK2lx2WaslwGnS18UBXTctDxRdAudYtq3jJtMu7CV6gzyCpBSfrm9kKFJBsA8Wq7zKvk0UxL",
+        "meta": {
+            "message": "Payment successfully initiated with telebirr",
+            "status": "success",
+            "ref_id": "CH3mhMQVhsHm2",
+            "payment_status": "PENDING"
+        },
+        "mode": "live"
+    }
+  }
+Failed Response
+{
+  "message": "Authorization required",
+  "status": "failed",
+  "data": null
+  }
+Types of Direct charges
+USSD A USSD push notification is sent to the account owner for transaction authorization. Example: Telebirr, Mpesa, CBEBirr, Coopay-Ebirr
+Example response for USSD:
+
+Successful Response
+  {
+    "message": "Charge initiated",
+    "status": "success",
+    "data": {
+        "auth_type": "ussd",
+        "requestID": "66dPW486w0z6uibrcraZ2diYztK2lx2WaslwGnS18UBXTctDxRdAudYtq3jJtMu7CV6gzyCpBSfrm9kKFJBsA8Wq7zKvk0UxL",
+        "meta": {
+            "message": "Payment successfully initiated with telebirr",
+            "status": "success",
+            "ref_id": "CH3mhMQVhsHm2",
+            "payment_status": "PENDING"
+        },
+        "mode": "live"
+    }
+  }
+Failed Response
+{
+  "message": "Authorization required",
+  "status": "failed",
+  "data": null
+  }
+Portal View The response will contain HTML content which will should be opened on a separate new tab for completing the transaction (will not work with in a frame). Example: Enat Bank
+Example response for portal view:
+
+Successful Response
+  {
+    "message": "Charge initiated",
+    "status": "success",
+    "data": {
+        "auth_type": "portal_view",
+        "requestID": "Zn6qkFmZ0Rzwbv3oxEZQPftK0h1GI5tTiPBfAe3yGQJdO4N8KH8V46wDXwZLnxxVazOiHOhBWDHG9uos6OUsu9Uplf6XLg4KL",
+        "meta": {
+            "message": "Payment successfully initiated with Enat Bank",
+            "status": "success",
+            "portal": "https://bank.com",
+            "ref_id": "CHIao4sITVmom",
+            "payment_status": "PENDING"
+        },
+        "mode": "live"
+    }
+}
+Failed Response
+  {
+    "message": "Payment failed",
+    "status": "failed",
+    "data": null
+  }
+
+
+Authorize Payments
+This document will go through the necessary actions taken to authorize transactions after payment using Chapa’s Direct API.
+
+How to Authorize Transactions
+Authorizing a payment is dependent on the method used when first initializing a transaction. This request is initiated after you initiated a direct charge payment. Using your transaction reference, a POST request is needed to be made to the Authorize Transaction endpoint server.
+
+Authorizing payments vary depending on the payment method (for example, some mobile money charge may include multiple authorization steps including OTPs). We’ll explain what applies to each method in its guide.
+
+Direct charge options
+Here are the different options for authorizing payments initiated via direct charge. Each type of direct charge has its own unique requirements and authorization flow. Follow the links to view detailed guides for each type:
+
+telebirr
+M-Pesa
+amole
+cbebirr
+ebirr
+awashbirr
+Type of auth_type parameters
+otp
+ussd
+When to Encrypt?
+While using our direct charges API you are responsible to handle some sensitive security information like OTPs. In those times, you’ll encrypt the secure object from the payload you’ve built up. You’ll need your encryption key from the Settings > API section of your dashboard, and you’ll use the 3DES algorithm for encryption. You can see examples of this in our encryption guide.
+
+Now, you’ll wrap the encrypted payload inside a JSON body like this:
+
+Successfully Encrypted Payload
+
+{
+    "client": "0jhd12Dfee+2h/FzHA/X1zPlDmRmH5v+F4sdsfFFSEgg44FAFDSFS000+YwUHegTSogQdnXp7OGdUxPngiv6592YoL0YXa4eHcH1fRGjAimdqucGJPurFVu4sE5gJIEmBCXdESVqNPG72PwdRPfAINT9x1bXemI1M3bBdydtWvAx58ZE4fcOtWkD/IDi+o8K7qpmzgUR8YUbgZ71yi0pg5UmrT4YpcY2eq5i46Gg3L+rtjhjkgjkjg83hfkjajhf3"
+}
+Here is a sample code for verifying transactions:
+
+Endpoint https://api.chapa.co/v1/validate?type=amole
+
+Method POST
+
+Authorization : Pass your secret key as a bearer token in the request header to authorize this call.
+
+python
+
+import requests
+    
+  url = "https://api.chapa.co/v1/validate?type=amole"
+  dataList = []
+  boundary = 'wL36Yn8afVp8Ag7AmP8qZ0SA4n1v9T'
+  dataList.append('--' + boundary)
+  dataList.append('Content-Disposition: form-data; name="reference"')
+  dataList.append('')
+  dataList.append('CHcuKjgnN0Dk0')
+  dataList.append('--' + boundary)
+  dataList.append('Content-Disposition: form-data; name="client"')
+  dataList.append('')
+  dataList.append('0jhd12Dfee+2h/FzHA/X1zPlDmRmH5v+F4sdsfFFSEgg44FAFDSFS000+YwUHegTSogQdnXp7OGdUxPngiv6592YoL0YXa4eHcH1fRGjAimdqucGJPurFVu4sE5gJIEmBCXdESVqNPG72PwdRPfAINT9x1bXemI1M3bBdydtWvAx58ZE4fcOtWkD/IDi+o8K7qpmzgUR8YUbgZ71yi0pg5UmrT4YpcY2eq5i46Gg3L+rtjhjkgjkjg83hfkjajhf3')
+  dataList.append('--' + boundary + '--')
+  dataList.append('')
+  body = '
+'.join(dataList)
+  payload = body.encode('utf-8')
+  headers = {
+      'Authorization': 'Bearer CHASECK-xxxxxxxxxxxxxxxx',
+      'Content-type': 'multipart/form-data; boundary={}'.format(boundary)
+  }
+  response = requests.post(url, data=payload, headers=headers)
+  data = response.text
+  print(data)
+Successful Response
+{
+  "message": "Payment is completed",
+  "trx_ref": "CHS7WFpXdCMR0",
+  "processor_id": null
+  }
+Failed Response
+{
+  "message": "Invalid client data or Transaction is nowhere to be found.",
+  "status": "failed",
+  "data": null
+  }
+Refer to our Error Codes page for all responses for this request.
+After the payment
+Four things will happen when payment is successfully authorized:
+
+We’ll send you a webhook if you have that enabled. You can find more information on Webhooks here.
+On your server, you should handle the redirect and always verify the final state of the transaction.
+Verify Transaction
+It is important to verify the transaction and confirm its status. Here is how you can Verify a Transaction.
+
+Webhook
+Chapa has event listeners that will send a message whenever a payment is successful. You can find more information on Webhooks here.
+
+
+
+Error Codes
+When accepting a payment, a transaction is established and following every transaction carries out a complete payment method.
+
+List of Responses
+How to Interpret our API Responses: A Comprehensive List of our Response Codes and Their Meanings
+
+Transaction Initialize Endpoint
+Message	Status	Status Code	Data
+Authorization required	failed	401	null
+Invalid API Key or User doesn’t exist	failed	401	null
+Required Attribute: [ “validation.required”]	failed	400	null
+Invalid currency, currency is not supported	failed	400	null
+Incorrect header settings Please check if content-type is present and set to application/json	failed	400	null
+The subaccount id you provided isn’t associated with this account. Please make sure the id is correct or to create a subaccount before proceeding	failed	400	null
+Merchant’s share of payment is not enough to cover transaction fee.	failed	400	null
+Merchant fee is greater than split flat amount.	failed	400	null
+Merchant’s share of payment is not enough to cover transaction fee.	failed	400	null
+The subaccount id you provided isn’t associated with this account. Please make sure the id is correct or to create a subaccount before proceeding.	failed	400	null
+Merchant’s share of payment is not enough to cover transaction fee.	failed	400	null
+Merchant fee is greater than split flat amount.	failed	400	null
+Hosted Link	success	200	”checkout_url”: “https://checkout.chapa.co/checkout/payment/Od4P12hbhkbqiw9oZFHgO”
+Transaction reference has been used before	failed	400	null
+User can’t receive payments	failed	400	null
+Invalid API Key or User doesn’t exist	failed	401	null
+Payments through API is disabled, please contact us	failed	404	null
+Required Attributes could be amount, currency, tx_ref
+
+Transaction Initialize Endpoint
+Message	Status	Status Code	Data
+Authorization required	failed	401	null
+Invalid API Key or User doesn’t exist	failed	401	null
+Required Attribute: [ “validation.required”]	failed	400	null
+Invalid currency, currency is not supported	failed	400	null
+Incorrect header settings Please check if content-type is present and set to application/json	failed	400	null
+The subaccount id you provided isn’t associated with this account. Please make sure the id is correct or to create a subaccount before proceeding	failed	400	null
+Merchant’s share of payment is not enough to cover transaction fee.	failed	400	null
+Merchant fee is greater than split flat amount.	failed	400	null
+Merchant’s share of payment is not enough to cover transaction fee.	failed	400	null
+The subaccount id you provided isn’t associated with this account. Please make sure the id is correct or to create a subaccount before proceeding.	failed	400	null
+Merchant’s share of payment is not enough to cover transaction fee.	failed	400	null
+Merchant fee is greater than split flat amount.	failed	400	null
+Hosted Link	success	200	”checkout_url”: “https://checkout.chapa.co/checkout/payment/Od4P12hbhkbqiw9oZFHgO”
+Transaction reference has been used before	failed	400	null
+User can’t receive payments	failed	400	null
+Invalid API Key or User doesn’t exist	failed	401	null
+Payments through API is disabled, please contact us	failed	404	null
+Required Attributes could be amount, currency, tx_ref
+
+Transaction Verify Endpoint
+Message	Status	Status Code	Data
+Authorization required	failed	401	null
+Invalid API Key or User doesn’t exist	failed	401	null
+Invalid API Key	failed	401	null
+Invalid transaction or Transaction not found	failed	404	null
+Live secret keys can’t be used to verify a test transaction	failed	401	null
+Test secret keys can’t be used to verify a live transaction	failed	401	null
+Payment not paid yet	null	404	null
+Payment details	payment status	200	”first_name”: “Bilen”, “last_name”: “Gizachew”,“email”: “abebech_bekele@gmail.com”,“currency”: “ETB”,“amount”: 100,“charge”: 3.5,“mode”: “test”,“method”: “test”,“type”: “API”,“status”: “success”,“reference”: “6jnheVKQEmy”,“tx_ref”: “chewatatest-6669”,“customization”: “title”: “Payment for my favourite merchant”, “description”: “I love online payments”, “logo”: null,“meta”: null,“created_at”: “2023-02-02T07:05:23.000000Z”,“updated_at”: “2023-02-02T07:05:23.000000Z”
+Payment status could be failed, success, pending.
+
+List Banks Endpoint
+Message	Status	Status Code	Data
+Authorization required	failed	401	null
+Banks retrieved	-	200	null
+Invalid API Key	failed	401	null
+Transfer Initialize Endpoint
+Message	Status	Status Code	Data
+Authorization required	failed	401	null
+Our Transfer hours are Mon-Sat from 08:30 AM - 04:30 PM only, please check our transfer manuals or contact us for an immediate assist.	failed	401	null
+Invalid API Key or User doesn’t exist	failed	401	null
+Required Attribute: [ “validation.required”]	failed	400	null
+This bank is no longer supported or banned by National bank of Ethiopia	failed	400	null
+The account number is not valid for bank name	failed	400	null
+The subaccount id you provided isn’t associated with this account. Please make sure the id is correct or to create a subaccount before proceeding.	failed	400	null
+Insufficient Balance	failed	400	null
+Transfer Queued Successfully	success	200	3241342142sfdd
+Transfer Queued Successfully in Test Mode	success	200	3241342142sfdd
+TThe reference number has been used before	failed	400	null
+Insufficient Balance	failed	400	null
+Invalid currency, currency is not supported only ETB is supported to use Transfer API.	failed	400	null
+The Bank Code is incorrect please check if it does exist with our getbanks endpoint.’,	failed	401	null
+User can’t receive payments’,	failed	400	null
+Invalid API Key or User doesn’t exist	failed	401	null
+Transfer API isn’t available now, please contact us	failed	404	null
+Required Attributes could be amount, currency, bank_code, reference, account_number, account_name
+
+Create Subaccount Endpoint
+Message	Status	Status Code	Data
+Authorization required	failed	401	null
+Invalid API Key or User doesn’t exist	failed	401	null
+Required Attribute: [ “validation.required”]	failed	400	null
+The account number is not valid for bank name	failed	400	null
+Subaccount created successfully	success	200	”subaccounts[id]”: “837b4e5e-57c8-4e39-b2df-66e7886b8bdb”
+Something went wrong while creating the subaccount.	failed	400	null
+This bank is not longer supported or banned by National bank of Ethiopia	failed	400	null
+This subaccount does exist	failed	400	null
+To create subaccounts via API you need to be on live mode.	failed	400	null
+The Bank Code is incorrect please check if it does exist with our getbanks endpoint.	failed	401	null
+Invalid API Key or User doesn’t exist	failed	400	null
+You Can’t create a subaccount via API, try to create from dashboard.	failed	401	null
+Required Attributes could be split_type, split_value, reference,business_name,bank_code, account_number, account_name
+
+Bulk Transfer Endpoint
+Message	Status	Status Code	Data
+Too many requests	failed	429	null

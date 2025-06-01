@@ -9,6 +9,7 @@ import os
 # Import centralized logger
 # from core.logger import setup_logging, get_logger
 from core.logger import setup_logging, get_logger
+from core.action_logging_middleware import ActionLoggingMiddleware
 
 # Import routers
 from routers import (
@@ -32,6 +33,9 @@ app = FastAPI(
     description="Backend API for GuzoSync transportation system",
     version="1.0.0"
 )
+
+# Add action logging middleware
+app.add_middleware(ActionLoggingMiddleware)
 
 socket_manager = SocketManager(app=app)
 

@@ -64,7 +64,7 @@ async def login(
     logger.info(f"Login attempt for email: {user_data.email}")
     
     user = await request.app.state.mongodb.users.find_one({"email": user_data.email})
-    if not user or user["password"] != user_data.password:  # In production, verify hashed password
+    if not user or user.get("password") != user_data.password:  # In production, verify hashed password
         logger.warning(f"Login failed for email: {user_data.email}")
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
@@ -73,7 +73,8 @@ async def login(
         )
     
     try:
-        access_token = create_access_token(data={"sub": str(user["id"])})
+        user_id = user.get("id") or str(user.get("_id"))
+        access_token = create_access_token(data={"sub": str(user_id)})
         logger.info(f"Successful login for user: {user_data.email}")
         return {"access_token": access_token, "token_type": "bearer"}
     except Exception as e:

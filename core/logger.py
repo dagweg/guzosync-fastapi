@@ -8,28 +8,41 @@ from typing import Dict, Any, Optional
 import uuid
 
 class HumanReadableFormatter(logging.Formatter):
-    """A formatter that produces more readable console output while keeping JSON for files."""
-    
+    """A formatter that produces more readable console output while keeping JSON for files. Adds color for levels."""
+    # ANSI color codes
+    COLORS = {
+        'DEBUG': '\033[37m',    # White
+        'INFO': '\033[36m',     # Cyan
+        'WARNING': '\033[33m',  # Yellow
+        'ERROR': '\033[31m',    # Red
+        'CRITICAL': '\033[41m', # Red background
+    }
+    RESET = '\033[0m'
+
     def format(self, record: logging.LogRecord) -> str:
         # Format the basic message
         timestamp = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
         levelname = record.levelname
         name = record.name
         message = record.getMessage()
-        
-        # Base format
-        log_line = f"{timestamp} | {levelname:8} | {name} | {message}"
-        
+
+        # Colorize levelname
+        color = self.COLORS.get(levelname, '')
+        reset = self.RESET if color else ''
+        level_display = f"{color}{levelname:8}{reset}"
+
+        log_line = f"{timestamp} | {level_display} | {name} | {message}"
+
         # Add context if present
         context = getattr(record, "context", None)
         if context:
             context_str = " ".join(f"{k}={v}" for k, v in context.items())
             log_line += f" | {context_str}"
-        
+
         # Add exception if present
         if record.exc_info:
             log_line += f"\n{self.formatException(record.exc_info)}"
-            
+
         return log_line
 
 class JSONFormatter(logging.Formatter):
