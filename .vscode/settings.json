@@ -4,5 +4,6 @@
   "python.linting.mypyEnabled": true,
   "python.linting.mypyArgs": ["--config-file=${workspaceFolder}/mypy.ini"],
   "errorLens.enabledDiagnosticLevels": ["error", "warning", "info"],
-  "errorLens.enabled": true
+  "errorLens.enabled": true,
+  "explorer.excludeGitIgnore": true
 }
