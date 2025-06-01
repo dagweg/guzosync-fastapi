@@ -22,3 +22,4 @@ class User(BaseDBModel):
     password_reset_token: Optional[str] = None
     password_reset_expires: Optional[datetime] = None
     is_active: bool = True
+    preferred_language: Optional[str] = None

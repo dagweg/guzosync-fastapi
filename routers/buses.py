@@ -1,19 +1,23 @@
-from fastapi import APIRouter, Depends, HTTPException, status, Query
+from fastapi import APIRouter, Depends, HTTPException, status, Query, Request
 from typing import List, Optional
 from uuid import UUID
 
 from models import User, Bus, BusStop
 from schemas.transport import BusResponse, BusStopResponse
 from schemas.trip import SimplifiedTripResponse
-from routers.accounts import get_current_user
+from core.dependencies import get_current_user
 
 router = APIRouter(prefix="/api/buses", tags=["buses"])
 
 @router.get("/{bus_id}", response_model=BusResponse)
-async def get_bus(bus_id: UUID, current_user: User = Depends(get_current_user)):
+async def get_bus(
+    request: Request,
+    bus_id: UUID, 
+    current_user: User = Depends(get_current_user)
+):
     
     
-    bus = await request.app.mongodb.buses.find_one({"id": bus_id})
+    bus = await request.app.state.mongodb.buses.find_one({"id": bus_id})
     if not bus:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
@@ -24,6 +28,7 @@ async def get_bus(bus_id: UUID, current_user: User = Depends(get_current_user)):
 
 @router.get("/stops", response_model=List[BusStopResponse])
 async def get_bus_stops(
+    request: Request,
     search: Optional[str] = None,
     filter_by: Optional[str] = None,
     page: int = Query(1, alias="pn", ge=1),
@@ -44,15 +49,19 @@ async def get_bus_stops(
     skip = (page - 1) * page_size
     
     # Get bus stops
-    bus_stops = await request.app.mongodb.bus_stops.find(query).skip(skip).limit(page_size).to_list(length=page_size)
+    bus_stops = await request.app.state.mongodb.bus_stops.find(query).skip(skip).limit(page_size).to_list(length=page_size)
     
     return [BusStopResponse(**stop) for stop in bus_stops]
 
 @router.get("/stops/{bus_stop_id}", response_model=BusStopResponse)
-async def get_bus_stop(bus_stop_id: UUID, current_user: User = Depends(get_current_user)):
+async def get_bus_stop(
+    request: Request,
+    bus_stop_id: UUID, 
+    current_user: User = Depends(get_current_user)
+):
     
     
-    bus_stop = await request.app.mongodb.bus_stops.find_one({"id": bus_stop_id})
+    bus_stop = await request.app.state.mongodb.bus_stops.find_one({"id": bus_stop_id})
     if not bus_stop:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
@@ -62,11 +71,15 @@ async def get_bus_stop(bus_stop_id: UUID, current_user: User = Depends(get_curre
     return BusStopResponse(**bus_stop)
 
 @router.get("/stops/{bus_stop_id}/incoming-buses", response_model=List[SimplifiedTripResponse])
-async def get_incoming_buses(bus_stop_id: UUID, current_user: User = Depends(get_current_user)):
+async def get_incoming_buses(
+    request: Request,
+    bus_stop_id: UUID, 
+    current_user: User = Depends(get_current_user)
+):
     
     
     # First, verify bus stop exists
-    bus_stop = await request.app.mongodb.bus_stops.find_one({"id": bus_stop_id})
+    bus_stop = await request.app.state.mongodb.bus_stops.find_one({"id": bus_stop_id})
     if not bus_stop:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
@@ -74,13 +87,13 @@ async def get_incoming_buses(bus_stop_id: UUID, current_user: User = Depends(get
         )
     
     # Find routes that include this bus stop
-    routes = await request.app.mongodb.routes.find(
+    routes = await request.app.state.mongodb.routes.find(
         {"stop_ids": bus_stop_id}
     ).to_list(length=None)
     route_ids = [route["id"] for route in routes]
     
     # Find active trips on these routes
-    trips = await request.app.mongodb.trips.find({
+    trips = await request.app.state.mongodb.trips.find({
         "route_id": {"$in": route_ids},
         "status": {"$in": ["SCHEDULED", "IN_PROGRESS"]}
     }).to_list(length=None)

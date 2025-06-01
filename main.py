@@ -19,7 +19,7 @@ load_dotenv()
 # Setup logging before anything else
 setup_logging(
     log_level=os.getenv("LOG_LEVEL", "INFO"),
-    log_file=os.getenv("LOG_FILE")
+    log_file=os.getenv("LOG_FILE", "logs/guzosync.log"),
 )
 
 logger = get_logger(__name__)
@@ -55,13 +55,13 @@ async def startup_db_client():
         logger.info("Connecting to MongoDB...")
         
         # Configure UUID representation
-        app.mongodb_client = AsyncIOMotorClient(
+        app.state.mongodb_client = AsyncIOMotorClient(
             mongodb_url,
             uuidRepresentation='standard'  # This is the key change
         )
-        app.mongodb = app.mongodb_client[database_name]
+        app.state.mongodb = app.state.mongodb_client[database_name]
         
-        await app.mongodb.command('ping')
+        await app.state.mongodb.command('ping')
         logger.info("Successfully connected to MongoDB")
     except Exception as e:
         logger.error("Error connecting to MongoDB", exc_info=True)
@@ -71,7 +71,7 @@ async def startup_db_client():
 async def shutdown_db_client():
     try:
         logger.info("Closing MongoDB connection...")
-        app.mongodb_client.close()
+        app.state.mongodb_client.close()
         logger.info("MongoDB connection closed successfully")
     except Exception as e:
         logger.error("Error closing MongoDB connection", exc_info=True)
