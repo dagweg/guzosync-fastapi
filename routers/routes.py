@@ -5,6 +5,7 @@ from uuid import UUID
 from models import User, Route
 from schemas.route import RouteResponse
 from core.dependencies import get_current_user
+from core import transform_mongo_doc
 
 router = APIRouter(prefix="/api/routes", tags=["routes"])
 
@@ -23,4 +24,4 @@ async def get_route(
             detail="Route not found"
         )
     
-    return RouteResponse(**route)
+    return transform_mongo_doc(route, RouteResponse)

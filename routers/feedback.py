@@ -6,6 +6,7 @@ from datetime import datetime
 from models import User, Feedback
 from schemas.feedback import SubmitFeedbackRequest, FeedbackResponse
 from core.dependencies import get_current_user
+from core import transform_mongo_doc
 
 router = APIRouter(prefix="/api/feedback", tags=["feedback"])
 
@@ -26,7 +27,7 @@ async def submit_feedback(
     result = await request.app.state.mongodb.feedback.insert_one(feedback_data)
     created_feedback = await request.app.state.mongodb.feedback.find_one({"_id": result.inserted_id})
     
-    return FeedbackResponse(**created_feedback)
+    return transform_mongo_doc(created_feedback, FeedbackResponse)
 
 @router.get("", response_model=List[FeedbackResponse])
 async def get_feedback(
@@ -44,4 +45,4 @@ async def get_feedback(
     
     feedback_list = await request.app.state.mongodb.feedback.find(query).skip(skip).limit(limit).to_list(length=limit)
     
-    return [FeedbackResponse(**feedback) for feedback in feedback_list]
+    return [transform_mongo_doc(feedback, FeedbackResponse) for feedback in feedback_list]

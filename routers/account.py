@@ -6,6 +6,7 @@ from models import User, NotificationSettings
 from schemas.user import UserResponse, UpdateUserRequest
 from schemas.notification import NotificationSettingsResponse, UpdateNotificationSettingsRequest
 from core.dependencies import get_current_user
+from core import transform_mongo_doc
 
 router = APIRouter(prefix="/api/account", tags=["account"])
 
@@ -27,9 +28,8 @@ async def update_user_info(
             {"id": current_user.id},
             {"$set": update_data}
         )
-    
     updated_user = await request.app.state.mongodb.users.find_one({"id": current_user.id})
-    return UserResponse(**updated_user)
+    return transform_mongo_doc(updated_user, UserResponse)
 
 @router.put("/notification-settings", response_model=NotificationSettingsResponse)
 async def update_notification_settings(
@@ -47,12 +47,10 @@ async def update_notification_settings(
             {"$set": {"email_enabled": settings_request.email_enabled}}
         )
     else:
-        # Create new settings
-        settings = NotificationSettings(user_id=current_user.id, email_enabled=settings_request.email_enabled)
+        # Create new settings        settings = NotificationSettings(user_id=current_user.id, email_enabled=settings_request.email_enabled)
         await request.app.state.mongodb.notification_settings.insert_one(settings.dict())
-    
     updated_settings = await request.app.state.mongodb.notification_settings.find_one({"user_id": current_user.id})
-    return NotificationSettingsResponse(**updated_settings)
+    return transform_mongo_doc(updated_settings, NotificationSettingsResponse)
 
 @router.put("/language")
 async def update_preferred_language(

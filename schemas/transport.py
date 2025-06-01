@@ -41,7 +41,7 @@ class UpdateBusRequest(BaseModel):
     bus_model: Optional[str] = None
 
 class BusResponse(DateTimeModelMixin):
-    id: UUID
+    id: str
     license_plate: str
     bus_type: BusType
     capacity: int

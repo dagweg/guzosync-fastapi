@@ -4,7 +4,7 @@ from logging.handlers import RotatingFileHandler
 from pathlib import Path
 import json
 import datetime
-from typing import Dict, Any
+from typing import Dict, Any, Optional
 import uuid
 
 class HumanReadableFormatter(logging.Formatter):
@@ -21,8 +21,9 @@ class HumanReadableFormatter(logging.Formatter):
         log_line = f"{timestamp} | {levelname:8} | {name} | {message}"
         
         # Add context if present
-        if hasattr(record, "context"):
-            context_str = " ".join(f"{k}={v}" for k, v in record.context.items())
+        context = getattr(record, "context", None)
+        if context:
+            context_str = " ".join(f"{k}={v}" for k, v in context.items())
             log_line += f" | {context_str}"
         
         # Add exception if present
@@ -45,12 +46,13 @@ class JSONFormatter(logging.Formatter):
         if record.exc_info:
             log_data["exception"] = self.formatException(record.exc_info)
         
-        if hasattr(record, "context"):
-            log_data.update(record.context)
+        context = getattr(record, "context", None)
+        if context:
+            log_data.update(context)
             
         return json.dumps(log_data)
 
-def setup_logging(log_level: str = "INFO", log_file: str = None) -> None:
+def setup_logging(log_level: str = "INFO", log_file: Optional[str] = None) -> None:
     """Configure centralized logging for the application."""
     
     # Create logs directory if it doesn't exist

@@ -20,7 +20,7 @@ class BroadcastNotificationRequest(BaseModel):
     related_entity: Optional[RelatedEntity] = None
 
 class NotificationResponse(DateTimeModelMixin):
-    id: UUID
+    id: str
     user_id: UUID
     title: str
     message: str

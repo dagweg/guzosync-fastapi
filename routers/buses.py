@@ -6,6 +6,7 @@ from models import User, Bus, BusStop
 from schemas.transport import BusResponse, BusStopResponse
 from schemas.trip import SimplifiedTripResponse
 from core.dependencies import get_current_user
+from core import transform_mongo_doc
 
 router = APIRouter(prefix="/api/buses", tags=["buses"])
 
@@ -24,7 +25,7 @@ async def get_bus(
             detail="Bus not found"
         )
     
-    return BusResponse(**bus)
+    return transform_mongo_doc(bus, BusResponse)
 
 @router.get("/stops", response_model=List[BusStopResponse])
 async def get_bus_stops(
@@ -51,7 +52,7 @@ async def get_bus_stops(
     # Get bus stops
     bus_stops = await request.app.state.mongodb.bus_stops.find(query).skip(skip).limit(page_size).to_list(length=page_size)
     
-    return [BusStopResponse(**stop) for stop in bus_stops]
+    return [transform_mongo_doc(stop, BusStopResponse) for stop in bus_stops]
 
 @router.get("/stops/{bus_stop_id}", response_model=BusStopResponse)
 async def get_bus_stop(
@@ -68,7 +69,7 @@ async def get_bus_stop(
             detail="Bus stop not found"
         )
     
-    return BusStopResponse(**bus_stop)
+    return transform_mongo_doc(bus_stop, BusStopResponse)
 
 @router.get("/stops/{bus_stop_id}/incoming-buses", response_model=List[SimplifiedTripResponse])
 async def get_incoming_buses(
@@ -98,7 +99,7 @@ async def get_incoming_buses(
         "status": {"$in": ["SCHEDULED", "IN_PROGRESS"]}
     }).to_list(length=None)
     
-    return [SimplifiedTripResponse(**trip) for trip in trips]
+    return [transform_mongo_doc(trip, SimplifiedTripResponse) for trip in trips]
 
 @router.post("/reallocate")
 async def request_bus_reallocation(current_user: User = Depends(get_current_user)):

@@ -21,7 +21,7 @@ class UpdateRouteRequest(BaseModel):
     is_active: Optional[bool] = None
 
 class RouteResponse(DateTimeModelMixin):
-    id: UUID
+    id: str
     name: str
     description: Optional[str] = None
     stop_ids: List[UUID]

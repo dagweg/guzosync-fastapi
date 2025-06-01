@@ -13,7 +13,7 @@ class TripStatus(str, Enum):
     DELAYED = "DELAYED"
 
 class SimplifiedTripResponse(BaseModel):
-    id: UUID
+    id: str
     bus_id: UUID
     route_id: UUID
     driver_id: Optional[UUID] = None
@@ -21,7 +21,7 @@ class SimplifiedTripResponse(BaseModel):
     status: TripStatus
 
 class TripResponse(DateTimeModelMixin):
-    id: UUID
+    id: str
     bus_id: UUID
     route_id: UUID
     driver_id: Optional[UUID] = None

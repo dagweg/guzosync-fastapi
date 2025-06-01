@@ -39,7 +39,7 @@ class UpdateUserRequest(BaseModel):
     profile_image: Optional[str] = None
 
 class UserResponse(DateTimeModelMixin):
-    id: UUID
+    id: str
     first_name: str
     last_name: str
     email: EmailStr

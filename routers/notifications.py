@@ -5,6 +5,7 @@ from uuid import UUID
 from models import User, Notification
 from schemas.notification import BroadcastNotificationRequest, NotificationResponse
 from core.dependencies import get_current_user
+from core import transform_mongo_doc
 
 router = APIRouter(prefix="/api/notifications", tags=["notifications"])
 
@@ -21,7 +22,7 @@ async def get_notifications(
         {"user_id": current_user.id}
     ).sort("created_at", -1).skip(skip).limit(limit).to_list(length=limit)
     
-    return [NotificationResponse(**notification) for notification in notifications]
+    return [transform_mongo_doc(notification, NotificationResponse) for notification in notifications]
 
 @router.post("/mark-read/{notification_id}")
 async def mark_notification_read(

@@ -5,6 +5,7 @@ from uuid import UUID
 from models import User, Incident
 from schemas.feedback import ReportIncidentRequest, IncidentResponse
 from core.dependencies import get_current_user
+from core import transform_mongo_doc
 
 router = APIRouter(prefix="/api/issues", tags=["issues"])
 
@@ -27,7 +28,7 @@ async def report_issue(
     result = await request.app.state.mongodb.incidents.insert_one(incident_data)
     created_incident = await request.app.state.mongodb.incidents.find_one({"_id": result.inserted_id})
     
-    return IncidentResponse(**created_incident)
+    return transform_mongo_doc(created_incident, IncidentResponse)
 
 @router.get("", response_model=List[IncidentResponse])
 async def get_issues(

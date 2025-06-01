@@ -10,8 +10,7 @@ from schemas.user import (
     ForgotPasswordRequest, ResetPasswordRequest
 )
 from core.dependencies import get_current_user
-from core.jwt import create_access_token
-from core.logger import get_logger
+from core import create_access_token, get_logger, transform_mongo_doc
 
 logger = get_logger(__name__)
 
@@ -41,14 +40,15 @@ async def register_user(
         "password": user_data.password,  # In production, hash this password
         "role": user_data.role.value,  # Convert enum to string value
         "phone_number": user_data.phone_number,
-        "profile_image": user_data.profile_image
+        "profile_image": user_data.profile_image,
+        "is_active": True  # Default to active user
     }
     
     try:
         result = await request.app.state.mongodb.users.insert_one(user_dict)
         created_user = await request.app.state.mongodb.users.find_one({"_id": result.inserted_id})
         logger.info("User registered successfully", extra={"email": user_data.email})
-        return UserResponse(**created_user)
+        return transform_mongo_doc(created_user, UserResponse)
     except Exception as e:
         logger.error("Error during user registration", exc_info=True)
         raise HTTPException(

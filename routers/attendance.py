@@ -6,6 +6,7 @@ from datetime import datetime, time
 from models import User
 from schemas.attendance import CreateAttendanceRecordRequest, AttendanceRecordResponse
 from core.dependencies import get_current_user
+from core import transform_mongo_doc
 
 router = APIRouter(prefix="/api/attendance", tags=["attendance"])
 
@@ -26,7 +27,7 @@ async def create_attendance_record(
     result = await request.app.state.mongodb.attendance.insert_one(attendance_data)
     created_attendance = await request.app.state.mongodb.attendance.find_one({"_id": result.inserted_id})
     
-    return AttendanceRecordResponse(**created_attendance)
+    return transform_mongo_doc(created_attendance, AttendanceRecordResponse)
 
 @router.get("/today", response_model=List[AttendanceRecordResponse])
 async def get_today_attendance(
@@ -44,4 +45,4 @@ async def get_today_attendance(
         "timestamp": {"$gte": start_of_day, "$lte": end_of_day}
     }).to_list(length=None)
     
-    return [AttendanceRecordResponse(**record) for record in attendance_records]
+    return [transform_mongo_doc(record, AttendanceRecordResponse) for record in attendance_records]

@@ -11,7 +11,7 @@ class SubmitFeedbackRequest(BaseModel):
     related_bus_id: Optional[UUID] = None
 
 class FeedbackResponse(DateTimeModelMixin):
-    id: UUID
+    id: str
     submitted_by_user_id: UUID
     content: str
     rating: Optional[float] = None

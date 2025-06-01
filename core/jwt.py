@@ -13,7 +13,10 @@ def create_access_token(data: dict):
         to_encode = data.copy()
         expire = datetime.utcnow() + timedelta(minutes=30)
         to_encode.update({"exp": expire})
-        encoded_jwt = jwt.encode(to_encode, os.getenv("JWT_SECRET"), algorithm="HS256")
+        jwt_secret = os.getenv("JWT_SECRET")
+        if jwt_secret is None:
+            raise ValueError("JWT_SECRET environment variable is not set")
+        encoded_jwt = jwt.encode(to_encode, jwt_secret, algorithm="HS256")
         logger.info("Access token created successfully")
         return encoded_jwt
     except Exception as e:
