@@ -11,8 +11,7 @@ router = APIRouter(prefix="/api/buses", tags=["buses"])
 
 @router.get("/{bus_id}", response_model=BusResponse)
 async def get_bus(bus_id: UUID, current_user: User = Depends(get_current_user)):
-    from fastapi import Request
-    request = Request
+    
     
     bus = await request.app.mongodb.buses.find_one({"id": bus_id})
     if not bus:
@@ -31,8 +30,7 @@ async def get_bus_stops(
     page_size: int = Query(10, alias="ps", ge=1, le=100),
     current_user: User = Depends(get_current_user)
 ):
-    from fastapi import Request
-    request = Request
+    
     
     # Build query
     query = {}
@@ -52,8 +50,7 @@ async def get_bus_stops(
 
 @router.get("/stops/{bus_stop_id}", response_model=BusStopResponse)
 async def get_bus_stop(bus_stop_id: UUID, current_user: User = Depends(get_current_user)):
-    from fastapi import Request
-    request = Request
+    
     
     bus_stop = await request.app.mongodb.bus_stops.find_one({"id": bus_stop_id})
     if not bus_stop:
@@ -66,8 +63,7 @@ async def get_bus_stop(bus_stop_id: UUID, current_user: User = Depends(get_curre
 
 @router.get("/stops/{bus_stop_id}/incoming-buses", response_model=List[SimplifiedTripResponse])
 async def get_incoming_buses(bus_stop_id: UUID, current_user: User = Depends(get_current_user)):
-    from fastapi import Request
-    request = Request
+    
     
     # First, verify bus stop exists
     bus_stop = await request.app.mongodb.bus_stops.find_one({"id": bus_stop_id})

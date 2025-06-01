@@ -33,8 +33,7 @@ async def get_issues(
     limit: int = Query(10, ge=1, le=100),
     current_user: User = Depends(get_current_user)
 ):
-    from fastapi import Request
-    request = Request
+    
     
     # For regular users, only show their own reported incidents
     query = {"reported_by_user_id": current_user.id}

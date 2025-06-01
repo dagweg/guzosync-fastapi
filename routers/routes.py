@@ -10,8 +10,7 @@ router = APIRouter(prefix="/api/routes", tags=["routes"])
 
 @router.get("/{route_id}", response_model=RouteResponse)
 async def get_route(route_id: UUID, current_user: User = Depends(get_current_user)):
-    from fastapi import Request
-    request = Request
+    
     
     route = await request.app.mongodb.routes.find_one({"id": route_id})
     if not route:

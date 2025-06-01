@@ -14,8 +14,7 @@ async def get_notifications(
     limit: int = Query(10, ge=1, le=100),
     current_user: User = Depends(get_current_user)
 ):
-    from fastapi import Request
-    request = Request
+    
     
     notifications = await request.app.mongodb.notifications.find(
         {"user_id": current_user.id}
@@ -25,8 +24,7 @@ async def get_notifications(
 
 @router.post("/mark-read/{notification_id}")
 async def mark_notification_read(notification_id: UUID, current_user: User = Depends(get_current_user)):
-    from fastapi import Request
-    request = Request
+    
     
     result = await request.app.mongodb.notifications.update_one(
         {"id": notification_id, "user_id": current_user.id},

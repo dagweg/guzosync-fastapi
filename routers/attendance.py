@@ -29,8 +29,7 @@ async def create_attendance_record(request: CreateAttendanceRecordRequest, curre
 
 @router.get("/today", response_model=List[AttendanceRecordResponse])
 async def get_today_attendance(current_user: User = Depends(get_current_user)):
-    from fastapi import Request
-    request = Request
+    
     
     # Get today's date range
     today = datetime.utcnow().date()

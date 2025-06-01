@@ -1,5 +1,5 @@
 from fastapi import APIRouter, Depends, HTTPException, status, Request
-from fastapi.security import OAuth2PasswordBearer, OAuth2PasswordRequestForm
+from fastapi.security import HTTPBearer, OAuth2PasswordBearer, OAuth2PasswordRequestForm
 from datetime import datetime, timedelta
 import os
 import jwt   # or keep as just `import jwt` after uninstalling the wrong package
@@ -23,43 +23,7 @@ import socket
 logger = get_logger(__name__)
 
 router = APIRouter(prefix="/api/accounts", tags=["accounts"])
-oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/api/accounts/login")
-
-# Helper functions for JWT
-def create_access_token(data: dict):
-    try:
-        to_encode = data.copy()
-        expire = datetime.utcnow() + timedelta(minutes=30)
-        to_encode.update({"exp": expire})
-        encoded_jwt = jwt.encode(to_encode, os.getenv("JWT_SECRET"), algorithm="HS256")
-        logger.info("Access token created successfully")
-        return encoded_jwt
-    except Exception as e:
-        logger.error("Failed to create access token", exc_info=True)
-        raise
-
-async def get_current_user(request: Request, token: str = Depends(oauth2_scheme)):
-    credentials_exception = HTTPException(
-        status_code=status.HTTP_401_UNAUTHORIZED,
-        detail="Could not validate credentials",
-        headers={"WWW-Authenticate": "Bearer"},
-    )
-    try:
-        payload = jwt.decode(token, os.getenv("JWT_SECRET"), algorithms=["HS256"])
-        user_id: str = payload.get("sub")
-        if user_id is None:
-            logger.warning("Token payload missing user ID")
-            raise credentials_exception
-        logger.info("Token decoded successfully", extra={"user_id": user_id})
-    except jwt.PyJWTError as e:
-        logger.warning("JWT validation failed", exc_info=True)
-        raise credentials_exception
-    
-    user = await request.app.mongodb.users.find_one({"id": UUID(user_id)})
-    if user is None:
-        logger.warning("User not found in database", extra={"user_id": user_id})
-        raise credentials_exception
-    return User(**user)
+# oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/api/accounts/login")
 
 @router.post("/register", response_model=UserResponse, status_code=status.HTTP_201_CREATED)
 async def register_user(request: Request, user_data: RegisterUserRequest):

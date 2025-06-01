@@ -15,8 +15,7 @@ async def get_current_user_info(current_user: User = Depends(get_current_user)):
 
 @router.put("/me", response_model=UserResponse)
 async def update_user_info(request: UpdateUserRequest, current_user: User = Depends(get_current_user)):
-    from fastapi import Request
-    request = Request
+    
     
     # Update only provided fields
     update_data = {k: v for k, v in request.dict().items() if v is not None}
@@ -32,8 +31,7 @@ async def update_user_info(request: UpdateUserRequest, current_user: User = Depe
 
 @router.put("/notification-settings", response_model=NotificationSettingsResponse)
 async def update_notification_settings(request: UpdateNotificationSettingsRequest, current_user: User = Depends(get_current_user)):
-    from fastapi import Request
-    request = Request
+    
     
     # Check if settings exist
     settings = await request.app.mongodb.notification_settings.find_one({"user_id": current_user.id})
@@ -55,8 +53,7 @@ async def update_notification_settings(request: UpdateNotificationSettingsReques
 
 @router.put("/language")
 async def update_preferred_language(language: str, current_user: User = Depends(get_current_user)):
-    from fastapi import Request
-    request = Request
+    
     
     # Check if user is a passenger
     if current_user.role != "PASSENGER":
