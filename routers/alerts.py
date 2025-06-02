@@ -3,9 +3,10 @@ from typing import List, Optional
 from uuid import UUID
 from datetime import datetime
 
+from core.dependencies import get_current_user
 from models import User
 from schemas.transport import CreateAlertRequest, UpdateAlertRequest, AlertResponse
-from core.dependencies import get_current_user
+
 from core import transform_mongo_doc
 
 router = APIRouter(prefix="/api/alerts", tags=["alerts"])

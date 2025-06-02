@@ -8,8 +8,7 @@ from typing import Dict, Any, Optional
 import uuid
 
 class HumanReadableFormatter(logging.Formatter):
-    """A formatter that produces more readable console output while keeping JSON for files. Adds color for levels."""
-    # ANSI color codes
+    """A formatter that produces clean, readable console output with colors."""
     COLORS = {
         'DEBUG': '\033[37m',    # White
         'INFO': '\033[36m',     # Cyan
@@ -20,29 +19,38 @@ class HumanReadableFormatter(logging.Formatter):
     RESET = '\033[0m'
 
     def format(self, record: logging.LogRecord) -> str:
-        # Format the basic message
+        # Format timestamp
         timestamp = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-        levelname = record.levelname
-        name = record.name
-        message = record.getMessage()
-
+        
         # Colorize levelname
-        color = self.COLORS.get(levelname, '')
+        color = self.COLORS.get(record.levelname, '')
         reset = self.RESET if color else ''
-        level_display = f"{color}{levelname:8}{reset}"
-
-        log_line = f"{timestamp} | {level_display} | {name} | {message}"
-
-        # Add context if present
-        context = getattr(record, "context", None)
-        if context:
-            context_str = " ".join(f"{k}={v}" for k, v in context.items())
-            log_line += f" | {context_str}"
-
+        level_display = f"{color}{record.levelname[:4]}{reset}"
+        
+        # Format the main message
+        log_line = f"{timestamp} | {level_display} | {record.name} | {record.getMessage()}"
+        
+        # Get relevant extra attributes (filter out internal ones)
+        extra_attrs = {
+            k: v for k, v in record.__dict__.items()
+            if k not in [
+                'msg', 'args', 'levelname', 'levelno', 'pathname', 'filename',
+                'module', 'exc_info', 'exc_text', 'stack_info', 'lineno',
+                'funcName', 'created', 'msecs', 'relativeCreated', 'thread',
+                'threadName', 'processName', 'process', 'taskName'
+            ]
+            and not k.startswith('_')
+        }
+        
+        # Add extras if present
+        if extra_attrs:
+            extras = " ".join(f"{k}={v}" for k, v in extra_attrs.items())
+            log_line += f" | {extras}"
+        
         # Add exception if present
         if record.exc_info:
             log_line += f"\n{self.formatException(record.exc_info)}"
-
+        
         return log_line
 
 class JSONFormatter(logging.Formatter):
@@ -59,10 +67,14 @@ class JSONFormatter(logging.Formatter):
         if record.exc_info:
             log_data["exception"] = self.formatException(record.exc_info)
         
-        context = getattr(record, "context", None)
-        if context:
-            log_data.update(context)
-            
+        # Add all extra attributes (including context if present)
+        extra_attrs = {k: v for k, v in record.__dict__.items() 
+                    if k not in ('message', 'asctime', 'levelname', 'name', 
+                                'exc_info', 'exc_text', 'stack_info') 
+                    and not k.startswith('_')}
+        
+        log_data.update(extra_attrs)
+                
         return json.dumps(log_data)
 
 def setup_logging(log_level: str = "INFO", log_file: Optional[str] = None) -> None:

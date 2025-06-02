@@ -1,11 +1,12 @@
 from typing import List, Optional
 from pydantic import BaseModel
-from uuid import UUID
+
 from datetime import datetime
 from .base import DateTimeModelMixin
+from core.custom_types import UUID
 
 class MessageResponse(DateTimeModelMixin):
-    id: UUID
+    id: str
     conversation_id: UUID
     sender_id: UUID
     content: str
@@ -13,9 +14,11 @@ class MessageResponse(DateTimeModelMixin):
     sent_at: datetime
 
 class ConversationResponse(BaseModel):
-    id: UUID
+    id: str
     participants: List[UUID]
     last_message_at: Optional[datetime] = None
+
+    
 
 class SendMessageRequest(BaseModel):
     content: str

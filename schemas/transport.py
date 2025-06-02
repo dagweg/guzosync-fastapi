@@ -1,9 +1,10 @@
 from typing import Optional, List
 from pydantic import BaseModel
-from uuid import UUID
+
 from enum import Enum
 from datetime import datetime
 from .base import DateTimeModelMixin, Location
+from core.custom_types import UUID
 
 class BusType(str, Enum):
     STANDARD = "STANDARD"
@@ -40,6 +41,8 @@ class UpdateBusRequest(BaseModel):
     manufacture_year: Optional[int] = None
     bus_model: Optional[str] = None
 
+    
+
 class BusResponse(DateTimeModelMixin):
     id: str
     license_plate: str
@@ -70,7 +73,7 @@ class UpdateBusStopRequest(BaseModel):
     is_active: Optional[bool] = None
 
 class BusStopResponse(DateTimeModelMixin):
-    id: UUID
+    id: str
     name: str
     location: Location
     capacity: Optional[int] = None
@@ -99,6 +102,8 @@ class CreateAlertRequest(BaseModel):
     affected_routes: Optional[List[UUID]] = None
     affected_bus_stops: Optional[List[UUID]] = None
 
+    
+
 class UpdateAlertRequest(BaseModel):
     title: Optional[str] = None
     message: Optional[str] = None
@@ -108,8 +113,10 @@ class UpdateAlertRequest(BaseModel):
     affected_bus_stops: Optional[List[UUID]] = None
     is_active: Optional[bool] = None
 
+    
+
 class AlertResponse(DateTimeModelMixin):
-    id: UUID
+    id: str
     title: str
     message: str
     alert_type: AlertType
@@ -128,7 +135,7 @@ class InstructionType(str, Enum):
     GENERAL = "GENERAL"
 
 class InstructionResponse(DateTimeModelMixin):
-    id: UUID
+    id: str
     title: str
     content: str
     instruction_type: InstructionType

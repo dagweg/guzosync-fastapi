@@ -1,6 +1,6 @@
 from typing import Literal, Optional
 from pydantic import BaseModel, EmailStr
-from uuid import UUID
+
 from enum import Enum
 from .base import DateTimeModelMixin
 

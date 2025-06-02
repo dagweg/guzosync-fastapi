@@ -2,30 +2,14 @@ from fastapi import APIRouter, Depends, HTTPException, status, Query, Request
 from typing import List, Optional
 from uuid import UUID
 
+from core.dependencies import get_current_user
 from models import User, Bus, BusStop
 from schemas.transport import BusResponse, BusStopResponse
 from schemas.trip import SimplifiedTripResponse
-from core.dependencies import get_current_user
+
 from core import transform_mongo_doc
 
 router = APIRouter(prefix="/api/buses", tags=["buses"])
-
-@router.get("/{bus_id}", response_model=BusResponse)
-async def get_bus(
-    request: Request,
-    bus_id: UUID, 
-    current_user: User = Depends(get_current_user)
-):
-    
-    
-    bus = await request.app.state.mongodb.buses.find_one({"id": bus_id})
-    if not bus:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail="Bus not found"
-        )
-    
-    return transform_mongo_doc(bus, BusResponse)
 
 @router.get("/stops", response_model=List[BusStopResponse])
 async def get_bus_stops(
@@ -86,8 +70,7 @@ async def get_incoming_buses(
             status_code=status.HTTP_404_NOT_FOUND,
             detail="Bus stop not found"
         )
-    
-    # Find routes that include this bus stop
+      # Find routes that include this bus stop
     routes = await request.app.state.mongodb.routes.find(
         {"stop_ids": bus_stop_id}
     ).to_list(length=None)
@@ -100,6 +83,23 @@ async def get_incoming_buses(
     }).to_list(length=None)
     
     return [transform_mongo_doc(trip, SimplifiedTripResponse) for trip in trips]
+
+@router.get("/{bus_id}", response_model=BusResponse)
+async def get_bus(
+    request: Request,
+    bus_id: UUID, 
+    current_user: User = Depends(get_current_user)
+):
+    
+    
+    bus = await request.app.state.mongodb.buses.find_one({"id": bus_id})
+    if not bus:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Bus not found"
+        )
+    
+    return transform_mongo_doc(bus, BusResponse)
 
 @router.post("/reallocate")
 async def request_bus_reallocation(current_user: User = Depends(get_current_user)):

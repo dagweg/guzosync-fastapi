@@ -1,9 +1,15 @@
 from datetime import datetime
 from typing import Optional
 from pydantic import BaseModel, Field
-from uuid import UUID, uuid4
+from core.custom_types import UUID, generate_uuid
+
 
 class BaseDBModel(BaseModel):
-    id: UUID = Field(default_factory=uuid4)
+    id: UUID = Field(default_factory=generate_uuid, alias="_id")
     created_at: datetime = Field(default_factory=datetime.utcnow)
     updated_at: datetime = Field(default_factory=datetime.utcnow)
+
+    class Config:
+        populate_by_name = True
+        json_encoders = {UUID: str}
+        arbitrary_types_allowed = True

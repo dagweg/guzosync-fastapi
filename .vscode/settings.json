@@ -2,5 +2,16 @@
   "python.analysis.typeCheckingMode": "basic",
   "errorLens.enabledDiagnosticLevels": ["error", "warning", "info"],
   "errorLens.enabled": true,
-  "explorer.excludeGitIgnore": true
+  "files.exclude": {
+    "**/.git": true,
+    "**/.svn": true,
+    "**/.hg": true,
+    "**/.DS_Store": true,
+    "**/Thumbs.db": true,
+    "**/node_modules": true,
+    "**/__pycache__": true,
+    "**/venv": true,
+    "**/.venv": true,
+    "**/.mypy_cache": true
+  }
 }

@@ -2,9 +2,10 @@ from fastapi import APIRouter, Depends, HTTPException, status, Query, Request
 from typing import List, Optional
 from uuid import UUID
 
+from core.dependencies import get_current_user
 from models import User, Notification
 from schemas.notification import BroadcastNotificationRequest, NotificationResponse
-from core.dependencies import get_current_user
+
 from core import transform_mongo_doc
 
 router = APIRouter(prefix="/api/notifications", tags=["notifications"])

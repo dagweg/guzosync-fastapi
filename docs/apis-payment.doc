@@ -1,0 +1,15 @@
+GET api/tickets
+
+POST api/tickets
+
+GET api/tickets/{ticketId}
+
+GET  api/tickets/{ticketId}/qr
+
+
+
+GET api/payment-methods
+
+POST api/payment-methods
+
+PUT api/payment-methods/{paymentMethodId}

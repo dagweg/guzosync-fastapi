@@ -2,9 +2,10 @@ from fastapi import APIRouter, Depends, HTTPException, status, Request
 from typing import List
 from uuid import UUID
 
+from core.dependencies import get_current_user
 from models import User, Route
 from schemas.route import RouteResponse
-from core.dependencies import get_current_user
+
 from core import transform_mongo_doc
 
 router = APIRouter(prefix="/api/routes", tags=["routes"])

@@ -4,12 +4,15 @@ from uuid import UUID
 from datetime import datetime, timedelta
 import secrets
 
-from models import User, UserRole
+from core.dependencies import get_current_user
+from core.mongo_utils import transform_mongo_doc, model_to_mongo_doc
+from models import User
+from models.user import UserRole as ModelUserRole
 from schemas.user import (
     UserResponse, RegisterUserRequest, LoginRequest, 
     ForgotPasswordRequest, ResetPasswordRequest
 )
-from core.dependencies import get_current_user
+
 from core import create_access_token, get_logger, transform_mongo_doc
 
 logger = get_logger(__name__)
@@ -30,22 +33,24 @@ async def register_user(
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail="User with this email already exists"
-        )
-    
-    # Create new user
-    user_dict = {
-        "first_name": user_data.first_name,
-        "last_name": user_data.last_name,
-        "email": user_data.email,
-        "password": user_data.password,  # In production, hash this password
-        "role": user_data.role.value,  # Convert enum to string value
-        "phone_number": user_data.phone_number,
-        "profile_image": user_data.profile_image,
-        "is_active": True  # Default to active user
-    }
+        )    # Create new user model
+    user = User(
+        first_name=user_data.first_name,
+        last_name=user_data.last_name,
+        email=user_data.email,
+        password=user_data.password,  # In production, hash this password
+        role=ModelUserRole(user_data.role.value),  # Convert schema enum to model enum
+        phone_number=user_data.phone_number,
+        profile_image=user_data.profile_image,
+        is_active=True
+    )
     
     try:
-        result = await request.app.state.mongodb.users.insert_one(user_dict)
+        # Convert model to MongoDB document
+        user_doc = model_to_mongo_doc(user)
+        result = await request.app.state.mongodb.users.insert_one(user_doc)
+        
+        # Retrieve and return the created user
         created_user = await request.app.state.mongodb.users.find_one({"_id": result.inserted_id})
         logger.info("User registered successfully", extra={"email": user_data.email})
         return transform_mongo_doc(created_user, UserResponse)

@@ -1,8 +1,9 @@
 from typing import Optional, List
 from pydantic import BaseModel
-from uuid import UUID
+
 from datetime import datetime
 from .base import DateTimeModelMixin
+from core.custom_types import UUID
 
 class CreateRouteRequest(BaseModel):
     name: str
@@ -12,6 +13,8 @@ class CreateRouteRequest(BaseModel):
     estimated_duration: Optional[float] = None
     is_active: bool
 
+    
+
 class UpdateRouteRequest(BaseModel):
     name: Optional[str] = None
     description: Optional[str] = None
@@ -19,6 +22,8 @@ class UpdateRouteRequest(BaseModel):
     total_distance: Optional[float] = None
     estimated_duration: Optional[float] = None
     is_active: Optional[bool] = None
+
+    
 
 class RouteResponse(DateTimeModelMixin):
     id: str
@@ -30,7 +35,7 @@ class RouteResponse(DateTimeModelMixin):
     is_active: bool
 
 class ScheduleResponse(DateTimeModelMixin):
-    id: UUID
+    id: str
     route_id: UUID
     schedule_pattern: str
     departure_times: List[str]
@@ -46,8 +51,10 @@ class RouteChangeRequestRequest(BaseModel):
     requested_route_id: UUID
     reason: str
 
+    
+
 class RouteChangeResponse(DateTimeModelMixin):
-    id: UUID
+    id: str
     driver_id: UUID
     current_route_id: UUID
     requested_route_id: UUID

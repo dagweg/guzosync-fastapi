@@ -3,9 +3,10 @@ from typing import List
 from uuid import UUID
 from datetime import datetime
 
+from core.dependencies import get_current_user
 from models import User
 from schemas.conversation import MessageResponse, ConversationResponse, SendMessageRequest
-from core.dependencies import get_current_user
+
 from core import transform_mongo_doc
 
 router = APIRouter(prefix="/api/conversations", tags=["conversations"])

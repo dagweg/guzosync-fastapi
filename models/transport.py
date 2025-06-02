@@ -2,8 +2,9 @@ from datetime import datetime
 from typing import Optional, List
 from pydantic import BaseModel, Field
 from enum import Enum
-from uuid import UUID
+
 from .base import BaseDBModel
+from core.custom_types import UUID
 
 class Location(BaseModel):
     latitude: float

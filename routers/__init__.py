@@ -16,7 +16,8 @@ from . import (
     conversations,
     drivers,
     regulators,
-    control_center
+    control_center,
+    payments
 )
 
 __all__ = [
@@ -34,5 +35,6 @@ __all__ = [
     "conversations",
     "drivers",
     "regulators",
-    "control_center"
+    "control_center",
+    "payments"
 ]

@@ -1,9 +1,10 @@
 from typing import Optional, List
 from pydantic import BaseModel
-from uuid import UUID
+
 from datetime import datetime
 from enum import Enum
 from .base import DateTimeModelMixin, RelatedEntity
+from core.custom_types import UUID
 
 class NotificationType(str, Enum):
     ALERT = "ALERT"
@@ -19,6 +20,8 @@ class BroadcastNotificationRequest(BaseModel):
     target_roles: Optional[List[str]] = None
     related_entity: Optional[RelatedEntity] = None
 
+    
+
 class NotificationResponse(DateTimeModelMixin):
     id: str
     user_id: UUID
@@ -32,6 +35,8 @@ class UpdateNotificationSettingsRequest(BaseModel):
     email_enabled: bool
 
 class NotificationSettingsResponse(BaseModel):
-    id: UUID
+    id: str
     user_id: UUID
     email_enabled: bool
+
+    

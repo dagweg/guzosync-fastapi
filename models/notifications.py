@@ -2,14 +2,18 @@ from datetime import datetime
 from typing import Optional
 from pydantic import BaseModel
 from enum import Enum
-from uuid import UUID
+
 from .base import BaseDBModel
+from core.custom_types import UUID
 
 class NotificationType(str, Enum):
     ALERT = "ALERT"
     UPDATE = "UPDATE"
     PROMOTION = "PROMOTION"
     REMINDER = "REMINDER"
+    GENERAL = "GENERAL"
+    TRIP_UPDATE = "TRIP_UPDATE"
+    SERVICE_ALERT = "SERVICE_ALERT"
 
 class RelatedEntity(BaseModel):
     entity_type: str

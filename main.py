@@ -5,6 +5,7 @@ from fastapi_socketio import SocketManager
 import googlemaps
 from dotenv import load_dotenv
 import os
+from contextlib import asynccontextmanager
 
 # Import centralized logger
 # from core.logger import setup_logging, get_logger
@@ -14,7 +15,7 @@ from core.action_logging_middleware import ActionLoggingMiddleware
 # Import routers
 from routers import (
     accounts, account, notifications, config, buses, routes, feedback, issues, attendance,
-    alerts, conversations, drivers, regulators, control_center, trip
+    alerts, conversations, drivers, regulators, control_center, trip, payments
 )
 
 # Load environment variables
@@ -28,10 +29,43 @@ setup_logging(
 
 logger = get_logger(__name__)
 
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    # Startup
+    try:
+        mongodb_url = os.getenv("MONGODB_URL")
+        database_name = os.getenv("DATABASE_NAME")
+
+        if not mongodb_url or not database_name:
+            logger.error("MongoDB configuration not found")
+            raise RuntimeError("Database configuration missing")
+
+        logger.info("Connecting to MongoDB...")
+
+        app.state.mongodb_client = AsyncIOMotorClient(mongodb_url, )  
+        app.state.mongodb = app.state.mongodb_client[database_name]
+
+        await app.state.mongodb.command('ping')
+        logger.info("Successfully connected to MongoDB")
+    except Exception as e:
+        logger.error("Error connecting to MongoDB", exc_info=True)
+        raise
+
+    yield
+
+    # Shutdown
+    try:
+        logger.info("Closing MongoDB connection...")
+        app.state.mongodb_client.close()
+        logger.info("MongoDB connection closed successfully")
+    except Exception as e:
+        logger.error("Error closing MongoDB connection", exc_info=True)
+
 app = FastAPI(
     title="GuzoSync API",
     description="Backend API for GuzoSync transportation system",
-    version="1.0.0"
+    version="1.0.0",
+    lifespan=lifespan
 )
 
 # Add action logging middleware
@@ -47,41 +81,6 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
-
-# MongoDB connection
-@app.on_event("startup")
-async def startup_db_client():
-    try:
-        mongodb_url = os.getenv("MONGODB_URL")
-        database_name = os.getenv("DATABASE_NAME")
-        
-        if not mongodb_url or not database_name:
-            logger.error("MongoDB configuration not found")
-            raise RuntimeError("Database configuration missing")
-            
-        logger.info("Connecting to MongoDB...")
-        
-        # Configure UUID representation
-        app.state.mongodb_client = AsyncIOMotorClient(
-            mongodb_url,
-            uuidRepresentation='standard'  # This is the key change
-        )
-        app.state.mongodb = app.state.mongodb_client[database_name]
-        
-        await app.state.mongodb.command('ping')
-        logger.info("Successfully connected to MongoDB")
-    except Exception as e:
-        logger.error("Error connecting to MongoDB", exc_info=True)
-        raise
-
-@app.on_event("shutdown")
-async def shutdown_db_client():
-    try:
-        logger.info("Closing MongoDB connection...")
-        app.state.mongodb_client.close()
-        logger.info("MongoDB connection closed successfully")
-    except Exception as e:
-        logger.error("Error closing MongoDB connection", exc_info=True)
 
 # Include routers
 app.include_router(accounts.router)
@@ -99,6 +98,7 @@ app.include_router(conversations.router)
 app.include_router(drivers.router)
 app.include_router(regulators.router)
 app.include_router(control_center.router)
+app.include_router(payments.router)
 
 @app.get("/")
 async def root():

@@ -3,9 +3,10 @@ from typing import List
 from uuid import UUID
 from datetime import datetime, time
 
+from core.dependencies import get_current_user
 from models import User
 from schemas.attendance import CreateAttendanceRecordRequest, AttendanceRecordResponse
-from core.dependencies import get_current_user
+
 from core import transform_mongo_doc
 
 router = APIRouter(prefix="/api/attendance", tags=["attendance"])

@@ -3,12 +3,13 @@ from typing import List, Optional
 from uuid import UUID
 from datetime import datetime
 
+from core.dependencies import get_current_user
 from models import User
 from schemas.attendance import CreateAttendanceRecordRequest, AttendanceRecordResponse
 from schemas.feedback import ReportIncidentRequest, IncidentResponse
 from schemas.route import RouteChangeRequestRequest, RouteChangeResponse
 from schemas.transport import InstructionResponse
-from core.dependencies import get_current_user
+
 from core import transform_mongo_doc
 
 router = APIRouter(prefix="/api/drivers", tags=["drivers"])
