@@ -181,7 +181,7 @@ def standardize_uuid_fields(doc: Dict[str, Any]) -> Dict[str, Any]:
     if not doc:
         return doc
     
-    result = {}
+    result: Dict[Any,Any] = {}
     
     for key, value in doc.items():
         if isinstance(value, UUID):

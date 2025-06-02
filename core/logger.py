@@ -55,7 +55,6 @@ class HumanReadableFormatter(logging.Formatter):
 
 class JSONFormatter(logging.Formatter):
     """Formatter for structured JSON logging (used in files)"""
-    
     def format(self, record: logging.LogRecord) -> str:
         log_data: Dict[str, Any] = {
             "timestamp": datetime.datetime.utcnow().isoformat() + "Z",
@@ -72,6 +71,11 @@ class JSONFormatter(logging.Formatter):
                     if k not in ('message', 'asctime', 'levelname', 'name', 
                                 'exc_info', 'exc_text', 'stack_info') 
                     and not k.startswith('_')}
+        
+        # Convert non-JSON serializable objects to strings
+        for key, value in extra_attrs.items():
+            if not isinstance(value, (str, int, float, bool, list, dict, type(None))):
+                extra_attrs[key] = str(value)
         
         log_data.update(extra_attrs)
                 

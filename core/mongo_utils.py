@@ -59,12 +59,16 @@ def transform_mongo_doc(doc: Dict[str, Any], model_class: Type[ModelType], **def
         else:
             # Unknown type, generate new UUID
             transformed["id"] = uuid.uuid4()
-    
-    # Convert any string UUID fields back to UUID objects
+      # Handle UUID field conversions based on model type
     for field_name, field_type in model_class.__annotations__.items():
         if field_name in transformed and transformed[field_name] is not None:
-            # Check if this field should be a UUID
-            if hasattr(field_type, '__origin__') and field_type.__origin__ is Union:
+            # For response schemas, keep UUIDs as strings (especially for 'id' field)
+            if field_name == "id" and field_type is str:
+                # Convert UUID object to string for response schemas
+                if isinstance(transformed[field_name], uuid.UUID):
+                    transformed[field_name] = str(transformed[field_name])
+            # For model classes, convert string UUIDs to UUID objects
+            elif hasattr(field_type, '__origin__') and field_type.__origin__ is Union:
                 # Handle Optional[UUID] fields
                 args = getattr(field_type, '__args__', ())
                 if uuid.UUID in args and isinstance(transformed[field_name], str):
@@ -117,14 +121,30 @@ def model_to_mongo_doc(model: BaseModel, exclude_none: bool = True) -> Dict[str,
     # Get the model data as dict, using aliases (so id becomes _id)
     doc = model.model_dump(by_alias=True, exclude_none=exclude_none)
     
-    # Ensure _id is properly formatted as string for MongoDB storage
+    # Ensure both _id and id fields are present and consistent
     if "_id" in doc:
         # Convert UUID to string for MongoDB storage
         if isinstance(doc["_id"], uuid.UUID):
-            doc["_id"] = str(doc["_id"])
+            uuid_str = str(doc["_id"])
+            doc["_id"] = uuid_str
+            doc["id"] = uuid_str  # Also set id field for queries
+        else:
+            # If _id is already a string, ensure id matches
+            doc["id"] = doc["_id"]
+    
+    # Also handle the case where id exists but _id doesn't
+    elif "id" in doc:
+        if isinstance(doc["id"], uuid.UUID):
+            uuid_str = str(doc["id"])
+            doc["id"] = uuid_str
+            doc["_id"] = uuid_str
+        else:
+            doc["_id"] = doc["id"]
     
     # Also ensure other UUID fields are converted to strings
     for key, value in doc.items():
+        if key in ["_id", "id"]:
+            continue  # Already handled above
         if isinstance(value, uuid.UUID):
             doc[key] = str(value)
         elif isinstance(value, list):
