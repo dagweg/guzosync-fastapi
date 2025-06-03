@@ -64,7 +64,8 @@ from .payment import (
 )
 
 from .control_center import (
-    RegisterPersonnelRequest
+    RegisterPersonnelRequest,
+    RegisterControlStaffRequest
 )
 
 __all__ = [
@@ -87,5 +88,5 @@ __all__ = [
     "CreateTicketRequest", "TicketResponse", "TicketQRResponse",
     "ValidateTicketRequest", "ValidateTicketResponse",
     "CreatePaymentMethodRequest", "UpdatePaymentMethodRequest", "PaymentMethodResponse",
-    "ChapaWebhookEvent", "PaymentCallbackResponse", "RegisterPersonnelRequest"
+    "ChapaWebhookEvent", "PaymentCallbackResponse", "RegisterPersonnelRequest", "RegisterControlStaffRequest"
 ]

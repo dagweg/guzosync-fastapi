@@ -4,9 +4,10 @@ from .logger import setup_logging, get_logger
 from .mongo_utils import transform_mongo_doc
 from .action_logging_middleware import ActionLoggingMiddleware
 from .custom_types import UUID, generate_uuid
+from .security import generate_secure_password
 
 __all__ = [
     'create_access_token', 'security', 'setup_logging', 
     'get_logger', 'transform_mongo_doc', 'ActionLoggingMiddleware',
-    'UUID', 'generate_uuid'
+    'UUID', 'generate_uuid', 'generate_secure_password'
 ]

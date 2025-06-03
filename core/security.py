@@ -1,3 +1,4 @@
+from faker import Faker
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 from fastapi import Request, HTTPException, status
 from passlib.context import CryptContext
@@ -27,5 +28,13 @@ class CustomHTTPBearer(HTTPBearer):
             )
         return credentials
 
+# Initialize faker instance
+faker = Faker()
+
+# Function to generate a secure password
+def generate_secure_password() -> str:
+    """Generate a secure random password using faker"""
+    # Create a strong password with at least one uppercase, lowercase, number, and special character
+    return f"{faker.word().capitalize()}{faker.random_int(100, 999)}!{faker.lexify('??')}"
 
 security = CustomHTTPBearer()

@@ -87,7 +87,7 @@ async def login(
         user_id = user.get("id") or str(user.get("_id"))
         access_token = create_access_token(data={"sub": str(user_id)})
         logger.info(f"Successful login for user: {user_data.email}")
-        return {"access_token": access_token, "token_type": "bearer"}
+        return {"access_token": access_token, "token_type": "bearer", "role": user.get("role", "user")}
     except Exception as e:
         logger.error(f"Error generating token for user {user_data.email}: {str(e)}")
         raise HTTPException(

@@ -1,3 +1,4 @@
+from faker import Faker
 from fastapi import APIRouter, Depends, HTTPException, status, Query, Request
 from typing import List, Optional
 
@@ -7,6 +8,7 @@ from core.dependencies import get_current_user
 from core.mongo_utils import transform_mongo_doc, model_to_mongo_doc
 from core.email_service import email_service
 from core import get_logger
+from core.security import generate_secure_password
 from models import User
 from schemas.user import RegisterUserRequest, UserResponse
 from schemas.transport import (
@@ -15,10 +17,13 @@ from schemas.transport import (
 )
 from schemas.route import CreateRouteRequest, UpdateRouteRequest, RouteResponse
 from models.user import UserRole
-from schemas.control_center import (RegisterPersonnelRequest)
+from schemas.control_center import (RegisterPersonnelRequest, RegisterControlStaffRequest)
 from uuid import uuid4
 
+
 logger = get_logger(__name__)
+
+
 
 router = APIRouter(prefix="/api/control-center", tags=["control-center"])
 
@@ -29,11 +34,11 @@ async def register_personnel(
     user_data: RegisterPersonnelRequest,
     current_user: User = Depends(get_current_user)
 ):
-    """Register new personnel (admin only)"""
+    """Register new personnel (admin and staff only)"""
     if current_user.role is not (UserRole.CONTROL_ADMIN or UserRole.CONTROL_STAFF):
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
-            detail="Only control center admins can register personnel"
+            detail="Only control center staffs and admins can register personnel"
         )
       # Check if user with email already exists
     existing_user = await request.app.state.mongodb.users.find_one({"email": user_data.email})
