@@ -2,7 +2,7 @@ from datetime import datetime
 from typing import Optional, List, Dict, Any
 from pydantic import BaseModel
 from enum import Enum
-from uuid import UUID
+
 from .base import BaseDBModel
 
 
@@ -43,7 +43,7 @@ class Payment(BaseDBModel):
     currency: str = "ETB"
     payment_method: PaymentMethod
     mobile_number: Optional[str] = None
-    customer_id: UUID  # User who made the payment
+    customer_id: str  # User who made the payment
     customer_email: str
     customer_first_name: str
     customer_last_name: str
@@ -60,20 +60,20 @@ class Payment(BaseDBModel):
 
 class Ticket(BaseDBModel):
     ticket_number: str  # Unique ticket identifier
-    customer_id: UUID
-    payment_id: UUID
+    customer_id: str
+    payment_id: str
     ticket_type: TicketType
-    origin_stop_id: Optional[UUID] = None
-    destination_stop_id: Optional[UUID] = None
-    route_id: Optional[UUID] = None
-    trip_id: Optional[UUID] = None
+    origin_stop_id: Optional[str] = None
+    destination_stop_id: Optional[str] = None
+    route_id: Optional[str] = None
+    trip_id: Optional[str] = None
     status: TicketStatus = TicketStatus.ACTIVE
     price: float
     currency: str = "ETB"
     valid_from: datetime
     valid_until: datetime
     used_at: Optional[datetime] = None
-    used_trip_id: Optional[UUID] = None
+    used_trip_id: Optional[str] = None
     qr_code: Optional[str] = None  # QR code data for validation
     metadata: Optional[Dict[str, Any]] = None  # Additional ticket data
 

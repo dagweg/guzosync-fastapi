@@ -4,7 +4,7 @@ from pydantic import BaseModel, Field
 from enum import Enum
 
 from .base import BaseDBModel
-from core.custom_types import UUID
+
 
 class Location(BaseModel):
     latitude: float
@@ -31,8 +31,8 @@ class Bus(BaseDBModel):
     speed: Optional[float] = None
     location_accuracy: Optional[float] = None
     current_address: Optional[str] = None
-    assigned_route_id: Optional[UUID] = None
-    assigned_driver_id: Optional[UUID] = None
+    assigned_route_id: Optional[str] = None
+    assigned_driver_id: Optional[str] = None
     bus_status: BusStatus
     manufacture_year: Optional[int] = None
     bus_model: Optional[str] = None
@@ -46,7 +46,7 @@ class BusStop(BaseDBModel):
 class Route(BaseDBModel):
     name: str
     description: Optional[str] = None
-    stop_ids: List[UUID]
+    stop_ids: List[str]
     total_distance: Optional[float] = None
     estimated_duration: Optional[float] = None
     is_active: bool = True

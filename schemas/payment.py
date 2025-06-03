@@ -1,6 +1,5 @@
 from typing import Optional, List, Dict, Any
 from pydantic import BaseModel, EmailStr
-from uuid import UUID
 from datetime import datetime
 from enum import Enum
 from .base import DateTimeModelMixin
@@ -43,10 +42,10 @@ class InitiatePaymentRequest(BaseModel):
     payment_method: PaymentMethod
     mobile_number: Optional[str] = None
     ticket_type: TicketType
-    origin_stop_id: Optional[UUID] = None
-    destination_stop_id: Optional[UUID] = None
-    route_id: Optional[UUID] = None
-    trip_id: Optional[UUID] = None
+    origin_stop_id: Optional[str] = None
+    destination_stop_id: Optional[str] = None
+    route_id: Optional[str] = None
+    trip_id: Optional[str] = None
     description: Optional[str] = None
     return_url: Optional[str] = None
 
@@ -68,7 +67,7 @@ class PaymentResponse(DateTimeModelMixin):
     amount: float
     currency: str
     payment_method: PaymentMethod
-    customer_id: UUID
+    customer_id: str
     status: PaymentStatus
     description: Optional[str] = None
     paid_at: Optional[datetime] = None
@@ -103,29 +102,29 @@ class VerifyPaymentResponse(BaseModel):
 # Ticket Requests
 class CreateTicketRequest(BaseModel):
     ticket_type: TicketType
-    origin_stop_id: Optional[UUID] = None
-    destination_stop_id: Optional[UUID] = None
-    route_id: Optional[UUID] = None
-    trip_id: Optional[UUID] = None
+    origin_stop_id: Optional[str] = None
+    destination_stop_id: Optional[str] = None
+    route_id: Optional[str] = None
+    trip_id: Optional[str] = None
     price: float
 
 
 class ValidateTicketRequest(BaseModel):
     ticket_number: str
-    trip_id: Optional[UUID] = None
+    trip_id: Optional[str] = None
 
 
 # Ticket Responses
 class TicketResponse(DateTimeModelMixin):
     id: str
     ticket_number: str
-    customer_id: UUID
-    payment_id: UUID
+    customer_id: str
+    payment_id: str
     ticket_type: TicketType
-    origin_stop_id: Optional[UUID] = None
-    destination_stop_id: Optional[UUID] = None
-    route_id: Optional[UUID] = None
-    trip_id: Optional[UUID] = None
+    origin_stop_id: Optional[str] = None
+    destination_stop_id: Optional[str] = None
+    route_id: Optional[str] = None
+    trip_id: Optional[str] = None
     status: TicketStatus
     price: float
     currency: str

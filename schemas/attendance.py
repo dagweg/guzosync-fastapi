@@ -4,7 +4,7 @@ from pydantic import BaseModel
 from datetime import datetime
 from enum import Enum
 from .base import DateTimeModelMixin, Location
-from core.custom_types import UUID
+
 
 class AttendanceType(str, Enum):
     CHECK_IN = "CHECK_IN"
@@ -16,7 +16,7 @@ class CreateAttendanceRecordRequest(BaseModel):
 
 class AttendanceRecordResponse(BaseModel):
     id: str
-    user_id: UUID
+    user_id: str
     timestamp: datetime
     type: AttendanceType
     location: Optional[Location] = None

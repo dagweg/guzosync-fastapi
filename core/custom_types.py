@@ -17,9 +17,9 @@ def validate_uuid(v: str | uuid.UUID) -> uuid.UUID:
 UUID = Annotated[uuid.UUID, BeforeValidator(validate_uuid)]
 
 # Function to generate new UUIDs
-def generate_uuid() -> uuid.UUID:
+def generate_uuid() -> str:
     """Generate a new UUID4."""
-    return uuid.uuid4()
+    return str(uuid.uuid4())
 
 
 __all__ = ['UUID', 'generate_uuid']

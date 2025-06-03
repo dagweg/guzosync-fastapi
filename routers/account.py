@@ -1,13 +1,10 @@
 from fastapi import APIRouter, Depends, HTTPException, status, Request, Body
-from typing import List
-from uuid import UUID
+
 
 from core.dependencies import get_current_user
 from models import User, NotificationSettings
 from schemas.user import UserResponse, UpdateUserRequest
 from schemas.notification import NotificationSettingsResponse, UpdateNotificationSettingsRequest
-from core.uuid_mongodb_helper import update_one_by_uuid, find_one_by_uuid
-
 from core import transform_mongo_doc
 
 router = APIRouter(prefix="/api/account", tags=["account"])
@@ -24,22 +21,19 @@ async def update_user_info(
     request: Request,
     update_request: UpdateUserRequest, 
     current_user: User = Depends(get_current_user)
-):    # Update only provided fields
+):
+    # Update only provided fields
     update_data = {k: v for k, v in update_request.model_dump().items() if v is not None}
     
     if update_data:
-        # Use UUID helper to handle UUID conversion properly
-        await update_one_by_uuid(
-            request.app.state.mongodb.users,
-            {"id": current_user.id},
+        # Update user in MongoDB using built-in driver
+        await request.app.state.mongodb.users.update_one(
+            {"_id": current_user.id},
             {"$set": update_data}
         )
     
-    # Use UUID helper to find the updated user
-    updated_user = await find_one_by_uuid(
-        request.app.state.mongodb.users,
-        {"id": current_user.id}
-    )
+    # Find the updated user
+    updated_user = await request.app.state.mongodb.users.find_one({"_id": current_user.id})
     
     if not updated_user:
         raise HTTPException(
@@ -66,34 +60,31 @@ async def update_notification_settings(
     # Prepare update data with normalized field name
     update_data = {"email_enabled": email_enabled}
     
-    # Use UUID helper to find settings
-    settings = await find_one_by_uuid(
-        request.app.state.mongodb.notification_settings,
+    # Find existing settings
+    settings = await request.app.state.mongodb.notification_settings.find_one(
         {"user_id": current_user.id}
     )
+    
     if settings:
-        # Use UUID helper to update settings
-        await update_one_by_uuid(
-            request.app.state.mongodb.notification_settings,
+        # Update existing settings
+        await request.app.state.mongodb.notification_settings.update_one(
             {"user_id": current_user.id},
             {"$set": update_data}
         )
     else:
-        # Convert UUID to string for new document
-        from core.uuid_mongodb_helper import standardize_uuid_fields
+        # Create new settings document
         new_settings = {"user_id": current_user.id, **update_data}
-        standardized_settings = standardize_uuid_fields(new_settings)
-        await request.app.state.mongodb.notification_settings.insert_one(standardized_settings)
-      # Use UUID helper to get updated settings
-    updated_settings = await find_one_by_uuid(
-        request.app.state.mongodb.notification_settings,
+        await request.app.state.mongodb.notification_settings.insert_one(new_settings)
+    
+    # Get updated settings
+    updated_settings = await request.app.state.mongodb.notification_settings.find_one(
         {"user_id": current_user.id}
     )
     
     # Return a properly formatted response matching the schema
     if updated_settings:
         return {
-            "id": str(updated_settings.get("id", updated_settings.get("_id", ""))),
+            "id": str(updated_settings.get("_id", "")),
             "user_id": current_user.id,
             "email_enabled": updated_settings.get("email_enabled", False)
         }
@@ -112,6 +103,7 @@ async def update_preferred_language(
             status_code=status.HTTP_403_FORBIDDEN,
             detail="Only passengers can update preferred language"
         )
+    
     # Validate language
     allowed_languages = {"en", "am", "om", "ti"}
     lang = language.get("language")
@@ -119,10 +111,12 @@ async def update_preferred_language(
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail="Invalid language code"
-        )    # Update user's language preference using UUID helper
-    await update_one_by_uuid(
-        request.app.state.mongodb.users,
-        {"id": current_user.id},
+        )
+    
+    # Update user's language preference
+    await request.app.state.mongodb.users.update_one(
+        {"_id": current_user.id},
         {"$set": {"preferred_language": lang}}
     )
+    
     return {"message": "Language updated successfully"}

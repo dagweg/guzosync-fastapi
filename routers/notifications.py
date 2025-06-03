@@ -1,6 +1,6 @@
 from fastapi import APIRouter, Depends, HTTPException, status, Query, Request
 from typing import List, Optional
-from uuid import UUID
+
 
 from core.dependencies import get_current_user
 from models import User, Notification
@@ -29,13 +29,13 @@ async def get_notifications(
 @router.post("/mark-read/{notification_id}")
 async def mark_notification_read(
     request: Request,
-    notification_id: UUID, 
+    notification_id: str, 
     current_user: User = Depends(get_current_user)
 ):
     
     
     result = await request.app.state.mongodb.notifications.update_one(
-        {"id": notification_id, "user_id": current_user.id},
+        {"_id": notification_id, "user_id": current_user.id},
         {"$set": {"is_read": True}}
     )
     
@@ -66,7 +66,7 @@ async def broadcast_notification(
     if notification_req.target_user_ids:
         # Send to specific users
         target_users = await request.app.state.mongodb.users.find(
-            {"id": {"$in": notification_req.target_user_ids}}
+            {"_id": {"$in": notification_req.target_user_ids}}
         ).to_list(length=None)
     elif notification_req.target_roles:
         # Send to users with specific roles

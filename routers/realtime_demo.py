@@ -2,7 +2,7 @@
 Real-time demo endpoints for testing
 """
 from fastapi import APIRouter, Depends, Request, Body
-from uuid import UUID, uuid4
+from uuid import  uuid4
 from datetime import datetime
 
 from core.dependencies import get_current_user
@@ -31,7 +31,7 @@ async def demo_bus_location_update(
     
     # Simulate bus location update
     await bus_tracking_service.update_bus_location(
-        bus_id=UUID(bus_id),
+        bus_id=bus_id,
         latitude=latitude,
         longitude=longitude,
         heading=heading,
@@ -62,7 +62,7 @@ async def demo_notification(
     
     # Send real-time notification
     await notification_service.send_real_time_notification(
-        user_id=UUID(target_user_id),
+        user_id=target_user_id,
         title=title,
         message=message,
         notification_type="DEMO",
@@ -91,7 +91,7 @@ async def demo_chat_message(
     
     # Send real-time chat message
     await chat_service.send_real_time_message(
-        conversation_id=UUID(conversation_id),
+        conversation_id=conversation_id,
         sender_id=current_user.id,
         content=content,
         message_type=message_type,

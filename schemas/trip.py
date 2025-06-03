@@ -1,6 +1,5 @@
 from typing import Optional, List
 from pydantic import BaseModel
-from uuid import UUID
 from datetime import datetime
 from enum import Enum
 from .base import DateTimeModelMixin
@@ -14,21 +13,21 @@ class TripStatus(str, Enum):
 
 class SimplifiedTripResponse(BaseModel):
     id: str
-    bus_id: UUID
-    route_id: UUID
-    driver_id: Optional[UUID] = None
+    bus_id: str
+    route_id: str
+    driver_id: Optional[str] = None
     estimated_arrival_time: Optional[datetime] = None
     status: TripStatus
 
 class TripResponse(DateTimeModelMixin):
     id: str
-    bus_id: UUID
-    route_id: UUID
-    driver_id: Optional[UUID] = None
-    schedule_id: Optional[UUID] = None
+    bus_id: str
+    route_id: str
+    driver_id: Optional[str] = None
+    schedule_id: Optional[str] = None
     actual_departure_time: Optional[datetime] = None
     actual_arrival_time: Optional[datetime] = None
     estimated_arrival_time: Optional[datetime] = None
     status: TripStatus
-    passenger_ids: Optional[List[UUID]] = None
-    feedback_ids: Optional[List[UUID]] = None
+    passenger_ids: Optional[List[str]] = None
+    feedback_ids: Optional[List[str]] = None

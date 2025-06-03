@@ -3,7 +3,7 @@ Real-time notifications service
 """
 from datetime import datetime
 from typing import List, Optional
-from uuid import UUID
+
 from core.websocket_manager import websocket_manager
 from core.logger import get_logger
 
@@ -15,7 +15,7 @@ class NotificationService:
     
     @staticmethod
     async def send_real_time_notification(
-        user_id: UUID,
+        user_id: str,
         title: str,
         message: str,
         notification_type: str = "GENERAL",
@@ -64,7 +64,7 @@ class NotificationService:
         title: str,
         message: str,
         notification_type: str = "GENERAL",
-        target_user_ids: Optional[List[UUID]] = None,
+        target_user_ids: Optional[List[str]] = None,
         target_roles: Optional[List[str]] = None,
         related_entity: Optional[dict] = None,
         app_state=None
@@ -138,7 +138,7 @@ class NotificationService:
     
     @staticmethod
     async def send_trip_update_notification(
-        trip_id: UUID,
+        trip_id: str,
         message: str,
         delay_minutes: Optional[int] = None,
         app_state=None

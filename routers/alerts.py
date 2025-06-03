@@ -1,6 +1,6 @@
 from fastapi import APIRouter, Depends, HTTPException, status, Query, Request
 from typing import List, Optional
-from uuid import UUID
+
 from datetime import datetime
 
 from core.dependencies import get_current_user
@@ -58,7 +58,7 @@ async def create_alert(
 @router.put("/{alert_id}", response_model=AlertResponse)
 async def update_alert(
     request: Request,
-    alert_id: UUID,
+    alert_id: str,
     alert_request: UpdateAlertRequest, 
     current_user: User = Depends(get_current_user)
 ):
@@ -70,7 +70,7 @@ async def update_alert(
         )
     
     # Check if alert exists
-    alert = await request.app.state.mongodb.alerts.find_one({"id": alert_id})
+    alert = await request.app.state.mongodb.alerts.find_one({"_id": alert_id})
     if not alert:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
@@ -82,17 +82,17 @@ async def update_alert(
     update_data["updated_at"] = datetime.utcnow()
     
     await request.app.state.mongodb.alerts.update_one(
-        {"id": alert_id},
+        {"_id": alert_id},
         {"$set": update_data}
     )
     
-    updated_alert = await request.app.state.mongodb.alerts.find_one({"id": alert_id})
+    updated_alert = await request.app.state.mongodb.alerts.find_one({"_id": alert_id})
     return transform_mongo_doc(updated_alert, AlertResponse)
 
 @router.delete("/{alert_id}")
 async def delete_alert(
     request: Request,
-    alert_id: UUID,
+    alert_id: str,
     current_user: User = Depends(get_current_user)
 ):
     """Delete an alert (admin only)"""
@@ -102,7 +102,7 @@ async def delete_alert(
             detail="Only admins can delete alerts"
         )
     
-    result = await request.app.state.mongodb.alerts.delete_one({"id": alert_id})
+    result = await request.app.state.mongodb.alerts.delete_one({"_id": alert_id})
     
     if result.deleted_count == 0:
         raise HTTPException(

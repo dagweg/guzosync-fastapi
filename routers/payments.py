@@ -1,6 +1,6 @@
 from fastapi import APIRouter, Depends, HTTPException, status, Query, Request, Header
 from typing import List, Optional, Dict, Any
-from uuid import UUID, uuid4
+from uuid import uuid4
 from datetime import datetime, timedelta
 import json
 
@@ -331,7 +331,7 @@ async def get_ticket(
     
     try:
         
-        ticket_uuid = UUID(ticket_id)
+        ticket_uuid = str(ticket_id)
     except ValueError:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
@@ -362,7 +362,7 @@ async def get_ticket_qr(
     
     try:
         
-        ticket_uuid = UUID(ticket_id)
+        ticket_uuid = str(ticket_id)
     except ValueError:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
@@ -428,7 +428,7 @@ async def validate_ticket(
         )
     
     # Get customer info
-    customer = await request.app.state.mongodb.users.find_one({"id": ticket["customer_id"]})
+    customer = await request.app.state.mongodb.users.find_one({"_id": ticket["customer_id"]})
     customer_name = f"{customer['first_name']} {customer['last_name']}" if customer else "Unknown"
     
     # Check ticket validity
@@ -550,7 +550,7 @@ async def update_payment_method(
     
     try:
         
-        method_uuid = UUID(method_id)
+        method_uuid = str(method_id)
     except ValueError:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,

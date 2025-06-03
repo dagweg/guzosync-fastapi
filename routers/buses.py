@@ -1,6 +1,6 @@
 from fastapi import APIRouter, Depends, HTTPException, status, Query, Request, Body
 from typing import List, Optional
-from uuid import UUID
+
 
 from core.dependencies import get_current_user
 from models import User, Bus, BusStop
@@ -42,12 +42,12 @@ async def get_bus_stops(
 @router.get("/stops/{bus_stop_id}", response_model=BusStopResponse)
 async def get_bus_stop(
     request: Request,
-    bus_stop_id: UUID, 
+    bus_stop_id: str, 
     current_user: User = Depends(get_current_user)
 ):
     
     
-    bus_stop = await request.app.state.mongodb.bus_stops.find_one({"id": bus_stop_id})
+    bus_stop = await request.app.state.mongodb.bus_stops.find_one({"_id": bus_stop_id})
     if not bus_stop:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
@@ -59,13 +59,12 @@ async def get_bus_stop(
 @router.get("/stops/{bus_stop_id}/incoming-buses", response_model=List[SimplifiedTripResponse])
 async def get_incoming_buses(
     request: Request,
-    bus_stop_id: UUID, 
+    bus_stop_id: str, 
     current_user: User = Depends(get_current_user)
 ):
     
-    
-    # First, verify bus stop exists
-    bus_stop = await request.app.state.mongodb.bus_stops.find_one({"id": bus_stop_id})
+      # First, verify bus stop exists
+    bus_stop = await request.app.state.mongodb.bus_stops.find_one({"_id": bus_stop_id})
     if not bus_stop:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
@@ -88,12 +87,12 @@ async def get_incoming_buses(
 @router.get("/{bus_id}", response_model=BusResponse)
 async def get_bus(
     request: Request,
-    bus_id: UUID, 
+    bus_id: str, 
     current_user: User = Depends(get_current_user)
 ):
     
     
-    bus = await request.app.state.mongodb.buses.find_one({"id": bus_id})
+    bus = await request.app.state.mongodb.buses.find_one({"_id": bus_id})
     if not bus:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
@@ -115,7 +114,7 @@ async def get_reallocation_requests(current_user: User = Depends(get_current_use
 @router.post("/{bus_id}/location")
 async def update_bus_location(
     request: Request,
-    bus_id: UUID,
+    bus_id: str,
     location_data: dict = Body(...),
     current_user: User = Depends(get_current_user)
 ):
@@ -127,7 +126,7 @@ async def update_bus_location(
         )
     
     # Verify bus exists
-    bus = await request.app.state.mongodb.buses.find_one({"id": bus_id})
+    bus = await request.app.state.mongodb.buses.find_one({"_id": bus_id})
     if not bus:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
@@ -160,7 +159,7 @@ async def update_bus_location(
 
 @router.post("/{bus_id}/track")
 async def subscribe_to_bus_tracking(
-    bus_id: UUID,
+    bus_id: str,
     current_user: User = Depends(get_current_user)
 ):
     """Subscribe to real-time bus tracking updates"""
@@ -169,7 +168,7 @@ async def subscribe_to_bus_tracking(
 
 @router.delete("/{bus_id}/track")
 async def unsubscribe_from_bus_tracking(
-    bus_id: UUID,
+    bus_id: str,
     current_user: User = Depends(get_current_user)
 ):
     """Unsubscribe from real-time bus tracking updates"""

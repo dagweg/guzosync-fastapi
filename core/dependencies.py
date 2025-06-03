@@ -40,28 +40,12 @@ async def get_current_user(request: Request, token = Depends(security)):
     user = None
     logger.info("Fetching user from database", extra={"user_id": user_id})
 
-    # First try to find by id field (UUID as string)
+    
     try:
         user = await request.app.state.mongodb.users.find_one({"id": user_id})
         logger.debug("Found user by id field")
     except Exception as e:
         logger.debug(f"Query by id field failed: {e}")
-    
-    # If not found, try by _id field with UUID string
-    if user is None:
-        try:
-            user = await request.app.state.mongodb.users.find_one({"_id": user_id})
-            logger.debug("Found user by _id field")
-        except Exception as e:
-            logger.debug(f"Query by _id field failed: {e}")
-    
-    # If still not found, try by _id field as ObjectId (for backwards compatibility)
-    if user is None:
-        try:
-            user = await request.app.state.mongodb.users.find_one({"_id": ObjectId(user_id)})
-            logger.debug("Found user by _id field as ObjectId")
-        except Exception as e:
-            logger.debug(f"Query by _id ObjectId failed: {e}")
     
     if user is None:
         logger.warning("User not found in database", extra={"user_id": user_id})

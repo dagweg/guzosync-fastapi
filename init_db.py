@@ -21,6 +21,8 @@ from passlib.context import CryptContext
 import uuid
 from faker import Faker
 
+from core.custom_types import generate_uuid
+
 # Configure faker
 fake = Faker()
 
@@ -74,11 +76,6 @@ ADDIS_ABABA_BOUNDS = {
     "lon_min": 38.7,
     "lon_max": 38.9
 }
-
-
-def generate_uuid():
-    """Generate a random UUID."""
-    return uuid.uuid4()
 
 
 def hash_password(password: str) -> str:
@@ -813,7 +810,7 @@ async def populate_db():
         return
     
     # Connect to MongoDB
-    client: AsyncIOMotorClient = AsyncIOMotorClient(mongodb_url, uuidRepresentation="pythonLegacy")
+    client: AsyncIOMotorClient = AsyncIOMotorClient(mongodb_url, uuidRepresentation="unspecified")
     db = client[database_name]
     
     try:

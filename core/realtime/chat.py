@@ -2,7 +2,7 @@
 Real-time chat/conversation service
 """
 from datetime import datetime
-from uuid import UUID
+
 from core.websocket_manager import websocket_manager
 from core.logger import get_logger
 
@@ -14,8 +14,8 @@ class ChatService:
     
     @staticmethod
     async def send_real_time_message(
-        conversation_id: UUID,
-        sender_id: UUID,
+        conversation_id: str,
+        sender_id: str,
         content: str,
         message_id: str,
         message_type: str = "TEXT",
@@ -76,14 +76,14 @@ class ChatService:
             logger.error(f"Error sending real-time message: {e}")
     
     @staticmethod
-    async def join_conversation(user_id: str, conversation_id: UUID, app_state=None):
+    async def join_conversation(user_id: str, conversation_id: str, app_state=None):
         """Join user to a conversation room"""
         try:
             # Verify user is participant in conversation
             if app_state and app_state.mongodb:
                 conversation = await app_state.mongodb.conversations.find_one({
                     "id": conversation_id,
-                    "participants": UUID(user_id)
+                    "participants": str(user_id)
                 })
                 
                 if not conversation:
@@ -111,14 +111,14 @@ class ChatService:
             return False
     
     @staticmethod
-    def leave_conversation(user_id: str, conversation_id: UUID):
+    def leave_conversation(user_id: str, conversation_id: str):
         """Remove user from conversation room"""
         room_id = f"conversation:{conversation_id}"
         websocket_manager.leave_room(user_id, room_id)
         logger.info(f"User {user_id} left conversation {conversation_id}")
     
     @staticmethod
-    async def notify_typing(conversation_id: UUID, user_id: str, is_typing: bool):
+    async def notify_typing(conversation_id: str, user_id: str, is_typing: bool):
         """Notify conversation participants about typing status"""
         try:
             room_id = f"conversation:{conversation_id}"
@@ -140,7 +140,7 @@ class ChatService:
             logger.error(f"Error sending typing notification: {e}")
     
     @staticmethod
-    async def notify_message_read(conversation_id: UUID, user_id: str, message_id: str):
+    async def notify_message_read(conversation_id: str, user_id: str, message_id: str):
         """Notify when a message has been read"""
         try:
             room_id = f"conversation:{conversation_id}"

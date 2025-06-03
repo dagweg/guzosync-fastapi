@@ -1,6 +1,5 @@
 from fastapi import APIRouter, Depends, HTTPException, status, Request
-from typing import List
-from uuid import UUID
+
 from datetime import datetime, timedelta
 import secrets
 

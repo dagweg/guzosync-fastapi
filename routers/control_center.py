@@ -1,6 +1,6 @@
 from fastapi import APIRouter, Depends, HTTPException, status, Query, Request
 from typing import List, Optional
-from uuid import UUID
+
 from datetime import datetime
 
 from core.dependencies import get_current_user
@@ -78,7 +78,7 @@ async def get_queue_regulators(
 @router.get("/personnel/queue-regulators/{regulator_id}", response_model=UserResponse)
 async def get_queue_regulator(
     request: Request,
-    regulator_id: UUID,
+    regulator_id: str,
     current_user: User = Depends(get_current_user)
 ):
     """Get specific queue regulator"""
@@ -87,9 +87,9 @@ async def get_queue_regulator(
             status_code=status.HTTP_403_FORBIDDEN,
             detail="Only control center admins can view personnel"
         )
-    
+
     regulator = await request.app.state.mongodb.users.find_one({
-        "id": regulator_id,
+        "_id": regulator_id,
         "role": "REGULATOR"
     })
     
@@ -104,7 +104,7 @@ async def get_queue_regulator(
 @router.put("/personnel/queue-regulators/{regulator_id}", response_model=UserResponse)
 async def update_queue_regulator(
     request: Request,
-    regulator_id: UUID,
+    regulator_id: str,
     update_data: dict,
     current_user: User = Depends(get_current_user)
 ):
@@ -116,7 +116,7 @@ async def update_queue_regulator(
         )
     
     result = await request.app.state.mongodb.users.update_one(
-        {"id": regulator_id, "role": "REGULATOR"},
+        {"_id": regulator_id, "role": "REGULATOR"},
         {"$set": update_data}
     )
     
@@ -126,13 +126,13 @@ async def update_queue_regulator(
             detail="Regulator not found"
         )
     
-    updated_regulator = await request.app.state.mongodb.users.find_one({"id": regulator_id})
+    updated_regulator = await request.app.state.mongodb.users.find_one({"_id": regulator_id})
     return transform_mongo_doc(updated_regulator, UserResponse)
 
 @router.delete("/personnel/queue-regulators/{regulator_id}")
 async def delete_queue_regulator(
     request: Request,
-    regulator_id: UUID,
+    regulator_id: str,
     current_user: User = Depends(get_current_user)
 ):
     """Delete queue regulator"""
@@ -143,7 +143,7 @@ async def delete_queue_regulator(
         )
     
     result = await request.app.state.mongodb.users.delete_one({
-        "id": regulator_id,
+        "_id": regulator_id,
         "role": "REGULATOR"
     })
     
@@ -158,8 +158,8 @@ async def delete_queue_regulator(
 @router.put("/personnel/queue-regulators/{regulator_id}/assign/bus-stop/{bus_stop_id}")
 async def assign_regulator_to_bus_stop(
     request: Request,
-    regulator_id: UUID,
-    bus_stop_id: UUID,
+    regulator_id: str,
+    bus_stop_id: str,
     current_user: User = Depends(get_current_user)
 ):
     """Assign regulator to a bus stop"""
@@ -171,7 +171,7 @@ async def assign_regulator_to_bus_stop(
     
     # Check if regulator exists
     regulator = await request.app.state.mongodb.users.find_one({
-        "id": regulator_id,
+        "_id": regulator_id,
         "role": "REGULATOR"
     })
     if not regulator:
@@ -181,7 +181,7 @@ async def assign_regulator_to_bus_stop(
         )
     
     # Check if bus stop exists
-    bus_stop = await request.app.state.mongodb.bus_stops.find_one({"id": bus_stop_id})
+    bus_stop = await request.app.state.mongodb.bus_stops.find_one({"_id": bus_stop_id})
     if not bus_stop:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
@@ -228,7 +228,7 @@ async def get_bus_drivers(
 @router.get("/personnel/bus-drivers/{driver_id}", response_model=UserResponse)
 async def get_bus_driver(
     request: Request,
-    driver_id: UUID,
+    driver_id: str,
     current_user: User = Depends(get_current_user)
 ):
     """Get specific bus driver"""
@@ -239,7 +239,7 @@ async def get_bus_driver(
         )
     
     driver = await request.app.state.mongodb.users.find_one({
-        "id": driver_id,
+        "_id": driver_id,
         "role": "DRIVER"
     })
     
@@ -254,7 +254,7 @@ async def get_bus_driver(
 @router.put("/personnel/bus-drivers/{driver_id}", response_model=UserResponse)
 async def update_bus_driver(
     request: Request,
-    driver_id: UUID,
+    driver_id: str,
     update_data: dict,
     current_user: User = Depends(get_current_user)
 ):
@@ -266,7 +266,7 @@ async def update_bus_driver(
         )
     
     result = await request.app.state.mongodb.users.update_one(
-        {"id": driver_id, "role": "DRIVER"},
+        {"_id": driver_id, "role": "DRIVER"},
         {"$set": update_data}
     )
     
@@ -276,13 +276,13 @@ async def update_bus_driver(
             detail="Driver not found"
         )
     
-    updated_driver = await request.app.state.mongodb.users.find_one({"id": driver_id})
+    updated_driver = await request.app.state.mongodb.users.find_one({"_id": driver_id})
     return transform_mongo_doc(updated_driver, UserResponse)
 
 @router.delete("/personnel/bus-drivers/{driver_id}")
 async def delete_bus_driver(
     request: Request,
-    driver_id: UUID,
+    driver_id: str,
     current_user: User = Depends(get_current_user)
 ):
     """Delete bus driver"""
@@ -293,7 +293,7 @@ async def delete_bus_driver(
         )
     
     result = await request.app.state.mongodb.users.delete_one({
-        "id": driver_id,
+        "_id": driver_id,
         "role": "DRIVER"
     })
     
@@ -308,8 +308,8 @@ async def delete_bus_driver(
 @router.put("/personnel/bus-drivers/{driver_id}/assign-bus/{bus_id}")
 async def assign_driver_to_bus(
     request: Request,
-    driver_id: UUID,
-    bus_id: UUID,
+    driver_id: str,
+    bus_id: str,
     current_user: User = Depends(get_current_user)
 ):
     """Assign driver to a bus"""
@@ -321,7 +321,7 @@ async def assign_driver_to_bus(
     
     # Check if driver exists
     driver = await request.app.state.mongodb.users.find_one({
-        "id": driver_id,
+        "_id": driver_id,
         "role": "DRIVER"
     })
     if not driver:
@@ -331,7 +331,7 @@ async def assign_driver_to_bus(
         )
     
     # Check if bus exists
-    bus = await request.app.state.mongodb.buses.find_one({"id": bus_id})
+    bus = await request.app.state.mongodb.buses.find_one({"_id": bus_id})
     if not bus:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
@@ -340,7 +340,7 @@ async def assign_driver_to_bus(
     
     # Update bus with assigned driver
     await request.app.state.mongodb.buses.update_one(
-        {"id": bus_id},
+        {"_id": bus_id},
         {"$set": {"assigned_driver_id": driver_id}}
     )
     
@@ -392,7 +392,7 @@ async def get_control_center_bus_stops(
 @router.get("/bus-stops/{bus_stop_id}", response_model=BusStopResponse)
 async def get_control_center_bus_stop(
     request: Request,
-    bus_stop_id: UUID,
+    bus_stop_id: str,
     current_user: User = Depends(get_current_user)
 ):
     """Get specific bus stop for management"""
@@ -402,7 +402,7 @@ async def get_control_center_bus_stop(
             detail="Only control center admins can view bus stop details"
         )
     
-    bus_stop = await request.app.state.mongodb.bus_stops.find_one({"id": bus_stop_id})
+    bus_stop = await request.app.state.mongodb.bus_stops.find_one({"_id": bus_stop_id})
     if not bus_stop:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
@@ -414,7 +414,7 @@ async def get_control_center_bus_stop(
 @router.put("/bus-stops/{bus_stop_id}", response_model=BusStopResponse)
 async def update_control_center_bus_stop(
     request: Request,
-    bus_stop_id: UUID,
+    bus_stop_id: str,
     update_data: UpdateBusStopRequest,
     current_user: User = Depends(get_current_user)
 ):
@@ -429,7 +429,7 @@ async def update_control_center_bus_stop(
     update_dict["updated_at"] = datetime.utcnow()
     
     result = await request.app.state.mongodb.bus_stops.update_one(
-        {"id": bus_stop_id},
+        {"_id": bus_stop_id},
         {"$set": update_dict}
     )
     
@@ -439,13 +439,13 @@ async def update_control_center_bus_stop(
             detail="Bus stop not found"
         )
     
-    updated_bus_stop = await request.app.state.mongodb.bus_stops.find_one({"id": bus_stop_id})
+    updated_bus_stop = await request.app.state.mongodb.bus_stops.find_one({"_id": bus_stop_id})
     return transform_mongo_doc(updated_bus_stop, BusStopResponse)
 
 @router.delete("/bus-stops/{bus_stop_id}")
 async def delete_control_center_bus_stop(
     request: Request,
-    bus_stop_id: UUID,
+    bus_stop_id: str,
     current_user: User = Depends(get_current_user)
 ):
     """Delete bus stop"""
@@ -455,7 +455,7 @@ async def delete_control_center_bus_stop(
             detail="Only control center admins can delete bus stops"
         )
     
-    result = await request.app.state.mongodb.bus_stops.delete_one({"id": bus_stop_id})
+    result = await request.app.state.mongodb.bus_stops.delete_one({"_id": bus_stop_id})
     
     if result.deleted_count == 0:
         raise HTTPException(
@@ -487,7 +487,7 @@ async def get_control_center_buses(
 @router.get("/buses/{bus_id}", response_model=BusResponse)
 async def get_control_center_bus(
     request: Request,
-    bus_id: UUID,
+    bus_id: str,
     current_user: User = Depends(get_current_user)
 ):
     """Get specific bus for management"""
@@ -497,7 +497,7 @@ async def get_control_center_bus(
             detail="Only control center admins can view bus details"
         )
     
-    bus = await request.app.state.mongodb.buses.find_one({"id": bus_id})
+    bus = await request.app.state.mongodb.buses.find_one({"_id": bus_id})
     if not bus:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
@@ -509,7 +509,7 @@ async def get_control_center_bus(
 @router.put("/buses/{bus_id}", response_model=BusResponse)
 async def update_control_center_bus(
     request: Request,
-    bus_id: UUID,
+    bus_id: str,
     update_data: UpdateBusRequest,
     current_user: User = Depends(get_current_user)
 ):
@@ -524,7 +524,7 @@ async def update_control_center_bus(
     update_dict["updated_at"] = datetime.utcnow()
     
     result = await request.app.state.mongodb.buses.update_one(
-        {"id": bus_id},
+        {"_id": bus_id},
         {"$set": update_dict}
     )
     
@@ -534,14 +534,14 @@ async def update_control_center_bus(
             detail="Bus not found"
         )
     
-    updated_bus = await request.app.state.mongodb.buses.find_one({"id": bus_id})
+    updated_bus = await request.app.state.mongodb.buses.find_one({"_id": bus_id})
     return transform_mongo_doc(updated_bus, BusResponse)
 
 @router.put("/buses/{bus_id}/assign-route/{route_id}")
 async def assign_bus_to_route(
     request: Request,
-    bus_id: UUID,
-    route_id: UUID,
+    bus_id: str,
+    route_id: str,
     current_user: User = Depends(get_current_user)
 ):
     """Assign bus to a route"""
@@ -552,7 +552,7 @@ async def assign_bus_to_route(
         )
     
     # Check if bus exists
-    bus = await request.app.state.mongodb.buses.find_one({"id": bus_id})
+    bus = await request.app.state.mongodb.buses.find_one({"_id": bus_id})
     if not bus:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
@@ -560,7 +560,7 @@ async def assign_bus_to_route(
         )
     
     # Check if route exists
-    route = await request.app.state.mongodb.routes.find_one({"id": route_id})
+    route = await request.app.state.mongodb.routes.find_one({"_id": route_id})
     if not route:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
@@ -569,7 +569,7 @@ async def assign_bus_to_route(
     
     # Update bus with assigned route
     await request.app.state.mongodb.buses.update_one(
-        {"id": bus_id},
+        {"_id": bus_id},
         {"$set": {"assigned_route_id": route_id}}
     )
     
@@ -578,8 +578,8 @@ async def assign_bus_to_route(
 @router.put("/buses/{bus_id}/reallocate-route/{route_id}")
 async def reallocate_bus_route(
     request: Request,
-    bus_id: UUID,
-    route_id: UUID,
+    bus_id: str,
+    route_id: str,
     current_user: User = Depends(get_current_user)
 ):
     """Reallocate bus to a different route"""
@@ -590,7 +590,7 @@ async def reallocate_bus_route(
         )
     
     # Check if bus exists
-    bus = await request.app.state.mongodb.buses.find_one({"id": bus_id})
+    bus = await request.app.state.mongodb.buses.find_one({"_id": bus_id})
     if not bus:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
@@ -598,7 +598,7 @@ async def reallocate_bus_route(
         )
     
     # Check if route exists
-    route = await request.app.state.mongodb.routes.find_one({"id": route_id})
+    route = await request.app.state.mongodb.routes.find_one({"_id": route_id})
     if not route:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
@@ -619,7 +619,7 @@ async def reallocate_bus_route(
     
     # Update bus with new route
     await request.app.state.mongodb.buses.update_one(
-        {"id": bus_id},
+        {"_id": bus_id},
         {"$set": {"assigned_route_id": route_id}}
     )
     
@@ -696,7 +696,7 @@ async def get_control_center_routes(
 @router.get("/routes/{route_id}", response_model=RouteResponse)
 async def get_control_center_route(
     request: Request,
-    route_id: UUID,
+    route_id: str,
     current_user: User = Depends(get_current_user)
 ):
     """Get specific route for management"""
@@ -706,7 +706,7 @@ async def get_control_center_route(
             detail="Only control center admins can view route details"
         )
     
-    route = await request.app.state.mongodb.routes.find_one({"id": route_id})
+    route = await request.app.state.mongodb.routes.find_one({"_id": route_id})
     if not route:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
@@ -718,7 +718,7 @@ async def get_control_center_route(
 @router.put("/routes/{route_id}", response_model=RouteResponse)
 async def update_control_center_route(
     request: Request,
-    route_id: UUID,
+    route_id: str,
     update_data: UpdateRouteRequest,
     current_user: User = Depends(get_current_user)
 ):
@@ -733,7 +733,7 @@ async def update_control_center_route(
     update_dict["updated_at"] = datetime.utcnow()
     
     result = await request.app.state.mongodb.routes.update_one(
-        {"id": route_id},
+        {"_id": route_id},
         {"$set": update_dict}
     )
     
@@ -743,13 +743,13 @@ async def update_control_center_route(
             detail="Route not found"
         )
     
-    updated_route = await request.app.state.mongodb.routes.find_one({"id": route_id})
+    updated_route = await request.app.state.mongodb.routes.find_one({"_id": route_id})
     return transform_mongo_doc(updated_route, RouteResponse)
 
 @router.delete("/routes/{route_id}")
 async def delete_control_center_route(
     request: Request,
-    route_id: UUID,
+    route_id: str,
     current_user: User = Depends(get_current_user)
 ):
     """Delete route"""
@@ -759,7 +759,7 @@ async def delete_control_center_route(
             detail="Only control center admins can delete routes"
         )
     
-    result = await request.app.state.mongodb.routes.delete_one({"id": route_id})
+    result = await request.app.state.mongodb.routes.delete_one({"_id": route_id})
     
     if result.deleted_count == 0:
         raise HTTPException(

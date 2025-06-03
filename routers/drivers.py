@@ -1,6 +1,6 @@
 from fastapi import APIRouter, Depends, HTTPException, status, Query, Request
 from typing import List, Optional
-from uuid import UUID
+
 from datetime import datetime
 
 from core.dependencies import get_current_user
@@ -178,7 +178,7 @@ async def get_driver_schedules(
 @router.get("/routes/{route_id}/schedule", response_model=dict)
 async def get_route_schedule(
     request: Request,
-    route_id: UUID,
+    route_id: str,
     current_user: User = Depends(get_current_user)
 ):
     """Get schedule for a specific route"""
@@ -224,7 +224,7 @@ async def get_driver_instructions(
 @router.put("/instructions/{instruction_id}/acknowledge")
 async def acknowledge_instruction(
     request: Request,
-    instruction_id: UUID,
+    instruction_id: str,
     current_user: User = Depends(get_current_user)
 ):
     """Acknowledge an instruction"""
@@ -235,7 +235,7 @@ async def acknowledge_instruction(
         )
     
     result = await request.app.state.mongodb.instructions.update_one(
-        {"id": instruction_id, "target_driver_id": current_user.id},
+        {"_id": instruction_id, "target_driver_id": current_user.id},
         {
             "$set": {
                 "acknowledged": True,

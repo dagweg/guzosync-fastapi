@@ -4,7 +4,6 @@ from pydantic import BaseModel
 from enum import Enum
 from datetime import datetime
 from .base import DateTimeModelMixin, Location
-from core.custom_types import UUID
 
 class BusType(str, Enum):
     STANDARD = "STANDARD"
@@ -35,8 +34,8 @@ class UpdateBusRequest(BaseModel):
     speed: Optional[float] = None
     location_accuracy: Optional[float] = None
     current_address: Optional[str] = None
-    assigned_route_id: Optional[UUID] = None
-    assigned_driver_id: Optional[UUID] = None
+    assigned_route_id: Optional[str] = None
+    assigned_driver_id: Optional[str] = None
     bus_status: Optional[BusStatus] = None
     manufacture_year: Optional[int] = None
     bus_model: Optional[str] = None
@@ -54,8 +53,8 @@ class BusResponse(DateTimeModelMixin):
     speed: Optional[float] = None
     location_accuracy: Optional[float] = None
     current_address: Optional[str] = None
-    assigned_route_id: Optional[UUID] = None
-    assigned_driver_id: Optional[UUID] = None
+    assigned_route_id: Optional[str] = None
+    assigned_driver_id: Optional[str] = None
     bus_status: BusStatus
     manufacture_year: Optional[int] = None
     bus_model: Optional[str] = None
@@ -99,8 +98,8 @@ class CreateAlertRequest(BaseModel):
     message: str
     alert_type: AlertType
     severity: AlertSeverity
-    affected_routes: Optional[List[UUID]] = None
-    affected_bus_stops: Optional[List[UUID]] = None
+    affected_routes: Optional[List[str]] = None
+    affected_bus_stops: Optional[List[str]] = None
 
     
 
@@ -109,8 +108,8 @@ class UpdateAlertRequest(BaseModel):
     message: Optional[str] = None
     alert_type: Optional[AlertType] = None
     severity: Optional[AlertSeverity] = None
-    affected_routes: Optional[List[UUID]] = None
-    affected_bus_stops: Optional[List[UUID]] = None
+    affected_routes: Optional[List[str]] = None
+    affected_bus_stops: Optional[List[str]] = None
     is_active: Optional[bool] = None
 
     
@@ -121,10 +120,10 @@ class AlertResponse(DateTimeModelMixin):
     message: str
     alert_type: AlertType
     severity: AlertSeverity
-    affected_routes: Optional[List[UUID]] = None
-    affected_bus_stops: Optional[List[UUID]] = None
+    affected_routes: Optional[List[str]] = None
+    affected_bus_stops: Optional[List[str]] = None
     is_active: bool
-    created_by: UUID
+    created_by: str
 
 # Instruction schemas
 class InstructionType(str, Enum):
@@ -139,7 +138,7 @@ class InstructionResponse(DateTimeModelMixin):
     title: str
     content: str
     instruction_type: InstructionType
-    target_driver_id: UUID
+    target_driver_id: str
     priority: str
     acknowledged: bool
     acknowledged_at: Optional[datetime] = None

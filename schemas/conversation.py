@@ -3,19 +3,19 @@ from pydantic import BaseModel
 
 from datetime import datetime
 from .base import DateTimeModelMixin
-from core.custom_types import UUID
+
 
 class MessageResponse(DateTimeModelMixin):
     id: str
-    conversation_id: UUID
-    sender_id: UUID
+    conversation_id: str
+    sender_id: str
     content: str
     message_type: Optional[str] = "TEXT"
     sent_at: datetime
 
 class ConversationResponse(BaseModel):
     id: str
-    participants: List[UUID]
+    participants: List[str]
     last_message_at: Optional[datetime] = None
 
     

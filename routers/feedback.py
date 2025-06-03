@@ -1,6 +1,6 @@
 from fastapi import APIRouter, Depends, HTTPException, status, Query, Request
 from typing import List
-from uuid import UUID
+
 from datetime import datetime
 
 from core.dependencies import get_current_user

@@ -3,7 +3,7 @@ Real-time bus tracking service
 """
 from datetime import datetime
 from typing import Optional
-from uuid import UUID
+
 from core.websocket_manager import websocket_manager
 from core.logger import get_logger
 import asyncio
@@ -16,7 +16,7 @@ class BusTrackingService:
     
     @staticmethod
     async def update_bus_location(
-        bus_id: UUID,
+        bus_id: str,
         latitude: float,
         longitude: float,
         heading: Optional[float] = None,
@@ -72,7 +72,7 @@ class BusTrackingService:
             logger.error(f"Error updating bus location for {bus_id}: {e}")
     
     @staticmethod
-    async def subscribe_to_bus(user_id: str, bus_id: UUID):
+    async def subscribe_to_bus(user_id: str, bus_id: str):
         """Subscribe user to bus tracking updates"""
         room_id = f"bus_tracking:{bus_id}"
         websocket_manager.join_room(user_id, room_id)
@@ -89,7 +89,7 @@ class BusTrackingService:
         logger.info(f"User {user_id} subscribed to bus {bus_id} tracking")
     
     @staticmethod
-    async def subscribe_to_route(user_id: str, route_id: UUID):
+    async def subscribe_to_route(user_id: str, route_id: str):
         """Subscribe user to all buses on a route"""
         room_id = f"route_tracking:{route_id}"
         websocket_manager.join_room(user_id, room_id)
@@ -105,14 +105,14 @@ class BusTrackingService:
         logger.info(f"User {user_id} subscribed to route {route_id} tracking")
     
     @staticmethod
-    def unsubscribe_from_bus(user_id: str, bus_id: UUID):
+    def unsubscribe_from_bus(user_id: str, bus_id: str):
         """Unsubscribe user from bus tracking"""
         room_id = f"bus_tracking:{bus_id}"
         websocket_manager.leave_room(user_id, room_id)
         logger.info(f"User {user_id} unsubscribed from bus {bus_id} tracking")
     
     @staticmethod
-    def unsubscribe_from_route(user_id: str, route_id: UUID):
+    def unsubscribe_from_route(user_id: str, route_id: str):
         """Unsubscribe user from route tracking"""
         room_id = f"route_tracking:{route_id}"
         websocket_manager.leave_room(user_id, room_id)

@@ -1,6 +1,6 @@
 from fastapi import APIRouter, Depends, HTTPException, status, Query, Request
 from typing import List
-from uuid import UUID
+
 from datetime import datetime
 
 from core.dependencies import get_current_user
@@ -29,15 +29,15 @@ async def get_conversations(
 @router.get("/{conversation_id}/messages", response_model=List[MessageResponse])
 async def get_conversation_messages(
     request: Request,
-    conversation_id: UUID,
+    conversation_id: str,
     skip: int = Query(0, ge=0),
     limit: int = Query(50, ge=1, le=100),
     current_user: User = Depends(get_current_user)
-):
+):    
     """Get messages from a conversation"""
     # Check if user is part of the conversation
     conversation = await request.app.state.mongodb.conversations.find_one({
-        "id": conversation_id,
+        "_id": conversation_id,
         "participants": current_user.id
     })
     
@@ -56,14 +56,14 @@ async def get_conversation_messages(
 @router.post("/{conversation_id}/messages", response_model=MessageResponse, status_code=status.HTTP_201_CREATED)
 async def send_message(
     request: Request,
-    conversation_id: UUID,
+    conversation_id: str,
     message_request: SendMessageRequest,
     current_user: User = Depends(get_current_user)
 ):
     """Send a message to a conversation"""
     # Check if user is part of the conversation
     conversation = await request.app.state.mongodb.conversations.find_one({
-        "id": conversation_id,
+        "_id": conversation_id,
         "participants": current_user.id
     })
     
@@ -84,7 +84,7 @@ async def send_message(
     
     # Update conversation's last message timestamp
     await request.app.state.mongodb.conversations.update_one(
-        {"id": conversation_id},
+        {"_id": conversation_id},
         {"$set": {"last_message_at": datetime.utcnow()}}
     )
     
@@ -106,7 +106,7 @@ async def send_message(
 @router.post("/{conversation_id}/join")
 async def join_conversation_websocket(
     request: Request,
-    conversation_id: UUID,
+    conversation_id: str,
     current_user: User = Depends(get_current_user)
 ):
     """Join a conversation for real-time updates (WebSocket)"""
@@ -126,7 +126,7 @@ async def join_conversation_websocket(
 
 @router.post("/{conversation_id}/leave")
 async def leave_conversation_websocket(
-    conversation_id: UUID,
+    conversation_id: str,
     current_user: User = Depends(get_current_user)
 ):
     """Leave a conversation's real-time updates"""
@@ -135,7 +135,7 @@ async def leave_conversation_websocket(
 
 @router.post("/{conversation_id}/typing")
 async def update_typing_status(
-    conversation_id: UUID,
+    conversation_id: str,
     is_typing: bool = Query(..., description="Whether user is currently typing"),
     current_user: User = Depends(get_current_user)
 ):

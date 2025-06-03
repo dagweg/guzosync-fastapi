@@ -45,7 +45,7 @@ async def lifespan(app: FastAPI):
         # Modified: Added uuidRepresentation to AsyncIOMotorClient
         app.state.mongodb_client = AsyncIOMotorClient(
             mongodb_url,
-            uuidRepresentation="pythonLegacy"
+            uuidRepresentation="unspecified"
         )
         app.state.mongodb = app.state.mongodb_client[database_name]
 

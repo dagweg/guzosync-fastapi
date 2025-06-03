@@ -4,7 +4,7 @@ from pydantic import BaseModel
 from enum import Enum
 
 from .base import BaseDBModel
-from core.custom_types import UUID
+
 
 class NotificationType(str, Enum):
     ALERT = "ALERT"
@@ -20,7 +20,7 @@ class RelatedEntity(BaseModel):
     entity_id: str
 
 class Notification(BaseDBModel):
-    user_id: UUID
+    user_id: str
     title: str
     message: str
     type: NotificationType
@@ -29,4 +29,4 @@ class Notification(BaseDBModel):
 
 class NotificationSettings(BaseDBModel):
     email_enabled: bool
-    user_id: UUID
+    user_id: str

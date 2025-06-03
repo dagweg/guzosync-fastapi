@@ -4,7 +4,7 @@ from pydantic import BaseModel
 from datetime import datetime
 from enum import Enum
 from .base import DateTimeModelMixin, RelatedEntity
-from core.custom_types import UUID
+
 
 class NotificationType(str, Enum):
     ALERT = "ALERT"
@@ -16,7 +16,7 @@ class BroadcastNotificationRequest(BaseModel):
     title: str
     message: str
     type: NotificationType
-    target_user_ids: Optional[List[UUID]] = None
+    target_user_ids: Optional[List[str]] = None
     target_roles: Optional[List[str]] = None
     related_entity: Optional[RelatedEntity] = None
 
@@ -24,7 +24,7 @@ class BroadcastNotificationRequest(BaseModel):
 
 class NotificationResponse(DateTimeModelMixin):
     id: str
-    user_id: UUID
+    user_id: str
     title: str
     message: str
     type: NotificationType
@@ -36,7 +36,7 @@ class UpdateNotificationSettingsRequest(BaseModel):
 
 class NotificationSettingsResponse(BaseModel):
     id: str
-    user_id: UUID
+    user_id: str
     email_enabled: bool
 
     
