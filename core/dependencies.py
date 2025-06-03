@@ -42,7 +42,7 @@ async def get_current_user(request: Request, token = Depends(security)):
 
     
     try:
-        user = await request.app.state.mongodb.users.find_one({"id": user_id})
+        user = await request.app.state.mongodb.users.find_one({"_id": user_id})
         logger.debug("Found user by id field")
     except Exception as e:
         logger.debug(f"Query by id field failed: {e}")

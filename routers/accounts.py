@@ -5,6 +5,7 @@ import secrets
 
 from core.dependencies import get_current_user
 from core.mongo_utils import transform_mongo_doc, model_to_mongo_doc
+from core.email_service import send_password_reset_email, send_welcome_email
 from models import User
 from models.user import UserRole as ModelUserRole
 from schemas.user import (
@@ -44,13 +45,19 @@ async def register_user(
         is_active=True
     )
     
-    try:
-        # Convert model to MongoDB document
+    try:        # Convert model to MongoDB document
         user_doc = model_to_mongo_doc(user)
         result = await request.app.state.mongodb.users.insert_one(user_doc)
         
         # Retrieve and return the created user
         created_user = await request.app.state.mongodb.users.find_one({"_id": result.inserted_id})
+        
+        # Send welcome email
+        full_name = f"{user_data.first_name} {user_data.last_name}"
+        email_sent = await send_welcome_email(user_data.email, full_name)
+        if not email_sent:
+            logger.warning("Failed to send welcome email", extra={"email": user_data.email})
+        
         logger.info("User registered successfully", extra={"email": user_data.email})
         return transform_mongo_doc(created_user, UserResponse)
     except Exception as e:
@@ -124,12 +131,15 @@ async def request_password_reset(
                 "password_reset_expires": reset_expires
             }}
         )
-        
-        # Create reset link
+          # Create reset link
         reset_link = f"{request.base_url}password/reset?token={reset_token}"
         
-        # TODO: Send email with reset link
-        logger.info("Password reset token generated", extra={"email": reset_data.email})
+        # Send password reset email
+        email_sent = await send_password_reset_email(reset_data.email, reset_link)
+        if not email_sent:
+            logger.warning("Failed to send password reset email", extra={"email": reset_data.email})
+        
+        logger.info("Password reset token generated and email sent", extra={"email": reset_data.email})
         
         return {"message": "Password reset instructions sent to your email"}
     except Exception as e:

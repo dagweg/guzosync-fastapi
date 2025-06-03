@@ -11,6 +11,7 @@ from bson import UuidRepresentation  # Added import for UuidRepresentation
 # Import centralized logger
 from core.logger import setup_logging, get_logger
 from core.action_logging_middleware import ActionLoggingMiddleware
+from core.email_service import EmailConfig
 
 # Import routers
 from routers import (
@@ -109,6 +110,17 @@ app.include_router(websocket.router)
 async def root():
     logger.info("Root endpoint accessed")
     return {"message": "Welcome to GuzoSync API"}
+
+@app.on_event("startup")
+async def startup_event():
+    """Application startup event"""
+    # Check email configuration
+    email_config = EmailConfig()
+    if email_config.is_configured():
+        logger.info("✅ Email service is configured and ready")
+    else:
+        logger.warning("⚠️  Email service is not configured - emails will be logged only")
+        logger.warning("   Add SMTP settings to .env file to enable email sending")
 
 if __name__ == "__main__":
     import uvicorn

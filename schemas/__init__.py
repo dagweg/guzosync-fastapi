@@ -63,6 +63,10 @@ from .payment import (
     ChapaWebhookEvent, PaymentCallbackResponse
 )
 
+from .control_center import (
+    RegisterPersonnelRequest
+)
+
 __all__ = [
     "Location", "RelatedEntity",
     "UserRole", "RegisterUserRequest", "LoginRequest", "ForgotPasswordRequest",
@@ -83,5 +87,5 @@ __all__ = [
     "CreateTicketRequest", "TicketResponse", "TicketQRResponse",
     "ValidateTicketRequest", "ValidateTicketResponse",
     "CreatePaymentMethodRequest", "UpdatePaymentMethodRequest", "PaymentMethodResponse",
-    "ChapaWebhookEvent", "PaymentCallbackResponse"
+    "ChapaWebhookEvent", "PaymentCallbackResponse", "RegisterPersonnelRequest"
 ]

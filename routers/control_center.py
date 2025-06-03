@@ -5,6 +5,8 @@ from datetime import datetime
 
 from core.dependencies import get_current_user
 from core.mongo_utils import transform_mongo_doc, model_to_mongo_doc
+from core.email_service import email_service
+from core import get_logger
 from models import User
 from schemas.user import RegisterUserRequest, UserResponse
 from schemas.transport import (
@@ -12,6 +14,11 @@ from schemas.transport import (
     CreateBusRequest, UpdateBusRequest, BusResponse
 )
 from schemas.route import CreateRouteRequest, UpdateRouteRequest, RouteResponse
+from models.user import UserRole
+from schemas.control_center import (RegisterPersonnelRequest)
+from uuid import uuid4
+
+logger = get_logger(__name__)
 
 router = APIRouter(prefix="/api/control-center", tags=["control-center"])
 
@@ -19,17 +26,16 @@ router = APIRouter(prefix="/api/control-center", tags=["control-center"])
 @router.post("/personnel/register", response_model=UserResponse, status_code=status.HTTP_201_CREATED)
 async def register_personnel(
     request: Request,
-    user_data: RegisterUserRequest,
+    user_data: RegisterPersonnelRequest,
     current_user: User = Depends(get_current_user)
 ):
     """Register new personnel (admin only)"""
-    if current_user.role != "CONTROL_CENTER_ADMIN":
+    if current_user.role is not (UserRole.CONTROL_ADMIN or UserRole.CONTROL_STAFF):
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
             detail="Only control center admins can register personnel"
         )
-    
-    # Check if user with email already exists
+      # Check if user with email already exists
     existing_user = await request.app.state.mongodb.users.find_one({"email": user_data.email})
     if existing_user:
         raise HTTPException(
@@ -41,7 +47,7 @@ async def register_personnel(
         "first_name": user_data.first_name,
         "last_name": user_data.last_name,
         "email": user_data.email,
-        "password": user_data.password,
+        "password": str(uuid4()),
         "role": user_data.role.value,
         "phone_number": user_data.phone_number,
         "profile_image": user_data.profile_image,
@@ -49,8 +55,23 @@ async def register_personnel(
         "created_at": datetime.utcnow()
     }
     
+    # Store the temporary password for email
+    temp_password = user_dict["password"]
+    
     result = await request.app.state.mongodb.users.insert_one(user_dict)
     created_user = await request.app.state.mongodb.users.find_one({"_id": result.inserted_id})
+    
+    # Send invitation email with credentials
+    full_name = f"{user_data.first_name} {user_data.last_name}"
+    role_display = user_data.role.value.replace("_", " ").title()
+    email_sent = await email_service.send_personnel_invitation_email(
+        user_data.email, 
+        full_name, 
+        role_display, 
+        temp_password
+    )
+    if not email_sent:
+        logger.warning("Failed to send personnel invitation email", extra={"email": user_data.email})
     
     return transform_mongo_doc(created_user, UserResponse)
 
