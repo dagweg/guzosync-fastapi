@@ -5,6 +5,7 @@ from uuid import UUID
 from core.dependencies import get_current_user
 from models import User, Notification
 from schemas.notification import BroadcastNotificationRequest, NotificationResponse
+from core.realtime.notifications import notification_service
 
 from core import transform_mongo_doc
 
@@ -90,5 +91,16 @@ async def broadcast_notification(
     
     if notifications:
         await request.app.state.mongodb.notifications.insert_many(notifications)
+    
+    # Send real-time notifications
+    await notification_service.broadcast_notification(
+        title=notification_req.title,
+        message=notification_req.message,
+        notification_type=notification_req.type.value if hasattr(notification_req.type, 'value') else notification_req.type,
+        target_user_ids=notification_req.target_user_ids,
+        target_roles=notification_req.target_roles,
+        related_entity=notification_req.related_entity.dict() if notification_req.related_entity else None,
+        app_state=request.app.state
+    )
     
     return {"message": f"Notification sent to {len(notifications)} users"}

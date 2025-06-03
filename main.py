@@ -6,16 +6,16 @@ import googlemaps
 from dotenv import load_dotenv
 import os
 from contextlib import asynccontextmanager
+from bson import UuidRepresentation  # Added import for UuidRepresentation
 
 # Import centralized logger
-# from core.logger import setup_logging, get_logger
 from core.logger import setup_logging, get_logger
 from core.action_logging_middleware import ActionLoggingMiddleware
 
 # Import routers
 from routers import (
     accounts, account, notifications, config, buses, routes, feedback, issues, attendance,
-    alerts, conversations, drivers, regulators, control_center, trip, payments
+    alerts, conversations, drivers, regulators, control_center, trip, payments, websocket
 )
 
 # Load environment variables
@@ -42,7 +42,11 @@ async def lifespan(app: FastAPI):
 
         logger.info("Connecting to MongoDB...")
 
-        app.state.mongodb_client = AsyncIOMotorClient(mongodb_url, )  
+        # Modified: Added uuidRepresentation to AsyncIOMotorClient
+        app.state.mongodb_client = AsyncIOMotorClient(
+            mongodb_url,
+            uuidRepresentation="pythonLegacy"
+        )
         app.state.mongodb = app.state.mongodb_client[database_name]
 
         await app.state.mongodb.command('ping')
@@ -99,6 +103,7 @@ app.include_router(drivers.router)
 app.include_router(regulators.router)
 app.include_router(control_center.router)
 app.include_router(payments.router)
+app.include_router(websocket.router)
 
 @app.get("/")
 async def root():

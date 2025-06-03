@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends, HTTPException, status, Query, Request
+from fastapi import APIRouter, Depends, HTTPException, status, Query, Request, Body
 from typing import List, Optional
 from uuid import UUID
 
@@ -6,6 +6,7 @@ from core.dependencies import get_current_user
 from models import User, Bus, BusStop
 from schemas.transport import BusResponse, BusStopResponse
 from schemas.trip import SimplifiedTripResponse
+from core.realtime.bus_tracking import bus_tracking_service
 
 from core import transform_mongo_doc
 
@@ -110,3 +111,67 @@ async def request_bus_reallocation(current_user: User = Depends(get_current_user
 async def get_reallocation_requests(current_user: User = Depends(get_current_user)):
     # Implementation for getting reallocation requests
     pass
+
+@router.post("/{bus_id}/location")
+async def update_bus_location(
+    request: Request,
+    bus_id: UUID,
+    location_data: dict = Body(...),
+    current_user: User = Depends(get_current_user)
+):
+    """Update bus location (for drivers and control center)"""
+    if current_user.role not in ["BUS_DRIVER", "CONTROL_CENTER_ADMIN"]:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Only drivers and control center admins can update bus location"
+        )
+    
+    # Verify bus exists
+    bus = await request.app.state.mongodb.buses.find_one({"id": bus_id})
+    if not bus:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Bus not found"
+        )
+    
+    # Extract location data
+    latitude = location_data.get("latitude")
+    longitude = location_data.get("longitude")
+    heading = location_data.get("heading")
+    speed = location_data.get("speed")
+    
+    if not latitude or not longitude:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Latitude and longitude are required"
+        )
+    
+    # Update location with real-time broadcast
+    await bus_tracking_service.update_bus_location(
+        bus_id=bus_id,
+        latitude=latitude,
+        longitude=longitude,
+        heading=heading,
+        speed=speed,
+        app_state=request.app.state
+    )
+    
+    return {"message": "Bus location updated successfully"}
+
+@router.post("/{bus_id}/track")
+async def subscribe_to_bus_tracking(
+    bus_id: UUID,
+    current_user: User = Depends(get_current_user)
+):
+    """Subscribe to real-time bus tracking updates"""
+    await bus_tracking_service.subscribe_to_bus(str(current_user.id), bus_id)
+    return {"message": f"Subscribed to bus {bus_id} tracking"}
+
+@router.delete("/{bus_id}/track")
+async def unsubscribe_from_bus_tracking(
+    bus_id: UUID,
+    current_user: User = Depends(get_current_user)
+):
+    """Unsubscribe from real-time bus tracking updates"""
+    bus_tracking_service.unsubscribe_from_bus(str(current_user.id), bus_id)
+    return {"message": f"Unsubscribed from bus {bus_id} tracking"}

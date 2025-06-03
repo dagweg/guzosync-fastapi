@@ -6,6 +6,7 @@ from datetime import datetime
 from core.dependencies import get_current_user
 from models import User
 from schemas.conversation import MessageResponse, ConversationResponse, SendMessageRequest
+from core.realtime.chat import chat_service
 
 from core import transform_mongo_doc
 
@@ -79,7 +80,6 @@ async def send_message(
         "message_type": message_request.message_type,
         "sent_at": datetime.utcnow()
     }
-    
     result = await request.app.state.mongodb.messages.insert_one(message_data)
     
     # Update conversation's last message timestamp
@@ -89,4 +89,61 @@ async def send_message(
     )
     
     created_message = await request.app.state.mongodb.messages.find_one({"_id": result.inserted_id})
-    return transform_mongo_doc(created_message, MessageResponse)
+    response_message = transform_mongo_doc(created_message, MessageResponse)
+    
+    # Send real-time message to conversation participants
+    await chat_service.send_real_time_message(
+        conversation_id=conversation_id,
+        sender_id=current_user.id,
+        content=message_request.content,
+        message_type=message_request.message_type if message_request.message_type else "TEXT",
+        message_id=str(result.inserted_id),
+        app_state=request.app.state
+    )
+    
+    return response_message
+
+@router.post("/{conversation_id}/join")
+async def join_conversation_websocket(
+    request: Request,
+    conversation_id: UUID,
+    current_user: User = Depends(get_current_user)
+):
+    """Join a conversation for real-time updates (WebSocket)"""
+    success = await chat_service.join_conversation(
+        user_id=str(current_user.id),
+        conversation_id=conversation_id,
+        app_state=request.app.state
+    )
+    
+    if not success:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Not authorized to join this conversation"
+        )
+    
+    return {"message": f"Joined conversation {conversation_id} for real-time updates"}
+
+@router.post("/{conversation_id}/leave")
+async def leave_conversation_websocket(
+    conversation_id: UUID,
+    current_user: User = Depends(get_current_user)
+):
+    """Leave a conversation's real-time updates"""
+    chat_service.leave_conversation(str(current_user.id), conversation_id)
+    return {"message": f"Left conversation {conversation_id} real-time updates"}
+
+@router.post("/{conversation_id}/typing")
+async def update_typing_status(
+    conversation_id: UUID,
+    is_typing: bool = Query(..., description="Whether user is currently typing"),
+    current_user: User = Depends(get_current_user)
+):
+    """Update typing status in conversation"""
+    await chat_service.notify_typing(
+        conversation_id=conversation_id,
+        user_id=str(current_user.id),
+        is_typing=is_typing
+    )
+    
+    return {"message": "Typing status updated"}
