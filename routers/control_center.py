@@ -33,9 +33,9 @@ async def register_personnel(
     request: Request,
     user_data: RegisterPersonnelRequest,
     current_user: User = Depends(get_current_user)
-):
-    """Register new personnel (admin and staff only)"""
-    if current_user.role is not (UserRole.CONTROL_ADMIN or UserRole.CONTROL_STAFF):
+):    
+    """Register new personnel (admin and staff only)"""    
+    if current_user.role not in [UserRole.CONTROL_ADMIN, UserRole.CONTROL_STAFF]:
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
             detail="Only control center staffs and admins can register personnel"
