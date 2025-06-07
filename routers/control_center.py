@@ -379,18 +379,23 @@ async def get_all_personnel(
     current_user: User = Depends(get_current_user)
 ):
     """Get all personnel (CONTROL_ADMIN and CONTROL_STAFF can access)"""
-    if current_user.role not in [UserRole.CONTROL_ADMIN, UserRole.CONTROL_STAFF]:
+    if current_user.role not in [UserRole.CONTROL_ADMIN, UserRole.CONTROL_STAFF]:   
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
             detail="Only CONTROL_ADMIN and CONTROL_STAFF can view personnel"
         )
     
     try:
-        # Build query filter for personnel roles
-        personnel_roles = ["CONTROL_ADMIN", "CONTROL_STAFF", "DRIVER", "REGULATOR"]
-        query: dict[str, Any] = {"role": {"$in": personnel_roles}}
+        # Build query filter for personnel roles based on user role (RBAC)
+        if current_user.role == UserRole.CONTROL_ADMIN:
+            # CONTROL_ADMIN can see all personnel including other admins
+            personnel_roles = ["CONTROL_ADMIN", "CONTROL_STAFF", "BUS_DRIVER", "QUEUE_REGULATOR", "PASSENGER"]
+        else:  # CONTROL_STAFF
+            # CONTROL_STAFF can see all personnel EXCEPT CONTROL_ADMIN users
+            personnel_roles = ["CONTROL_STAFF", "BUS_DRIVER", "QUEUE_REGULATOR", "PASSENGER"]
         
-        # Apply role filter if specified
+        query: dict[str, Any] = {"role": {"$in": personnel_roles}}
+          # Apply role filter if specified
         if role_filter:
             if role_filter.upper() not in personnel_roles:
                 raise HTTPException(
@@ -413,6 +418,38 @@ async def get_all_personnel(
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail="Error retrieving personnel"
+        )
+
+# Passengers Management
+@router.get("/passengers", response_model=List[UserResponse])
+async def get_all_passengers(
+    request: Request,
+    skip: int = Query(0, ge=0),
+    limit: int = Query(10, ge=1, le=100),
+    current_user: User = Depends(get_current_user)
+):
+    """Get all passengers (CONTROL_ADMIN and CONTROL_STAFF can access)"""
+    if current_user.role not in [UserRole.CONTROL_ADMIN, UserRole.CONTROL_STAFF]:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Only CONTROL_ADMIN and CONTROL_STAFF can view passengers"
+        )
+    
+    try:
+        passengers = await request.app.state.mongodb.users.find(
+            {"role": "PASSENGER"}
+        ).skip(skip).limit(limit).to_list(length=limit)
+        
+        logger.info(f"Retrieved {len(passengers)} passenger records", 
+                   extra={"requestor": current_user.email, "skip": skip, "limit": limit})
+        
+        return [transform_mongo_doc(passenger, UserResponse) for passenger in passengers]
+        
+    except Exception as e:
+        logger.error("Error retrieving passengers", exc_info=True)
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Error retrieving passengers"
         )
 
 # Bus Stops Management
