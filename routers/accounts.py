@@ -1,4 +1,5 @@
-from fastapi import APIRouter, Depends, HTTPException, status, Request
+from fastapi import APIRouter, Depends, HTTPException, status, Request, Response
+from fastapi.responses import JSONResponse
 
 from datetime import datetime, timedelta
 import secrets
@@ -6,20 +7,22 @@ import secrets
 from core.dependencies import get_current_user
 from core.mongo_utils import transform_mongo_doc, model_to_mongo_doc
 from core.email_service import send_password_reset_email, send_welcome_email
-from models import User
+from models import User, ApprovalRequest
 from models.user import UserRole as ModelUserRole
+from models.approval import ApprovalStatus
 from schemas.user import (
     UserResponse, RegisterUserRequest, LoginRequest, 
     ForgotPasswordRequest, ResetPasswordRequest
 )
-
+from schemas.approval import ApprovalRequestResponse
+import os
 from core import create_access_token, get_logger, transform_mongo_doc
 
 logger = get_logger(__name__)
 
 router = APIRouter(prefix="/api/accounts", tags=["accounts"])
 
-@router.post("/register", response_model=UserResponse, status_code=status.HTTP_201_CREATED)
+@router.post("/register", status_code=status.HTTP_201_CREATED)
 async def register_user(
     request: Request, 
     user_data: RegisterUserRequest
@@ -33,7 +36,53 @@ async def register_user(
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail="User with this email already exists"
-        )    # Create new user model
+        )
+    
+    # Check if there's already a pending approval request for this email
+    existing_request = await request.app.state.mongodb.approval_requests.find_one({
+        "email": user_data.email, 
+        "status": ApprovalStatus.PENDING.value
+    })
+    if existing_request:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="There is already a pending approval request for this email"
+        )
+      # If registering as CONTROL_STAFF, create approval request instead of user
+    if user_data.role.value == "CONTROL_STAFF":
+        approval_request = ApprovalRequest(
+            first_name=user_data.first_name,
+            last_name=user_data.last_name,
+            email=user_data.email,
+            phone_number=user_data.phone_number,
+            profile_image=user_data.profile_image,
+            role="CONTROL_STAFF",
+            status=ApprovalStatus.PENDING,
+            requested_at=datetime.utcnow()
+        )
+        
+        try:
+            # Convert model to MongoDB document
+            request_doc = model_to_mongo_doc(approval_request)
+            result = await request.app.state.mongodb.approval_requests.insert_one(request_doc)
+            
+            # Retrieve the created approval request
+            created_request = await request.app.state.mongodb.approval_requests.find_one({"_id": result.inserted_id})
+            
+            logger.info("Approval request created for CONTROL_STAFF", extra={"email": user_data.email})
+            return {
+                "message": "Registration request submitted successfully. Please wait for admin approval.",
+                "request_id": str(result.inserted_id),
+                "status": "PENDING_APPROVAL"
+            }
+        except Exception as e:
+            logger.error("Error creating approval request", exc_info=True)
+            raise HTTPException(
+                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                detail="Error creating approval request"
+            )
+    
+    # For all other roles (including CONTROL_ADMIN), proceed with normal registration
     user = User(
         first_name=user_data.first_name,
         last_name=user_data.last_name,
@@ -45,7 +94,8 @@ async def register_user(
         is_active=True
     )
     
-    try:        # Convert model to MongoDB document
+    try:
+        # Convert model to MongoDB document
         user_doc = model_to_mongo_doc(user)
         result = await request.app.state.mongodb.users.insert_one(user_doc)
         
@@ -82,12 +132,35 @@ async def login(
             detail="Incorrect email or password",
             headers={"WWW-Authenticate": "Bearer"},
         )
-    
     try:
         user_id = user.get("id") or str(user.get("_id"))
-        access_token = create_access_token(data={"sub": str(user_id)})
+        access_token = create_access_token(data={"sub": str(user_id),"role": user.get("role")})
+        
+        # Create response data
+        response_data = {
+            "access_token": access_token, 
+            "token_type": "bearer", 
+            "role": user.get("role", "user")
+        }
+        
+        # Create JSON response
+        response = JSONResponse(
+            content=response_data,
+            status_code=status.HTTP_200_OK
+        )
+        
+        # Set access token in the response cookie
+        response.set_cookie(
+            key="access_token",
+            value=access_token,
+            httponly=True,
+            secure=True,
+            samesite="lax",
+            max_age=int(os.getenv("JWT_ACCESS_TOKEN_EXPIRE_MINUTES", 1440)) * 60
+        )
+        
         logger.info(f"Successful login for user: {user_data.email}")
-        return {"access_token": access_token, "token_type": "bearer", "role": user.get("role", "user")}
+        return response
     except Exception as e:
         logger.error(f"Error generating token for user {user_data.email}: {str(e)}")
         raise HTTPException(

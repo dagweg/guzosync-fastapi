@@ -23,3 +23,5 @@ class User(BaseDBModel):
     password_reset_expires: Optional[datetime] = None
     is_active: bool = True
     preferred_language: Optional[str] = None
+    pending_approval: Optional[bool] = None  # For CONTROL_STAFF waiting for approval
+

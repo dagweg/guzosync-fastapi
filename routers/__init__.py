@@ -1,6 +1,3 @@
-# This file intentionally left empty to make the directory a package
-
-# Import all routers for easy access
 from . import (
     accounts,
     account, 
@@ -17,8 +14,8 @@ from . import (
     drivers,
     regulators,
     control_center,
+    approvals,
     payments
-    # control_center_admin
 )
 
 __all__ = [
@@ -37,6 +34,6 @@ __all__ = [
     "drivers",
     "regulators",
     "control_center",
-    "payments",
-    # "control_center_admin"
+    "approvals",
+    "payments"
 ]

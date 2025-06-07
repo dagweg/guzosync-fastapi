@@ -1,6 +1,6 @@
 from faker import Faker
 from fastapi import APIRouter, Depends, HTTPException, status, Query, Request
-from typing import List, Optional
+from typing import Any, List, Optional
 
 from datetime import datetime
 
@@ -363,14 +363,57 @@ async def assign_driver_to_bus(
             status_code=status.HTTP_404_NOT_FOUND,
             detail="Bus not found"
         )
-    
-    # Update bus with assigned driver
+      # Update bus with assigned driver
     await request.app.state.mongodb.buses.update_one(
         {"_id": bus_id},
         {"$set": {"assigned_driver_id": driver_id}}
     )
     
     return {"message": "Driver assigned to bus successfully"}
+
+# Get All Personnel - for both CONTROL_ADMIN and CONTROL_STAFF
+@router.get("/personnel", response_model=List[UserResponse])
+async def get_all_personnel(
+    request: Request,
+    role_filter: Optional[str] = None,
+    current_user: User = Depends(get_current_user)
+):
+    """Get all personnel (CONTROL_ADMIN and CONTROL_STAFF can access)"""
+    if current_user.role not in [UserRole.CONTROL_ADMIN, UserRole.CONTROL_STAFF]:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Only CONTROL_ADMIN and CONTROL_STAFF can view personnel"
+        )
+    
+    try:
+        # Build query filter for personnel roles
+        personnel_roles = ["CONTROL_ADMIN", "CONTROL_STAFF", "DRIVER", "REGULATOR"]
+        query: dict[str, Any] = {"role": {"$in": personnel_roles}}
+        
+        # Apply role filter if specified
+        if role_filter:
+            if role_filter.upper() not in personnel_roles:
+                raise HTTPException(
+                    status_code=status.HTTP_400_BAD_REQUEST,
+                    detail=f"Invalid role filter. Must be one of: {', '.join(personnel_roles)}"
+                )
+            query = {"role": role_filter.upper()}
+        
+        # Fetch personnel
+        personnel_cursor = request.app.state.mongodb.users.find(query)
+        personnel = await personnel_cursor.to_list(length=None)
+        
+        logger.info(f"Retrieved {len(personnel)} personnel records", 
+                   extra={"requestor": current_user.email, "role_filter": role_filter})
+        
+        return [transform_mongo_doc(person, UserResponse) for person in personnel]
+        
+    except Exception as e:
+        logger.error("Error retrieving personnel", exc_info=True)
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Error retrieving personnel"
+        )
 
 # Bus Stops Management
 @router.post("/bus-stops", response_model=BusStopResponse, status_code=status.HTTP_201_CREATED)

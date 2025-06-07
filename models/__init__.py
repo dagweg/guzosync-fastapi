@@ -5,6 +5,7 @@ from .operations import Trip, TripStatus, Schedule
 from .notifications import Notification, NotificationType, NotificationSettings, RelatedEntity
 from .feedback import Feedback, Incident, IncidentSeverity
 from .payment import Payment, PaymentStatus, PaymentMethod, Ticket, TicketStatus, TicketType, PaymentMethodConfig
+from .approval import ApprovalRequest, ApprovalStatus
 
 __all__ = [
     "BaseDBModel",
@@ -13,5 +14,6 @@ __all__ = [
     "Trip", "TripStatus", "Schedule",
     "Notification", "NotificationType", "NotificationSettings", "RelatedEntity",
     "Feedback", "Incident", "IncidentSeverity",
-    "Payment", "PaymentStatus", "PaymentMethod", "Ticket", "TicketStatus", "TicketType", "PaymentMethodConfig"
+    "Payment", "PaymentStatus", "PaymentMethod", "Ticket", "TicketStatus", "TicketType", "PaymentMethodConfig",
+    "ApprovalRequest", "ApprovalStatus"
 ]

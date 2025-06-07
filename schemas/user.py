@@ -16,7 +16,7 @@ class RegisterUserRequest(BaseModel):
     last_name: str
     email: EmailStr
     password: str
-    role: Literal[UserRole.PASSENGER, UserRole.CONTROL_STAFF] = UserRole.PASSENGER
+    role: Literal[UserRole.PASSENGER, UserRole.CONTROL_STAFF, UserRole.CONTROL_ADMIN] = UserRole.PASSENGER
     phone_number: str
     profile_image: Optional[str] = None
 

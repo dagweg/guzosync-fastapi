@@ -16,7 +16,7 @@ from core.email_service import EmailConfig
 # Import routers
 from routers import (
     accounts, account, notifications, config, buses, routes, feedback, issues, attendance,
-    alerts, conversations, drivers, regulators, control_center, trip, payments, websocket
+    alerts, conversations, drivers, regulators, control_center, approvals, trip, payments, websocket
 )
 
 # Load environment variables
@@ -103,7 +103,7 @@ app.include_router(conversations.router)
 app.include_router(drivers.router)
 app.include_router(regulators.router)
 app.include_router(control_center.router)
-# app.include_router(control_center_admin.router)
+app.include_router(approvals.router)
 app.include_router(payments.router)
 app.include_router(websocket.router)
 
