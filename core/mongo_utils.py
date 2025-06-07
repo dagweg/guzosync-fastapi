@@ -1,5 +1,6 @@
 from typing import Dict, Any, TypeVar, Type
 from pydantic import BaseModel
+from bson import ObjectId
 
 __all__ = ['transform_mongo_doc', 'model_to_mongo_doc']
 
@@ -8,7 +9,7 @@ ModelType = TypeVar("ModelType", bound=BaseModel)
 def transform_mongo_doc(doc: Dict[str, Any], model_class: Type[ModelType], **defaults) -> ModelType:
     """
     Transform a MongoDB document into a Pydantic model, handling common field conversions
-    and applying default values. Assumes _id is stored as a string in MongoDB.
+    and applying default values. Converts ObjectId to string if present.
 
     Args:
         doc: The MongoDB document
@@ -19,14 +20,17 @@ def transform_mongo_doc(doc: Dict[str, Any], model_class: Type[ModelType], **def
         An instance of the specified Pydantic model
     """
     if not doc:
-        raise ValueError("Cannot transform empty document")
-
-    # Copy the document to avoid modifying the original
+        raise ValueError("Cannot transform empty document")    # Copy the document to avoid modifying the original
     transformed = doc.copy()
 
     # Convert _id to id if present
     if "_id" in transformed:
-        transformed["id"] = transformed.pop("_id")  # Keep as string, no UUID conversion
+        _id_value = transformed.pop("_id")
+        # Convert ObjectId to string if necessary
+        if isinstance(_id_value, ObjectId):
+            transformed["id"] = str(_id_value)
+        else:
+            transformed["id"] = _id_value
 
     # Set is_active to True by default if not present
     if "is_active" not in transformed and "is_active" in model_class.__annotations__:
