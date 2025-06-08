@@ -88,6 +88,26 @@ class WebSocketManager:
         for user_id in disconnected_users:
             self.disconnect(user_id)
     
+    async def broadcast_to_room(self, room_id: str, message: dict, exclude_user: str = ""):
+        """Alias for send_room_message to maintain compatibility"""
+        await self.send_room_message(room_id, message, exclude_user)
+    
+    def get_user_rooms(self, user_id: str) -> List[str]:
+        """Get all rooms that a user is subscribed to"""
+        user_rooms = []
+        for room_id, users in self.rooms.items():
+            if user_id in users:
+                user_rooms.append(room_id)
+        return user_rooms
+    
+    def get_connection_count(self) -> int:
+        """Get the total number of active connections"""
+        return len(self.active_connections)
+    
+    def get_room_count(self) -> int:
+        """Get the total number of active rooms"""
+        return len(self.rooms)
+    
     def get_room_users(self, room_id: str) -> Set[str]:
         """Get all users in a room"""
         return self.rooms.get(room_id, set()).copy()

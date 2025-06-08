@@ -105,3 +105,32 @@ async def demo_chat_message(
         "content": content,
         "sender_id": str(current_user.id)
     }
+
+
+@router.post("/trip-update")
+async def demo_trip_update(
+    request: Request,
+    demo_data: dict = Body(...),
+    current_user: User = Depends(get_current_user)
+):
+    """Demo endpoint to test real-time trip updates"""
+    
+    trip_id = demo_data.get("trip_id", str(uuid4()))
+    message = demo_data.get("message", "This is a demo trip update")
+    delay_minutes = demo_data.get("delay_minutes", 0)
+    
+    # Send real-time trip update notification
+    await notification_service.send_real_time_notification(
+        user_id=str(current_user.id),
+        title="Trip Update",
+        message=message,
+        notification_type="TRIP_UPDATE",
+        app_state=request.app.state
+    )
+    
+    return {
+        "message": "Demo trip update sent",
+        "trip_id": trip_id,
+        "content": message,
+        "delay_minutes": delay_minutes
+    }

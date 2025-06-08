@@ -71,15 +71,10 @@ async def get_current_user_websocket(token: str, app_state):
             logger.error("Token payload missing user ID")
             return None
         
-        # Convert string to ObjectId for MongoDB query
-        try:
-            user_object_id = ObjectId(user_id)
-        except Exception:
-            logger.error(f"Invalid user ID format: {user_id}")
-            return None
+       
         
         # Get user from database
-        user_data = await app_state.mongodb.users.find_one({"_id": user_object_id})
+        user_data = await app_state.mongodb.users.find_one({"_id": user_id})
         if not user_data:
             logger.error(f"User not found: {user_id}")
             return None

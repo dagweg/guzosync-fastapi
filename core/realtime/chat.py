@@ -78,12 +78,11 @@ class ChatService:
     @staticmethod
     async def join_conversation(user_id: str, conversation_id: str, app_state=None):
         """Join user to a conversation room"""
-        try:
-            # Verify user is participant in conversation
+        try:            # Verify user is participant in conversation
             if app_state and app_state.mongodb:
                 conversation = await app_state.mongodb.conversations.find_one({
                     "id": conversation_id,
-                    "participants": str(user_id)
+                    "participants": {"$in": [str(user_id)]}
                 })
                 
                 if not conversation:

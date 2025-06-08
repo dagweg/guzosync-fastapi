@@ -1,7 +1,7 @@
 from fastapi import FastAPI
 from motor.motor_asyncio import AsyncIOMotorClient
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi_socketio import SocketManager
+# from fastapi_socketio import SocketManager  # Commented out - conflicts with native WebSocket
 import googlemaps
 from dotenv import load_dotenv
 import os
@@ -16,7 +16,7 @@ from core.email_service import EmailConfig
 # Import routers
 from routers import (
     accounts, account, notifications, config, buses, routes, feedback, issues, attendance,
-    alerts, conversations, drivers, regulators, control_center, approvals, trip, payments, websocket
+    alerts, conversations, drivers, regulators, control_center, approvals, trip, payments, websocket, realtime_demo
 )
 
 # Load environment variables
@@ -76,7 +76,7 @@ app = FastAPI(
 # Add action logging middleware
 app.add_middleware(ActionLoggingMiddleware)
 
-socket_manager = SocketManager(app=app)
+# socket_manager = SocketManager(app=app)  # Commented out - conflicts with native WebSocket
 
 # Configure CORS
 app.add_middleware(
@@ -106,6 +106,7 @@ app.include_router(control_center.router)
 app.include_router(approvals.router)
 app.include_router(payments.router)
 app.include_router(websocket.router)
+app.include_router(realtime_demo.router)
 
 @app.get("/")
 async def root():

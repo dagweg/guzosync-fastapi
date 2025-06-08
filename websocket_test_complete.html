@@ -1,0 +1,1356 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Guzosync WebSocket Test Client - Complete</title>
+    <style>
+      body {
+        font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+        margin: 0;
+        padding: 20px;
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        min-height: 100vh;
+      }
+
+      .header {
+        text-align: center;
+        color: white;
+        margin-bottom: 30px;
+      }
+
+      .header h1 {
+        margin: 0;
+        font-size: 2.5em;
+        text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.3);
+      }
+
+      .container {
+        background: white;
+        border-radius: 15px;
+        box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+        overflow: hidden;
+        max-width: 1400px;
+        margin: 0 auto;
+      }
+
+      .status-bar {
+        background: #f8f9fa;
+        padding: 15px 20px;
+        border-bottom: 1px solid #e9ecef;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        flex-wrap: wrap;
+      }
+
+      .status-indicator {
+        display: flex;
+        align-items: center;
+        font-weight: bold;
+      }
+
+      .status-dot {
+        width: 12px;
+        height: 12px;
+        border-radius: 50%;
+        margin-right: 8px;
+        transition: all 0.3s ease;
+      }
+
+      .status-connected {
+        background-color: #28a745;
+      }
+      .status-disconnected {
+        background-color: #dc3545;
+      }
+      .status-connecting {
+        background-color: #ffc107;
+        animation: pulse 1s infinite;
+      }
+
+      @keyframes pulse {
+        0% {
+          opacity: 1;
+        }
+        50% {
+          opacity: 0.5;
+        }
+        100% {
+          opacity: 1;
+        }
+      }
+
+      .auth-section {
+        padding: 20px;
+        border-bottom: 1px solid #e9ecef;
+        background: #f8f9fa;
+      }
+
+      .auth-form {
+        display: flex;
+        gap: 10px;
+        align-items: center;
+        flex-wrap: wrap;
+      }
+
+      .auth-form input {
+        padding: 8px 12px;
+        border: 1px solid #ddd;
+        border-radius: 5px;
+        font-size: 14px;
+        min-width: 200px;
+      }
+
+      .auth-form button {
+        padding: 8px 16px;
+        background: #007bff;
+        color: white;
+        border: none;
+        border-radius: 5px;
+        cursor: pointer;
+        font-size: 14px;
+        transition: background 0.3s;
+      }
+
+      .auth-form button:hover:not(:disabled) {
+        background: #0056b3;
+      }
+
+      .auth-form button:disabled {
+        background: #6c757d;
+        cursor: not-allowed;
+      }
+
+      .tabs {
+        display: flex;
+        background: #f8f9fa;
+        border-bottom: 1px solid #e9ecef;
+      }
+
+      .tab {
+        padding: 15px 25px;
+        cursor: pointer;
+        border-bottom: 3px solid transparent;
+        transition: all 0.3s;
+        font-weight: 500;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+      }
+
+      .tab:hover {
+        background: #e9ecef;
+      }
+
+      .tab.active {
+        background: white;
+        border-bottom-color: #007bff;
+        color: #007bff;
+      }
+
+      .tab-content {
+        padding: 20px;
+        display: none;
+      }
+
+      .tab-content.active {
+        display: block;
+      }
+
+      .section {
+        margin-bottom: 25px;
+        padding: 15px;
+        border: 1px solid #e9ecef;
+        border-radius: 8px;
+        background: #f8f9fa;
+      }
+
+      .section h3 {
+        margin: 0 0 15px 0;
+        color: #495057;
+        font-size: 1.1em;
+      }
+
+      .controls {
+        display: flex;
+        gap: 10px;
+        margin-bottom: 15px;
+        flex-wrap: wrap;
+        align-items: center;
+      }
+
+      .controls input,
+      .controls select,
+      .controls textarea {
+        padding: 6px 10px;
+        border: 1px solid #ddd;
+        border-radius: 4px;
+        font-size: 13px;
+      }
+
+      .controls button {
+        padding: 6px 12px;
+        background: #28a745;
+        color: white;
+        border: none;
+        border-radius: 4px;
+        cursor: pointer;
+        font-size: 13px;
+        transition: background 0.3s;
+      }
+
+      .controls button:hover:not(:disabled) {
+        background: #218838;
+      }
+
+      .controls button:disabled {
+        background: #6c757d;
+        cursor: not-allowed;
+      }
+
+      .controls button.danger {
+        background: #dc3545;
+      }
+
+      .controls button.danger:hover:not(:disabled) {
+        background: #c82333;
+      }
+
+      .controls button.warning {
+        background: #ffc107;
+        color: #212529;
+      }
+
+      .controls button.warning:hover:not(:disabled) {
+        background: #e0a800;
+      }
+
+      .log-container {
+        background: #1e1e1e;
+        color: #d4d4d4;
+        padding: 15px;
+        border-radius: 5px;
+        font-family: "Courier New", monospace;
+        font-size: 12px;
+        height: 300px;
+        overflow-y: auto;
+        border: 1px solid #333;
+      }
+
+      .log-entry {
+        margin: 2px 0;
+        padding: 2px 5px;
+        border-left: 3px solid transparent;
+        word-wrap: break-word;
+      }
+
+      .log-entry.info {
+        border-left-color: #17a2b8;
+      }
+      .log-entry.success {
+        border-left-color: #28a745;
+      }
+      .log-entry.warning {
+        border-left-color: #ffc107;
+      }
+      .log-entry.error {
+        border-left-color: #dc3545;
+      }
+      .log-entry.websocket {
+        border-left-color: #6f42c1;
+      }
+
+      .stats {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+        gap: 15px;
+        margin: 15px 0;
+      }
+
+      .stat-card {
+        background: white;
+        padding: 15px;
+        border-radius: 8px;
+        text-align: center;
+        border: 1px solid #e9ecef;
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+      }
+
+      .stat-number {
+        font-size: 1.8em;
+        font-weight: bold;
+        color: #007bff;
+        margin-bottom: 5px;
+      }
+
+      .stat-label {
+        font-size: 0.9em;
+        color: #6c757d;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+      }
+
+      .message-list {
+        max-height: 200px;
+        overflow-y: auto;
+        border: 1px solid #ddd;
+        border-radius: 5px;
+        background: white;
+        padding: 10px;
+      }
+
+      .message-item {
+        padding: 8px 12px;
+        border-bottom: 1px solid #f1f1f1;
+        font-size: 13px;
+        margin-bottom: 5px;
+        border-radius: 4px;
+        background: #f8f9fa;
+      }
+
+      .message-item:last-child {
+        border-bottom: none;
+      }
+
+      .message-time {
+        color: #6c757d;
+        font-size: 11px;
+        float: right;
+      }
+
+      .alert {
+        padding: 10px 15px;
+        margin: 10px 0;
+        border-radius: 5px;
+        font-size: 14px;
+      }
+
+      .alert-info {
+        background: #d1ecf1;
+        border: 1px solid #bee5eb;
+        color: #0c5460;
+      }
+
+      .alert-success {
+        background: #d4edda;
+        border: 1px solid #c3e6cb;
+        color: #155724;
+      }
+
+      .alert-warning {
+        background: #fff3cd;
+        border: 1px solid #ffeaa7;
+        color: #856404;
+      }
+
+      .alert-danger {
+        background: #f8d7da;
+        border: 1px solid #f5c6cb;
+        color: #721c24;
+      }
+
+      .grid-2 {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 15px;
+      }
+
+      @media (max-width: 768px) {
+        .grid-2 {
+          grid-template-columns: 1fr;
+        }
+
+        .auth-form {
+          flex-direction: column;
+          align-items: stretch;
+        }
+
+        .controls {
+          flex-direction: column;
+          align-items: stretch;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <div class="header">
+      <h1>🚀 Guzosync WebSocket Test Client</h1>
+      <p>
+        Complete testing interface for Chat, Notifications, and Bus Tracking
+      </p>
+    </div>
+
+    <div class="container">
+      <!-- Status Bar -->
+      <div class="status-bar">
+        <div class="status-indicator">
+          <div class="status-dot status-disconnected" id="statusDot"></div>
+          <span id="statusText">Disconnected</span>
+        </div>
+        <div class="stats">
+          <div class="stat-card">
+            <div class="stat-number" id="messageCount">0</div>
+            <div class="stat-label">Messages</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-number" id="roomCount">0</div>
+            <div class="stat-label">Rooms Joined</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Authentication Section -->
+      <div class="auth-section">
+        <div class="auth-form">
+          <label for="emailInput">Email:</label>
+          <input
+            type="email"
+            id="emailInput"
+            placeholder="test@example.com"
+            value="test@example.com"
+          />
+
+          <label for="passwordInput">Password:</label>
+          <input
+            type="password"
+            id="passwordInput"
+            placeholder="Password"
+            value="testpassword"
+          />
+
+          <button id="loginBtn" onclick="authenticate()">
+            Login & Connect
+          </button>
+          <button id="disconnectBtn" onclick="disconnect()" disabled>
+            Disconnect
+          </button>
+        </div>
+      </div>
+
+      <!-- Tabs -->
+      <div class="tabs">
+        <div class="tab active" onclick="switchTab('chat')">
+          💬 Chat Testing
+        </div>
+        <div class="tab" onclick="switchTab('notifications')">
+          🔔 Notifications
+        </div>
+        <div class="tab" onclick="switchTab('busTracking')">
+          🚌 Bus Tracking
+        </div>
+        <div class="tab" onclick="switchTab('rooms')">🏠 Room Management</div>
+      </div>
+
+      <!-- Chat Tab -->
+      <div id="chatTab" class="tab-content active">
+        <div class="section">
+          <h3>💬 Chat Features</h3>
+
+          <div class="grid-2">
+            <div>
+              <div class="controls">
+                <input
+                  type="text"
+                  id="conversationId"
+                  placeholder="Conversation ID"
+                  value="test_conversation_123"
+                />
+                <button onclick="joinConversation()">Join Conversation</button>
+                <button onclick="leaveConversation()" class="danger">
+                  Leave
+                </button>
+              </div>
+
+              <div class="controls">
+                <textarea
+                  id="chatMessage"
+                  placeholder="Type your message..."
+                  rows="3"
+                ></textarea>
+                <button onclick="sendChatMessage()">Send Message</button>
+              </div>
+
+              <div class="controls">
+                <button onclick="startTyping()" class="warning">
+                  Start Typing
+                </button>
+                <button onclick="stopTyping()" class="warning">
+                  Stop Typing
+                </button>
+                <button onclick="markAsRead()">Mark as Read</button>
+              </div>
+            </div>
+
+            <div>
+              <h4>Recent Chat Messages</h4>
+              <div class="message-list" id="chatMessages"></div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Notifications Tab -->
+      <div id="notificationsTab" class="tab-content">
+        <div class="section">
+          <h3>🔔 Notification Features</h3>
+
+          <div class="grid-2">
+            <div>
+              <div class="controls">
+                <input
+                  type="text"
+                  id="notificationTitle"
+                  placeholder="Notification Title"
+                  value="Test Notification"
+                />
+                <textarea
+                  id="notificationMessage"
+                  placeholder="Notification message..."
+                  rows="2"
+                ></textarea>
+                <button onclick="sendPersonalNotification()">
+                  Send Personal
+                </button>
+              </div>
+
+              <div class="controls">
+                <select id="targetRole">
+                  <option value="PASSENGER">Passengers</option>
+                  <option value="DRIVER">Drivers</option>
+                  <option value="ADMIN">Admins</option>
+                </select>
+                <button onclick="sendBroadcastNotification()">
+                  Send Broadcast
+                </button>
+              </div>
+
+              <div class="controls">
+                <input
+                  type="text"
+                  id="tripId"
+                  placeholder="Trip ID"
+                  value="trip_123"
+                />
+                <input
+                  type="number"
+                  id="delayMinutes"
+                  placeholder="Delay (minutes)"
+                  value="5"
+                />
+                <button onclick="sendTripUpdate()">Send Trip Update</button>
+              </div>
+            </div>
+
+            <div>
+              <h4>Recent Notifications</h4>
+              <div class="message-list" id="notificationMessages"></div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Bus Tracking Tab -->
+      <div id="busTrackingTab" class="tab-content">
+        <div class="section">
+          <h3>🚌 Bus Tracking Features</h3>
+
+          <div class="grid-2">
+            <div>
+              <div class="controls">
+                <input
+                  type="text"
+                  id="busId"
+                  placeholder="Bus ID"
+                  value="bus_123"
+                />
+                <button onclick="subscribeToBus()">Subscribe to Bus</button>
+                <button onclick="unsubscribeFromBus()" class="danger">
+                  Unsubscribe
+                </button>
+              </div>
+
+              <div class="controls">
+                <input
+                  type="text"
+                  id="routeId"
+                  placeholder="Route ID"
+                  value="route_456"
+                />
+                <button onclick="subscribeToRoute()">Subscribe to Route</button>
+                <button onclick="unsubscribeFromRoute()" class="danger">
+                  Unsubscribe
+                </button>
+              </div>
+
+              <div class="controls">
+                <input
+                  type="number"
+                  id="latitude"
+                  placeholder="Latitude"
+                  value="9.0192"
+                  step="0.0001"
+                />
+                <input
+                  type="number"
+                  id="longitude"
+                  placeholder="Longitude"
+                  value="38.7525"
+                  step="0.0001"
+                />
+                <input
+                  type="number"
+                  id="heading"
+                  placeholder="Heading"
+                  value="45"
+                />
+                <input
+                  type="number"
+                  id="speed"
+                  placeholder="Speed"
+                  value="30"
+                />
+                <button onclick="updateBusLocation()">Update Location</button>
+              </div>
+            </div>
+
+            <div>
+              <h4>Bus Location Updates</h4>
+              <div class="message-list" id="busMessages"></div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Room Management Tab -->
+      <div id="roomsTab" class="tab-content">
+        <div class="section">
+          <h3>🏠 Room Management</h3>
+
+          <div class="grid-2">
+            <div>
+              <div class="controls">
+                <input
+                  type="text"
+                  id="roomId"
+                  placeholder="Room ID"
+                  value="test_room_123"
+                />
+                <button onclick="joinRoom()">Join Room</button>
+                <button onclick="leaveRoom()" class="danger">Leave Room</button>
+              </div>
+
+              <div class="controls">
+                <button onclick="sendPing()">Send Ping</button>
+                <button onclick="getConnectionInfo()">Get Info</button>
+              </div>
+
+              <div class="controls">
+                <textarea
+                  id="customMessage"
+                  placeholder='{"type": "custom", "data": "your message"}'
+                  rows="3"
+                ></textarea>
+                <button onclick="sendCustomMessage()">Send Custom</button>
+              </div>
+            </div>
+
+            <div>
+              <h4>Active Rooms</h4>
+              <div class="message-list" id="roomList"></div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Log Console -->
+      <div class="section">
+        <h3>📊 WebSocket Log Console</h3>
+        <div class="log-container" id="logContainer"></div>
+        <div class="controls">
+          <button onclick="clearLogs()">Clear Logs</button>
+          <button onclick="exportLogs()">Export Logs</button>
+          <label>
+            <input type="checkbox" id="autoScroll" checked /> Auto-scroll
+          </label>
+        </div>
+      </div>
+    </div>
+
+    <script>
+      // Global variables
+      let websocket = null;
+      let token = null;
+      let userId = null;
+      let isConnected = false;
+      let messageCount = 0;
+      let joinedRooms = new Set(); // API configuration
+      const API_BASE = "http://localhost:8000";
+      const WS_BASE = "ws://localhost:8000";
+
+      // Tab management
+      function switchTab(tabName) {
+        // Hide all tab contents
+        document.querySelectorAll(".tab-content").forEach((content) => {
+          content.classList.remove("active");
+        });
+
+        // Remove active class from all tabs
+        document.querySelectorAll(".tab").forEach((tab) => {
+          tab.classList.remove("active");
+        });
+
+        // Show selected tab content
+        document.getElementById(tabName + "Tab").classList.add("active");
+
+        // Add active class to selected tab
+        event.target.classList.add("active");
+      }
+
+      // Authentication
+      async function authenticate() {
+        const email = document.getElementById("emailInput").value;
+        const password = document.getElementById("passwordInput").value;
+
+        if (!email || !password) {
+          addLog("Please enter email and password", "error");
+          return;
+        }
+
+        try {
+          addLog("Authenticating...", "info");
+          const response = await fetch(`${API_BASE}/api/accounts/login`, {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+            },
+            body: JSON.stringify({
+              email: email,
+              password: password,
+            }),
+          });
+          if (response.ok) {
+            const data = await response.json();
+            token = data.access_token;
+            userId = data.user?.id || "current_user"; // Fallback since user object might not be included
+
+            addLog(`Authentication successful! Token received`, "success");
+            await connectWebSocket();
+          } else {
+            const error = await response.text();
+            addLog(`Authentication failed: ${error}`, "error");
+          }
+        } catch (error) {
+          addLog(`Authentication error: ${error.message}`, "error");
+        }
+      }
+
+      // WebSocket connection
+      async function connectWebSocket() {
+        if (!token) {
+          addLog("No authentication token available", "error");
+          return;
+        }
+
+        try {
+          updateStatus("connecting");
+          addLog("Connecting to WebSocket...", "info");
+
+          const wsUrl = `${WS_BASE}/ws/connect?token=${token}`;
+          websocket = new WebSocket(wsUrl);
+
+          websocket.onopen = function (event) {
+            isConnected = true;
+            updateStatus("connected");
+            addLog("WebSocket connected successfully!", "success");
+            enableControls(true);
+          };
+
+          websocket.onmessage = function (event) {
+            const data = JSON.parse(event.data);
+            handleIncomingMessage(data);
+          };
+
+          websocket.onclose = function (event) {
+            isConnected = false;
+            updateStatus("disconnected");
+            addLog(
+              `WebSocket closed. Code: ${event.code}, Reason: ${event.reason}`,
+              "warning"
+            );
+            enableControls(false);
+          };
+
+          websocket.onerror = function (error) {
+            addLog(`WebSocket error: ${error}`, "error");
+          };
+        } catch (error) {
+          addLog(`Connection error: ${error.message}`, "error");
+          updateStatus("disconnected");
+        }
+      }
+
+      function disconnect() {
+        if (websocket) {
+          websocket.close();
+          websocket = null;
+        }
+        isConnected = false;
+        updateStatus("disconnected");
+        enableControls(false);
+        addLog("Disconnected from WebSocket", "info");
+      }
+
+      // Status management
+      function updateStatus(status) {
+        const statusDot = document.getElementById("statusDot");
+        const statusText = document.getElementById("statusText");
+
+        statusDot.className = `status-dot status-${status}`;
+
+        switch (status) {
+          case "connected":
+            statusText.textContent = "Connected";
+            break;
+          case "connecting":
+            statusText.textContent = "Connecting...";
+            break;
+          case "disconnected":
+            statusText.textContent = "Disconnected";
+            break;
+        }
+      }
+
+      function enableControls(enabled) {
+        const buttons = document.querySelectorAll(
+          "button:not(#loginBtn):not(#disconnectBtn)"
+        );
+        buttons.forEach((btn) => (btn.disabled = !enabled));
+
+        document.getElementById("loginBtn").disabled = enabled;
+        document.getElementById("disconnectBtn").disabled = !enabled;
+      }
+
+      // Message handling
+      function handleIncomingMessage(data) {
+        messageCount++;
+        updateStats();
+
+        const type = data.type;
+        addLog(`Received: ${JSON.stringify(data)}`, "websocket");
+
+        // Route messages to appropriate displays
+        switch (type) {
+          case "new_message":
+          case "typing_status":
+          case "message_read":
+          case "conversation_joined":
+            addToMessageList("chatMessages", data);
+            break;
+
+          case "notification":
+          case "trip_update":
+            addToMessageList("notificationMessages", data);
+            break;
+
+          case "bus_location_update":
+          case "bus_tracking_subscribed":
+          case "route_tracking_subscribed":
+            addToMessageList("busMessages", data);
+            break;
+
+          case "room_joined":
+          case "room_left":
+            joinedRooms.add(data.room_id);
+            updateRoomList();
+            updateStats();
+            break;
+
+          case "pong":
+            addLog("Pong received", "success");
+            break;
+        }
+      }
+
+      function addToMessageList(listId, data) {
+        const list = document.getElementById(listId);
+        const item = document.createElement("div");
+        item.className = "message-item";
+
+        const time = new Date().toLocaleTimeString();
+        item.innerHTML = `
+                <div class="message-time">${time}</div>
+                <strong>${data.type}</strong><br>
+                <small>${JSON.stringify(data, null, 2)}</small>
+            `;
+
+        list.appendChild(item);
+        list.scrollTop = list.scrollHeight;
+      }
+
+      function updateStats() {
+        document.getElementById("messageCount").textContent = messageCount;
+        document.getElementById("roomCount").textContent = joinedRooms.size;
+      }
+
+      function updateRoomList() {
+        const roomList = document.getElementById("roomList");
+        roomList.innerHTML = "";
+
+        joinedRooms.forEach((room) => {
+          const item = document.createElement("div");
+          item.className = "message-item";
+          item.textContent = room;
+          roomList.appendChild(item);
+        });
+      }
+
+      // WebSocket message sending
+      function sendMessage(message) {
+        if (!websocket || !isConnected) {
+          addLog("Not connected to WebSocket", "error");
+          return;
+        }
+
+        try {
+          websocket.send(JSON.stringify(message));
+          addLog(`Sent: ${JSON.stringify(message)}`, "info");
+        } catch (error) {
+          addLog(`Send error: ${error.message}`, "error");
+        }
+      }
+
+      // Chat functions
+      function joinConversation() {
+        const conversationId = document.getElementById("conversationId").value;
+        if (!conversationId) {
+          addLog("Please enter a conversation ID", "error");
+          return;
+        }
+
+        sendMessage({
+          type: "join_room",
+          room_id: `conversation:${conversationId}`,
+        });
+      }
+
+      function leaveConversation() {
+        const conversationId = document.getElementById("conversationId").value;
+        if (!conversationId) {
+          addLog("Please enter a conversation ID", "error");
+          return;
+        }
+
+        sendMessage({
+          type: "leave_room",
+          room_id: `conversation:${conversationId}`,
+        });
+      }
+
+      async function sendChatMessage() {
+        const conversationId = document.getElementById("conversationId").value;
+        const content = document.getElementById("chatMessage").value;
+
+        if (!conversationId || !content) {
+          addLog("Please enter conversation ID and message", "error");
+          return;
+        }
+
+        try {
+          const response = await fetch(
+            `${API_BASE}/api/realtime/demo/chat-message`,
+            {
+              method: "POST",
+              headers: {
+                "Content-Type": "application/json",
+                Authorization: `Bearer ${token}`,
+              },
+              body: JSON.stringify({
+                conversation_id: conversationId,
+                content: content,
+                message_type: "TEXT",
+              }),
+            }
+          );
+
+          if (response.ok) {
+            addLog("Chat message sent via API", "success");
+            document.getElementById("chatMessage").value = "";
+          } else {
+            addLog(
+              `Failed to send chat message: ${await response.text()}`,
+              "error"
+            );
+          }
+        } catch (error) {
+          addLog(`Chat message error: ${error.message}`, "error");
+        }
+      }
+
+      function startTyping() {
+        const conversationId = document.getElementById("conversationId").value;
+        if (!conversationId) {
+          addLog("Please enter a conversation ID", "error");
+          return;
+        }
+
+        sendMessage({
+          type: "typing_status",
+          conversation_id: conversationId,
+          is_typing: true,
+        });
+      }
+
+      function stopTyping() {
+        const conversationId = document.getElementById("conversationId").value;
+        if (!conversationId) {
+          addLog("Please enter a conversation ID", "error");
+          return;
+        }
+
+        sendMessage({
+          type: "typing_status",
+          conversation_id: conversationId,
+          is_typing: false,
+        });
+      }
+
+      function markAsRead() {
+        const conversationId = document.getElementById("conversationId").value;
+        if (!conversationId) {
+          addLog("Please enter a conversation ID", "error");
+          return;
+        }
+
+        sendMessage({
+          type: "message_read",
+          conversation_id: conversationId,
+          message_id: "test_message_" + Date.now(),
+        });
+      }
+
+      // Notification functions
+      async function sendPersonalNotification() {
+        const title = document.getElementById("notificationTitle").value;
+        const message = document.getElementById("notificationMessage").value;
+
+        if (!title || !message) {
+          addLog("Please enter notification title and message", "error");
+          return;
+        }
+
+        try {
+          const response = await fetch(
+            `${API_BASE}/api/realtime/demo/notification`,
+            {
+              method: "POST",
+              headers: {
+                "Content-Type": "application/json",
+                Authorization: `Bearer ${token}`,
+              },
+              body: JSON.stringify({
+                title: title,
+                message: message,
+                target_user_id: userId,
+              }),
+            }
+          );
+
+          if (response.ok) {
+            addLog("Personal notification sent", "success");
+          } else {
+            addLog(
+              `Failed to send notification: ${await response.text()}`,
+              "error"
+            );
+          }
+        } catch (error) {
+          addLog(`Notification error: ${error.message}`, "error");
+        }
+      }
+
+      async function sendBroadcastNotification() {
+        const title = document.getElementById("notificationTitle").value;
+        const message = document.getElementById("notificationMessage").value;
+        const role = document.getElementById("targetRole").value;
+
+        if (!title || !message) {
+          addLog("Please enter notification title and message", "error");
+          return;
+        }
+
+        try {
+          const response = await fetch(
+            `${API_BASE}/api/notifications/broadcast`,
+            {
+              method: "POST",
+              headers: {
+                "Content-Type": "application/json",
+                Authorization: `Bearer ${token}`,
+              },
+              body: JSON.stringify({
+                title: title,
+                message: message,
+                type: "GENERAL",
+                target_roles: [role],
+              }),
+            }
+          );
+
+          if (response.ok) {
+            addLog(`Broadcast notification sent to ${role}s`, "success");
+          } else {
+            addLog(
+              `Failed to send broadcast: ${await response.text()}`,
+              "error"
+            );
+          }
+        } catch (error) {
+          addLog(`Broadcast error: ${error.message}`, "error");
+        }
+      }
+
+      async function sendTripUpdate() {
+        const tripId = document.getElementById("tripId").value;
+        const delayMinutes = document.getElementById("delayMinutes").value;
+
+        if (!tripId) {
+          addLog("Please enter a trip ID", "error");
+          return;
+        }
+
+        try {
+          const response = await fetch(
+            `${API_BASE}/api/realtime/demo/trip-update`,
+            {
+              method: "POST",
+              headers: {
+                "Content-Type": "application/json",
+                Authorization: `Bearer ${token}`,
+              },
+              body: JSON.stringify({
+                trip_id: tripId,
+                message: `Trip ${tripId} has been delayed by ${delayMinutes} minutes`,
+                delay_minutes: parseInt(delayMinutes) || 0,
+              }),
+            }
+          );
+
+          if (response.ok) {
+            addLog("Trip update sent", "success");
+          } else {
+            addLog(
+              `Failed to send trip update: ${await response.text()}`,
+              "error"
+            );
+          }
+        } catch (error) {
+          addLog(`Trip update error: ${error.message}`, "error");
+        }
+      }
+
+      // Bus tracking functions
+      function subscribeToBus() {
+        const busId = document.getElementById("busId").value;
+        if (!busId) {
+          addLog("Please enter a bus ID", "error");
+          return;
+        }
+
+        sendMessage({
+          type: "join_room",
+          room_id: `bus_tracking:${busId}`,
+        });
+      }
+
+      function unsubscribeFromBus() {
+        const busId = document.getElementById("busId").value;
+        if (!busId) {
+          addLog("Please enter a bus ID", "error");
+          return;
+        }
+
+        sendMessage({
+          type: "leave_room",
+          room_id: `bus_tracking:${busId}`,
+        });
+      }
+
+      function subscribeToRoute() {
+        const routeId = document.getElementById("routeId").value;
+        if (!routeId) {
+          addLog("Please enter a route ID", "error");
+          return;
+        }
+
+        sendMessage({
+          type: "join_room",
+          room_id: `route_tracking:${routeId}`,
+        });
+      }
+
+      function unsubscribeFromRoute() {
+        const routeId = document.getElementById("routeId").value;
+        if (!routeId) {
+          addLog("Please enter a route ID", "error");
+          return;
+        }
+
+        sendMessage({
+          type: "leave_room",
+          room_id: `route_tracking:${routeId}`,
+        });
+      }
+
+      async function updateBusLocation() {
+        const busId = document.getElementById("busId").value;
+        const latitude = parseFloat(document.getElementById("latitude").value);
+        const longitude = parseFloat(
+          document.getElementById("longitude").value
+        );
+        const heading = parseFloat(document.getElementById("heading").value);
+        const speed = parseFloat(document.getElementById("speed").value);
+
+        if (!busId || isNaN(latitude) || isNaN(longitude)) {
+          addLog("Please enter valid bus ID, latitude, and longitude", "error");
+          return;
+        }
+        try {
+          const response = await fetch(
+            `${API_BASE}/api/realtime/demo/bus-location-update`,
+            {
+              method: "POST",
+              headers: {
+                "Content-Type": "application/json",
+                Authorization: `Bearer ${token}`,
+              },
+              body: JSON.stringify({
+                bus_id: busId,
+                latitude: latitude,
+                longitude: longitude,
+                heading: isNaN(heading) ? null : heading,
+                speed: isNaN(speed) ? null : speed,
+              }),
+            }
+          );
+
+          if (response.ok) {
+            addLog("Bus location updated", "success");
+          } else {
+            addLog(
+              `Failed to update bus location: ${await response.text()}`,
+              "error"
+            );
+          }
+        } catch (error) {
+          addLog(`Bus location error: ${error.message}`, "error");
+        }
+      }
+
+      // Room management functions
+      function joinRoom() {
+        const roomId = document.getElementById("roomId").value;
+        if (!roomId) {
+          addLog("Please enter a room ID", "error");
+          return;
+        }
+
+        sendMessage({
+          type: "join_room",
+          room_id: roomId,
+        });
+      }
+
+      function leaveRoom() {
+        const roomId = document.getElementById("roomId").value;
+        if (!roomId) {
+          addLog("Please enter a room ID", "error");
+          return;
+        }
+
+        sendMessage({
+          type: "leave_room",
+          room_id: roomId,
+        });
+
+        joinedRooms.delete(roomId);
+        updateRoomList();
+        updateStats();
+      }
+
+      function sendPing() {
+        sendMessage({
+          type: "ping",
+          timestamp: new Date().toISOString(),
+        });
+      }
+
+      function getConnectionInfo() {
+        addLog(`Connection Info:`, "info");
+        addLog(`- Connected: ${isConnected}`, "info");
+        addLog(`- User ID: ${userId}`, "info");
+        addLog(`- Token: ${token ? "Available" : "None"}`, "info");
+        addLog(`- Joined Rooms: ${Array.from(joinedRooms).join(", ")}`, "info");
+      }
+
+      function sendCustomMessage() {
+        const messageText = document.getElementById("customMessage").value;
+        if (!messageText) {
+          addLog("Please enter a custom message", "error");
+          return;
+        }
+
+        try {
+          const message = JSON.parse(messageText);
+          sendMessage(message);
+        } catch (error) {
+          addLog(`Invalid JSON: ${error.message}`, "error");
+        }
+      }
+
+      // Logging functions
+      function addLog(message, type = "info") {
+        const logContainer = document.getElementById("logContainer");
+        const logEntry = document.createElement("div");
+        logEntry.className = `log-entry ${type}`;
+
+        const timestamp = new Date().toLocaleTimeString();
+        logEntry.innerHTML = `<span style="color: #6c757d;">[${timestamp}]</span> ${message}`;
+
+        logContainer.appendChild(logEntry);
+
+        if (document.getElementById("autoScroll").checked) {
+          logContainer.scrollTop = logContainer.scrollHeight;
+        }
+      }
+
+      function clearLogs() {
+        document.getElementById("logContainer").innerHTML = "";
+        messageCount = 0;
+        updateStats();
+      }
+
+      function exportLogs() {
+        const logs = document.getElementById("logContainer").innerText;
+        const blob = new Blob([logs], { type: "text/plain" });
+        const url = URL.createObjectURL(blob);
+
+        const a = document.createElement("a");
+        a.href = url;
+        a.download = `websocket-logs-${
+          new Date().toISOString().split("T")[0]
+        }.txt`;
+        a.click();
+
+        URL.revokeObjectURL(url);
+      }
+
+      // Initialize
+      document.addEventListener("DOMContentLoaded", function () {
+        addLog("WebSocket Test Client initialized", "info");
+        addLog("Please login to start testing", "info");
+        enableControls(false);
+      });
+    </script>
+  </body>
+</html>

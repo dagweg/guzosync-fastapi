@@ -115,8 +115,7 @@ class NotificationService:
                     "related_entity": related_entity,
                     "timestamp": datetime.utcnow().isoformat(),
                     "is_read": False
-                }
-            }
+                }            }
             
             if target_user_ids:
                 # Send to specific users
@@ -152,30 +151,45 @@ class NotificationService:
                     logger.warning(f"Trip {trip_id} not found for notification")
                     return
                 
-                # Find users who might be interested in this trip
+                # Get trip participants
+                participants = trip.get("participants", [])
+                  # Find users who might be interested in this trip
                 # This could be passengers on the route, or those tracking the bus
                 route_id = trip.get("route_id")
                 bus_id = trip.get("bus_id")
                 
                 notification_title = "Trip Update"
-                if delay_minutes:
-                    notification_title = f"Trip Delayed - {delay_minutes} minutes"
+                # Note: delay information is included in related_entity, not title
                 
                 related_entity = {
                     "entity_type": "trip",
                     "entity_id": str(trip_id)
                 }
-                
-                # Send to users tracking this specific trip/route
-                room_id = f"trip_tracking:{trip_id}"
+                  # Create WebSocket message
                 websocket_message = {
-                    "type": "trip_update",
-                    "trip_id": str(trip_id),
-                    "message": message,
-                    "delay_minutes": delay_minutes,
-                    "timestamp": datetime.utcnow().isoformat()
+                    "type": "notification",
+                    "notification": {
+                        "title": notification_title,
+                        "message": message,
+                        "notification_type": "TRIP_UPDATE",
+                        "related_entity": {
+                            "entity_type": "trip",
+                            "entity_id": str(trip_id),
+                            "trip_id": str(trip_id),
+                            "delay_minutes": delay_minutes
+                        },
+                        "timestamp": datetime.utcnow().isoformat(),
+                        "is_read": False
+                    }
                 }
                 
+                # Send to individual participants
+                if participants:
+                    for participant_id in participants:
+                        await websocket_manager.send_personal_message(str(participant_id), websocket_message)
+                
+                # Also send to users tracking this specific trip/route
+                room_id = f"trip_tracking:{trip_id}"
                 await websocket_manager.send_room_message(room_id, websocket_message)
                 
                 # Also send to route subscribers

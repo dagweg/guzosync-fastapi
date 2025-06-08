@@ -1,0 +1,898 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>GuzoSync WebSocket Test Client - Updated</title>
+    <style>
+      body {
+        font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+        margin: 0;
+        padding: 20px;
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        min-height: 100vh;
+      }
+
+      .header {
+        text-align: center;
+        color: white;
+        margin-bottom: 30px;
+      }
+
+      .header h1 {
+        margin: 0;
+        font-size: 2.5em;
+        text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.3);
+      }
+
+      .container {
+        background: white;
+        border-radius: 15px;
+        box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+        overflow: hidden;
+        max-width: 1400px;
+        margin: 0 auto;
+      }
+
+      .status-bar {
+        background: #f8f9fa;
+        padding: 15px 20px;
+        border-bottom: 1px solid #e9ecef;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        flex-wrap: wrap;
+      }
+
+      .status-indicator {
+        display: flex;
+        align-items: center;
+        font-weight: bold;
+      }
+
+      .status-dot {
+        width: 12px;
+        height: 12px;
+        border-radius: 50%;
+        margin-right: 8px;
+        transition: background-color 0.3s;
+      }
+
+      .status-connected {
+        background-color: #28a745;
+      }
+      .status-disconnected {
+        background-color: #dc3545;
+      }
+      .status-connecting {
+        background-color: #ffc107;
+      }
+
+      .main-content {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 20px;
+        padding: 20px;
+      }
+
+      .panel {
+        border: 1px solid #e9ecef;
+        border-radius: 8px;
+        overflow: hidden;
+      }
+
+      .panel-header {
+        background: #f8f9fa;
+        padding: 15px;
+        border-bottom: 1px solid #e9ecef;
+        font-weight: bold;
+        font-size: 1.1em;
+      }
+
+      .panel-content {
+        padding: 15px;
+      }
+
+      .form-group {
+        margin-bottom: 15px;
+      }
+
+      .form-group label {
+        display: block;
+        margin-bottom: 5px;
+        font-weight: 500;
+      }
+
+      .form-control {
+        width: 100%;
+        padding: 8px 12px;
+        border: 1px solid #ced4da;
+        border-radius: 4px;
+        font-size: 14px;
+        box-sizing: border-box;
+      }
+
+      .btn {
+        padding: 10px 20px;
+        border: none;
+        border-radius: 4px;
+        cursor: pointer;
+        font-size: 14px;
+        font-weight: 500;
+        margin-right: 10px;
+        margin-bottom: 10px;
+        transition: background-color 0.3s;
+      }
+
+      .btn-primary {
+        background: #007bff;
+        color: white;
+      }
+      .btn-primary:hover {
+        background: #0056b3;
+      }
+      .btn-success {
+        background: #28a745;
+        color: white;
+      }
+      .btn-success:hover {
+        background: #1e7e34;
+      }
+      .btn-danger {
+        background: #dc3545;
+        color: white;
+      }
+      .btn-danger:hover {
+        background: #c82333;
+      }
+      .btn-warning {
+        background: #ffc107;
+        color: #212529;
+      }
+      .btn-warning:hover {
+        background: #e0a800;
+      }
+
+      .messages {
+        height: 300px;
+        overflow-y: auto;
+        background: #f8f9fa;
+        border: 1px solid #e9ecef;
+        border-radius: 4px;
+        padding: 10px;
+        font-family: "Courier New", monospace;
+        font-size: 12px;
+      }
+
+      .message {
+        margin-bottom: 8px;
+        padding: 5px;
+        border-radius: 3px;
+        white-space: pre-wrap;
+        word-break: break-word;
+      }
+
+      .message-sent {
+        background: #e3f2fd;
+        border-left: 3px solid #2196f3;
+      }
+      .message-received {
+        background: #f3e5f5;
+        border-left: 3px solid #9c27b0;
+      }
+      .message-system {
+        background: #fff3e0;
+        border-left: 3px solid #ff9800;
+      }
+      .message-error {
+        background: #ffebee;
+        border-left: 3px solid #f44336;
+      }
+
+      .room-list {
+        max-height: 200px;
+        overflow-y: auto;
+        border: 1px solid #e9ecef;
+        border-radius: 4px;
+      }
+
+      .room-item {
+        padding: 8px 12px;
+        border-bottom: 1px solid #e9ecef;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+      }
+
+      .room-item:last-child {
+        border-bottom: none;
+      }
+
+      .room-status {
+        font-size: 12px;
+        padding: 2px 6px;
+        border-radius: 3px;
+        color: white;
+      }
+
+      .room-joined {
+        background: #28a745;
+      }
+      .room-pending {
+        background: #ffc107;
+        color: #212529;
+      }
+
+      .stats {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+        gap: 15px;
+        margin-bottom: 20px;
+      }
+
+      .stat-card {
+        background: #f8f9fa;
+        padding: 15px;
+        border-radius: 8px;
+        text-align: center;
+        border: 1px solid #e9ecef;
+      }
+
+      .stat-value {
+        font-size: 2em;
+        font-weight: bold;
+        color: #007bff;
+      }
+
+      .stat-label {
+        font-size: 0.9em;
+        color: #6c757d;
+        margin-top: 5px;
+      }
+
+      .test-scenarios {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+        gap: 10px;
+        margin-bottom: 20px;
+      }
+
+      @media (max-width: 768px) {
+        .main-content {
+          grid-template-columns: 1fr;
+        }
+
+        .test-scenarios {
+          grid-template-columns: 1fr;
+        }
+      }
+
+      .timestamp {
+        color: #6c757d;
+        font-size: 0.8em;
+      }
+
+      .message-type {
+        font-weight: bold;
+        color: #007bff;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="header">
+      <h1>🚌 GuzoSync Real-Time Test Client</h1>
+      <p>Test WebSocket connections, real-time messaging, and bus tracking</p>
+    </div>
+
+    <div class="container">
+      <!-- Status Bar -->
+      <div class="status-bar">
+        <div class="status-indicator">
+          <div class="status-dot status-disconnected" id="statusDot"></div>
+          <span id="connectionStatus">Disconnected</span>
+        </div>
+        <div id="connectionInfo"></div>
+      </div>
+
+      <!-- Statistics -->
+      <div
+        style="
+          padding: 20px;
+          background: #f8f9fa;
+          border-bottom: 1px solid #e9ecef;
+        "
+      >
+        <div class="stats">
+          <div class="stat-card">
+            <div class="stat-value" id="messageCount">0</div>
+            <div class="stat-label">Messages</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-value" id="roomCount">0</div>
+            <div class="stat-label">Active Rooms</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-value" id="uptime">00:00</div>
+            <div class="stat-label">Uptime</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-value" id="errorCount">0</div>
+            <div class="stat-label">Errors</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Main Content -->
+      <div class="main-content">
+        <!-- Connection Panel -->
+        <div class="panel">
+          <div class="panel-header">🔌 Connection</div>
+          <div class="panel-content">
+            <div class="form-group">
+              <label for="wsUrl">WebSocket URL:</label>
+              <input
+                type="text"
+                id="wsUrl"
+                class="form-control"
+                value="ws://localhost:8000/ws/connect"
+                readonly
+              />
+            </div>
+
+            <div class="form-group">
+              <label for="jwtToken">JWT Token:</label>
+              <input
+                type="password"
+                id="jwtToken"
+                class="form-control"
+                placeholder="Enter your JWT token"
+              />
+            </div>
+
+            <button onclick="connect()" class="btn btn-success" id="connectBtn">
+              Connect
+            </button>
+            <button
+              onclick="disconnect()"
+              class="btn btn-danger"
+              id="disconnectBtn"
+              disabled
+            >
+              Disconnect
+            </button>
+            <button
+              onclick="sendPing()"
+              class="btn btn-warning"
+              id="pingBtn"
+              disabled
+            >
+              Ping
+            </button>
+
+            <div class="form-group" style="margin-top: 20px">
+              <h4>Quick Test Scenarios:</h4>
+              <div class="test-scenarios">
+                <button
+                  onclick="testBusTracking()"
+                  class="btn btn-primary"
+                  disabled
+                  id="testBusBtn"
+                >
+                  Test Bus Tracking
+                </button>
+                <button
+                  onclick="testChat()"
+                  class="btn btn-primary"
+                  disabled
+                  id="testChatBtn"
+                >
+                  Test Chat
+                </button>
+                <button
+                  onclick="testNotifications()"
+                  class="btn btn-primary"
+                  disabled
+                  id="testNotifBtn"
+                >
+                  Test Notifications
+                </button>
+                <button
+                  onclick="testMultiRoom()"
+                  class="btn btn-primary"
+                  disabled
+                  id="testMultiBtn"
+                >
+                  Test Multi-Room
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Room Management -->
+        <div class="panel">
+          <div class="panel-header">🏠 Room Management</div>
+          <div class="panel-content">
+            <div class="form-group">
+              <label for="roomId">Room ID:</label>
+              <input
+                type="text"
+                id="roomId"
+                class="form-control"
+                placeholder="e.g., conversation:123, bus_tracking:456"
+              />
+            </div>
+
+            <button
+              onclick="joinRoom()"
+              class="btn btn-success"
+              id="joinBtn"
+              disabled
+            >
+              Join Room
+            </button>
+            <button
+              onclick="leaveRoom()"
+              class="btn btn-danger"
+              id="leaveBtn"
+              disabled
+            >
+              Leave Room
+            </button>
+
+            <div style="margin-top: 15px">
+              <h5>Quick Room IDs:</h5>
+              <button
+                onclick="setRoomId('conversation:test_chat_123')"
+                class="btn btn-warning"
+              >
+                Chat Room
+              </button>
+              <button
+                onclick="setRoomId('bus_tracking:bus_456')"
+                class="btn btn-warning"
+              >
+                Bus Tracking
+              </button>
+              <button
+                onclick="setRoomId('route_tracking:route_789')"
+                class="btn btn-warning"
+              >
+                Route Tracking
+              </button>
+            </div>
+
+            <div style="margin-top: 15px">
+              <h5>Active Rooms:</h5>
+              <div class="room-list" id="activeRooms">
+                <div style="padding: 20px; text-align: center; color: #6c757d">
+                  No active rooms
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Messages Panel -->
+      <div style="padding: 20px">
+        <div class="panel">
+          <div class="panel-header">
+            💬 Messages
+            <button
+              onclick="clearMessages()"
+              class="btn btn-warning"
+              style="float: right; padding: 5px 10px; font-size: 12px"
+            >
+              Clear
+            </button>
+          </div>
+          <div class="panel-content">
+            <div class="messages" id="messages"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <script>
+      // Global variables
+      let ws = null;
+      let connectionStartTime = null;
+      let uptimeInterval = null;
+      let messageCount = 0;
+      let errorCount = 0;
+      let activeRooms = new Set();
+
+      // DOM elements
+      const statusDot = document.getElementById("statusDot");
+      const connectionStatus = document.getElementById("connectionStatus");
+      const connectionInfo = document.getElementById("connectionInfo");
+      const messagesDiv = document.getElementById("messages");
+      const jwtTokenInput = document.getElementById("jwtToken");
+      const roomIdInput = document.getElementById("roomId");
+
+      // Button elements
+      const connectBtn = document.getElementById("connectBtn");
+      const disconnectBtn = document.getElementById("disconnectBtn");
+      const pingBtn = document.getElementById("pingBtn");
+      const joinBtn = document.getElementById("joinBtn");
+      const leaveBtn = document.getElementById("leaveBtn");
+      const testButtons = [
+        "testBusBtn",
+        "testChatBtn",
+        "testNotifBtn",
+        "testMultiBtn",
+      ];
+
+      // Connection functions
+      function connect() {
+        const token = jwtTokenInput.value.trim();
+        if (!token) {
+          addMessage("Please enter a JWT token", "error");
+          return;
+        }
+
+        const wsUrl = `ws://localhost:8000/ws/connect?token=${token}`;
+
+        try {
+          updateConnectionStatus("connecting", "Connecting...");
+          ws = new WebSocket(wsUrl);
+
+          ws.onopen = function (event) {
+            connectionStartTime = new Date();
+            updateConnectionStatus("connected", "Connected");
+            updateButtons(true);
+            startUptime();
+            addMessage("✅ Connected to GuzoSync server", "system");
+
+            // Send initial ping
+            setTimeout(() => sendPing(), 1000);
+          };
+
+          ws.onmessage = function (event) {
+            messageCount++;
+            updateStats();
+
+            try {
+              const message = JSON.parse(event.data);
+              handleMessage(message);
+            } catch (error) {
+              addMessage(`❌ Failed to parse message: ${event.data}`, "error");
+            }
+          };
+
+          ws.onclose = function (event) {
+            updateConnectionStatus("disconnected", "Disconnected");
+            updateButtons(false);
+            stopUptime();
+
+            let reason = "Connection closed";
+            switch (event.code) {
+              case 4001:
+                reason = "Authentication failed - Invalid token";
+                break;
+              case 4002:
+                reason = "Connection error";
+                break;
+              case 1000:
+                reason = "Normal closure";
+                break;
+              default:
+                reason = `Connection closed (Code: ${event.code})`;
+            }
+
+            addMessage(`🔴 ${reason}`, "system");
+
+            if (event.code === 4001) {
+              addMessage("Please check your JWT token and try again", "error");
+            }
+          };
+
+          ws.onerror = function (error) {
+            errorCount++;
+            updateStats();
+            addMessage(`❌ WebSocket error: ${error}`, "error");
+          };
+        } catch (error) {
+          addMessage(
+            `❌ Failed to create WebSocket connection: ${error}`,
+            "error"
+          );
+          updateConnectionStatus("disconnected", "Failed to connect");
+        }
+      }
+
+      function disconnect() {
+        if (ws) {
+          ws.close(1000, "User disconnected");
+          ws = null;
+        }
+      }
+
+      function sendPing() {
+        if (ws && ws.readyState === WebSocket.OPEN) {
+          const pingMessage = {
+            type: "ping",
+            timestamp: new Date().toISOString(),
+          };
+
+          ws.send(JSON.stringify(pingMessage));
+          addMessage(
+            `📤 PING: ${JSON.stringify(pingMessage, null, 2)}`,
+            "sent"
+          );
+        } else {
+          addMessage("❌ Cannot send ping - not connected", "error");
+        }
+      }
+
+      // Room management functions
+      function joinRoom() {
+        const roomId = roomIdInput.value.trim();
+        if (!roomId) {
+          addMessage("Please enter a room ID", "error");
+          return;
+        }
+
+        if (ws && ws.readyState === WebSocket.OPEN) {
+          const joinMessage = {
+            type: "join_room",
+            room_id: roomId,
+          };
+
+          ws.send(JSON.stringify(joinMessage));
+          addMessage(
+            `📤 JOIN ROOM: ${JSON.stringify(joinMessage, null, 2)}`,
+            "sent"
+          );
+        } else {
+          addMessage("❌ Cannot join room - not connected", "error");
+        }
+      }
+
+      function leaveRoom() {
+        const roomId = roomIdInput.value.trim();
+        if (!roomId) {
+          addMessage("Please enter a room ID", "error");
+          return;
+        }
+
+        if (ws && ws.readyState === WebSocket.OPEN) {
+          const leaveMessage = {
+            type: "leave_room",
+            room_id: roomId,
+          };
+
+          ws.send(JSON.stringify(leaveMessage));
+          addMessage(
+            `📤 LEAVE ROOM: ${JSON.stringify(leaveMessage, null, 2)}`,
+            "sent"
+          );
+        } else {
+          addMessage("❌ Cannot leave room - not connected", "error");
+        }
+      }
+
+      function setRoomId(roomId) {
+        roomIdInput.value = roomId;
+        addMessage(`🎯 Set room ID to: ${roomId}`, "system");
+      }
+
+      // Message handling
+      function handleMessage(message) {
+        const messageType = message.type;
+        let displayMessage = `📥 ${messageType.toUpperCase()}: ${JSON.stringify(
+          message,
+          null,
+          2
+        )}`;
+
+        switch (messageType) {
+          case "pong":
+            addMessage(displayMessage, "received");
+            break;
+
+          case "room_joined":
+            activeRooms.add(message.room_id);
+            updateRoomsList();
+            updateStats();
+            addMessage(displayMessage, "received");
+            break;
+
+          case "room_left":
+            activeRooms.delete(message.room_id);
+            updateRoomsList();
+            updateStats();
+            addMessage(displayMessage, "received");
+            break;
+
+          case "bus_location_update":
+          case "chat_message":
+          case "notification":
+            addMessage(displayMessage, "received");
+            break;
+
+          default:
+            addMessage(displayMessage, "received");
+        }
+      }
+
+      function addMessage(text, type = "system") {
+        const messageDiv = document.createElement("div");
+        const timestamp = new Date().toLocaleTimeString();
+
+        messageDiv.className = `message message-${type}`;
+        messageDiv.innerHTML = `<span class="timestamp">[${timestamp}]</span> ${text}`;
+
+        messagesDiv.appendChild(messageDiv);
+        messagesDiv.scrollTop = messagesDiv.scrollHeight;
+
+        // Keep only last 100 messages
+        while (messagesDiv.children.length > 100) {
+          messagesDiv.removeChild(messagesDiv.firstChild);
+        }
+      }
+
+      function clearMessages() {
+        messagesDiv.innerHTML = "";
+        messageCount = 0;
+        errorCount = 0;
+        updateStats();
+        addMessage("Messages cleared", "system");
+      }
+
+      // Test scenarios
+      function testBusTracking() {
+        addMessage("🚌 Starting bus tracking test...", "system");
+
+        // Join bus tracking room
+        setRoomId("bus_tracking:bus_456");
+        setTimeout(() => joinRoom(), 500);
+
+        // Also test route tracking
+        setTimeout(() => {
+          setRoomId("route_tracking:route_789");
+          joinRoom();
+        }, 1500);
+
+        addMessage(
+          "Bus tracking test initiated - joined bus and route rooms",
+          "system"
+        );
+      }
+
+      function testChat() {
+        addMessage("💬 Starting chat test...", "system");
+
+        // Join conversation room
+        setRoomId("conversation:test_chat_123");
+        setTimeout(() => joinRoom(), 500);
+
+        addMessage("Chat test initiated - joined conversation room", "system");
+      }
+
+      function testNotifications() {
+        addMessage("🔔 Starting notification test...", "system");
+        addMessage(
+          "Notifications are sent automatically by the server when events occur",
+          "system"
+        );
+        addMessage(
+          "Make sure you are connected and joined to relevant rooms to receive notifications",
+          "system"
+        );
+      }
+
+      function testMultiRoom() {
+        addMessage("🏠 Starting multi-room test...", "system");
+
+        const rooms = [
+          "conversation:test_chat_123",
+          "bus_tracking:bus_456",
+          "route_tracking:route_789",
+        ];
+
+        rooms.forEach((room, index) => {
+          setTimeout(() => {
+            setRoomId(room);
+            joinRoom();
+          }, index * 1000);
+        });
+
+        addMessage(
+          "Multi-room test initiated - joining 3 different rooms",
+          "system"
+        );
+      }
+
+      // UI update functions
+      function updateConnectionStatus(status, text) {
+        statusDot.className = `status-dot status-${status}`;
+        connectionStatus.textContent = text;
+
+        if (status === "connected") {
+          connectionInfo.textContent = `Connected to ${ws.url}`;
+        } else {
+          connectionInfo.textContent = "";
+        }
+      }
+
+      function updateButtons(connected) {
+        connectBtn.disabled = connected;
+        disconnectBtn.disabled = !connected;
+        pingBtn.disabled = !connected;
+        joinBtn.disabled = !connected;
+        leaveBtn.disabled = !connected;
+
+        testButtons.forEach((id) => {
+          document.getElementById(id).disabled = !connected;
+        });
+      }
+
+      function updateStats() {
+        document.getElementById("messageCount").textContent = messageCount;
+        document.getElementById("roomCount").textContent = activeRooms.size;
+        document.getElementById("errorCount").textContent = errorCount;
+      }
+
+      function updateRoomsList() {
+        const roomsContainer = document.getElementById("activeRooms");
+
+        if (activeRooms.size === 0) {
+          roomsContainer.innerHTML =
+            '<div style="padding: 20px; text-align: center; color: #6c757d;">No active rooms</div>';
+          return;
+        }
+
+        roomsContainer.innerHTML = "";
+        activeRooms.forEach((roomId) => {
+          const roomDiv = document.createElement("div");
+          roomDiv.className = "room-item";
+          roomDiv.innerHTML = `
+                    <span>${roomId}</span>
+                    <span class="room-status room-joined">Joined</span>
+                `;
+          roomsContainer.appendChild(roomDiv);
+        });
+      }
+
+      function startUptime() {
+        uptimeInterval = setInterval(() => {
+          if (connectionStartTime) {
+            const uptime = new Date() - connectionStartTime;
+            const minutes = Math.floor(uptime / 60000);
+            const seconds = Math.floor((uptime % 60000) / 1000);
+            document.getElementById("uptime").textContent = `${minutes
+              .toString()
+              .padStart(2, "0")}:${seconds.toString().padStart(2, "0")}`;
+          }
+        }, 1000);
+      }
+
+      function stopUptime() {
+        if (uptimeInterval) {
+          clearInterval(uptimeInterval);
+          uptimeInterval = null;
+        }
+        document.getElementById("uptime").textContent = "00:00";
+      }
+
+      // Initialize
+      document.addEventListener("DOMContentLoaded", function () {
+        addMessage("🚀 GuzoSync WebSocket Test Client Ready", "system");
+        addMessage(
+          "Enter your JWT token and click Connect to begin testing",
+          "system"
+        );
+        updateStats();
+      });
+
+      // Handle page unload
+      window.addEventListener("beforeunload", function () {
+        if (ws) {
+          ws.close(1000, "Page unload");
+        }
+      });
+    </script>
+  </body>
+</html>

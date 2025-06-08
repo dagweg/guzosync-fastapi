@@ -15,7 +15,9 @@ from . import (
     regulators,
     control_center,
     approvals,
-    payments
+    payments,
+    websocket,
+    realtime_demo
 )
 
 __all__ = [
@@ -35,5 +37,7 @@ __all__ = [
     "regulators",
     "control_center",
     "approvals",
-    "payments"
+    "payments",
+    "websocket",
+    "realtime_demo"
 ]
