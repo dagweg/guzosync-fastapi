@@ -10,6 +10,24 @@ from core import transform_mongo_doc
 
 router = APIRouter(prefix="/api/routes", tags=["routes"])
 
+@router.get("/", response_model=List[RouteResponse])
+async def get_all_routes(
+    request: Request,
+    page: int = 1,
+    limit: int = 10,
+    current_user: User = Depends(get_current_user)
+):
+    """Get all routes with pagination"""
+    skip = (page - 1) * limit
+    
+    # Get paginated routes
+    routes_cursor = request.app.state.mongodb.routes.find({}).skip(skip).limit(limit)
+    routes = await routes_cursor.to_list(length=limit)
+    
+    # Transform routes
+    return [transform_mongo_doc(route, RouteResponse) for route in routes]
+    
+    
 @router.get("/{route_id}", response_model=RouteResponse)
 async def get_route(
     request: Request,
