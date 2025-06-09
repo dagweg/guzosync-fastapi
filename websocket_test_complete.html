@@ -376,7 +376,6 @@
         border-radius: 4px;
         font-size: 0.9em;
       }
-
       .env-local {
         background-color: #28a745;
         color: white;
@@ -384,6 +383,11 @@
 
       .env-production {
         background-color: #dc3545;
+        color: white;
+      }
+
+      .env-custom {
+        background-color: #17a2b8;
         color: white;
       }
     </style>
@@ -445,26 +449,174 @@
             Disconnect
           </button>
 
+          <!-- URL Configuration -->
           <div
             style="
-              margin-left: 20px;
-              display: flex;
-              align-items: center;
-              gap: 10px;
+              margin-top: 15px;
+              padding: 10px;
+              background: #fff;
+              border-radius: 5px;
+              border: 1px solid #e9ecef;
             "
           >
-            <label for="envOverride" style="font-size: 12px; color: #6c757d"
-              >Override:</label
+            <h4 style="margin: 0 0 10px 0; font-size: 14px; color: #495057">
+              🔧 URL Configuration
+            </h4>
+
+            <div
+              style="
+                display: grid;
+                grid-template-columns: 1fr 1fr;
+                gap: 10px;
+                margin-bottom: 10px;
+              "
             >
-            <select
-              id="envOverride"
-              onchange="switchEnvironment()"
-              style="font-size: 12px; padding: 4px"
+              <div>
+                <label
+                  for="apiUrlInput"
+                  style="
+                    font-size: 12px;
+                    color: #6c757d;
+                    margin-bottom: 5px;
+                    display: block;
+                  "
+                  >API Base URL:</label
+                >
+                <input
+                  type="text"
+                  id="apiUrlInput"
+                  placeholder="http://localhost:8000"
+                  style="
+                    width: 100%;
+                    padding: 6px;
+                    font-size: 12px;
+                    border: 1px solid #ced4da;
+                    border-radius: 4px;
+                  "
+                />
+              </div>
+
+              <div>
+                <label
+                  for="wsUrlInput"
+                  style="
+                    font-size: 12px;
+                    color: #6c757d;
+                    margin-bottom: 5px;
+                    display: block;
+                  "
+                  >WebSocket Base URL:</label
+                >
+                <input
+                  type="text"
+                  id="wsUrlInput"
+                  placeholder="ws://localhost:8000"
+                  style="
+                    width: 100%;
+                    padding: 6px;
+                    font-size: 12px;
+                    border: 1px solid #ced4da;
+                    border-radius: 4px;
+                  "
+                />
+              </div>
+            </div>
+
+            <div
+              style="
+                display: flex;
+                align-items: center;
+                gap: 10px;
+                justify-content: space-between;
+              "
             >
-              <option value="auto">Auto-detect</option>
-              <option value="local">Force Local</option>
-              <option value="production">Force Production</option>
-            </select>
+              <div>
+                <label for="envOverride" style="font-size: 12px; color: #6c757d"
+                  >Environment:</label
+                >
+                <select
+                  id="envOverride"
+                  onchange="switchEnvironment()"
+                  style="font-size: 12px; padding: 4px; margin-left: 5px"
+                >
+                  <option value="auto">Auto-detect</option>
+                  <option value="local">Force Local</option>
+                  <option value="production">Force Production</option>
+                  <option value="custom">Custom URLs</option>
+                </select>
+              </div>
+              <button
+                onclick="applyCustomUrls()"
+                style="
+                  font-size: 12px;
+                  padding: 4px 8px;
+                  background: #17a2b8;
+                  color: white;
+                  border: none;
+                  border-radius: 3px;
+                  cursor: pointer;
+                "
+              >
+                Apply URLs
+              </button>
+            </div>
+
+            <!-- Preset URLs -->
+            <div
+              style="
+                margin-top: 10px;
+                padding-top: 10px;
+                border-top: 1px solid #e9ecef;
+              "
+            >
+              <span style="font-size: 11px; color: #6c757d; margin-right: 10px"
+                >Quick presets:</span
+              >
+              <button
+                onclick="setPresetUrls('local')"
+                style="
+                  font-size: 11px;
+                  padding: 2px 6px;
+                  background: #28a745;
+                  color: white;
+                  border: none;
+                  border-radius: 2px;
+                  cursor: pointer;
+                  margin-right: 5px;
+                "
+              >
+                Local
+              </button>
+              <button
+                onclick="setPresetUrls('production')"
+                style="
+                  font-size: 11px;
+                  padding: 2px 6px;
+                  background: #dc3545;
+                  color: white;
+                  border: none;
+                  border-radius: 2px;
+                  cursor: pointer;
+                  margin-right: 5px;
+                "
+              >
+                Production
+              </button>
+              <button
+                onclick="setPresetUrls('local-https')"
+                style="
+                  font-size: 11px;
+                  padding: 2px 6px;
+                  background: #6f42c1;
+                  color: white;
+                  border: none;
+                  border-radius: 2px;
+                  cursor: pointer;
+                "
+              >
+                Local HTTPS
+              </button>
+            </div>
           </div>
         </div>
       </div>
@@ -725,8 +877,7 @@
       let userId = null;
       let isConnected = false;
       let messageCount = 0;
-      let joinedRooms = new Set();
-      // Environment detection and API configuration
+      let joinedRooms = new Set(); // Environment detection and API configuration
       function getEnvironmentConfig(forceEnv = null) {
         let environment;
 
@@ -743,7 +894,14 @@
           environment = isLocal ? "local" : "production";
         }
 
-        if (environment === "local") {
+        if (environment === "custom") {
+          // For custom environment, return current values or defaults
+          return {
+            API_BASE: API_BASE || "http://localhost:8000",
+            WS_BASE: WS_BASE || "ws://localhost:8000",
+            environment: "custom",
+          };
+        } else if (environment === "local") {
           return {
             API_BASE: "http://localhost:8000",
             WS_BASE: "ws://localhost:8000",
@@ -766,9 +924,34 @@
       // Environment switcher function
       function switchEnvironment() {
         const override = document.getElementById("envOverride").value;
+
+        if (override === "custom") {
+          // Enable custom URL inputs
+          document.getElementById("apiUrlInput").disabled = false;
+          document.getElementById("wsUrlInput").disabled = false;
+
+          // Set placeholder values based on current config
+          document.getElementById("apiUrlInput").placeholder = API_BASE;
+          document.getElementById("wsUrlInput").placeholder = WS_BASE;
+
+          addLog(
+            "Custom URL mode enabled. Enter your URLs and click 'Apply URLs'",
+            "info"
+          );
+          return;
+        } else {
+          // Disable custom URL inputs for preset environments
+          document.getElementById("apiUrlInput").disabled = true;
+          document.getElementById("wsUrlInput").disabled = true;
+        }
+
         config = getEnvironmentConfig(override);
         API_BASE = config.API_BASE;
         WS_BASE = config.WS_BASE;
+
+        // Update URL inputs to show current values
+        document.getElementById("apiUrlInput").value = API_BASE;
+        document.getElementById("wsUrlInput").value = WS_BASE;
 
         // Update environment display
         const envElement = document.getElementById("environment");
@@ -787,6 +970,91 @@
             "warning"
           );
         }
+      }
+
+      // Apply custom URLs function
+      function applyCustomUrls() {
+        const apiUrl = document.getElementById("apiUrlInput").value.trim();
+        const wsUrl = document.getElementById("wsUrlInput").value.trim();
+
+        if (!apiUrl || !wsUrl) {
+          addLog("Please enter both API and WebSocket URLs", "error");
+          return;
+        }
+
+        // Validate URLs
+        try {
+          new URL(apiUrl);
+          // For WebSocket URLs, we need to handle ws:// and wss:// protocols
+          if (!wsUrl.startsWith("ws://") && !wsUrl.startsWith("wss://")) {
+            throw new Error("WebSocket URL must start with ws:// or wss://");
+          }
+        } catch (error) {
+          addLog(`Invalid URL format: ${error.message}`, "error");
+          return;
+        }
+
+        // Update configuration
+        API_BASE = apiUrl;
+        WS_BASE = wsUrl;
+        config = {
+          API_BASE: apiUrl,
+          WS_BASE: wsUrl,
+          environment: "custom",
+        };
+
+        // Update environment display
+        const envElement = document.getElementById("environment");
+        envElement.textContent = "CUSTOM";
+        envElement.className = "env-custom";
+
+        // Set environment dropdown to custom
+        document.getElementById("envOverride").value = "custom";
+
+        // Log the change
+        addLog("Custom URLs applied successfully!", "success");
+        addLog(`API Base: ${API_BASE}`, "info");
+        addLog(`WebSocket Base: ${WS_BASE}`, "info"); // If currently connected, warn user to reconnect
+        if (isConnected) {
+          addLog(
+            "⚠️ URLs changed. Please disconnect and reconnect to use new endpoints.",
+            "warning"
+          );
+        }
+      }
+
+      // Set preset URLs function
+      function setPresetUrls(preset) {
+        let apiUrl, wsUrl;
+
+        switch (preset) {
+          case "local":
+            apiUrl = "http://localhost:8000";
+            wsUrl = "ws://localhost:8000";
+            break;
+          case "local-https":
+            apiUrl = "https://localhost:8000";
+            wsUrl = "wss://localhost:8000";
+            break;
+          case "production":
+            apiUrl = "https://guzosync-fastapi.onrender.com";
+            wsUrl = "wss://guzosync-fastapi.onrender.com";
+            break;
+          default:
+            addLog(`Unknown preset: ${preset}`, "error");
+            return;
+        }
+
+        // Set the URLs in the input fields
+        document.getElementById("apiUrlInput").value = apiUrl;
+        document.getElementById("wsUrlInput").value = wsUrl;
+
+        // Enable custom mode and apply the URLs
+        document.getElementById("envOverride").value = "custom";
+        switchEnvironment();
+        applyCustomUrls();
+
+        addLog(`Applied ${preset} preset URLs`, "success");
       }
 
       // Tab management
@@ -1451,10 +1719,22 @@
         envElement.textContent = config.environment.toUpperCase();
         envElement.className = `env-${config.environment}`;
 
+        // Populate URL inputs with current values
+        document.getElementById("apiUrlInput").value = API_BASE;
+        document.getElementById("wsUrlInput").value = WS_BASE;
+
+        // Initially disable URL inputs (they get enabled when "Custom" is selected)
+        document.getElementById("apiUrlInput").disabled = true;
+        document.getElementById("wsUrlInput").disabled = true;
+
         addLog("WebSocket Test Client initialized", "info");
         addLog(`Environment: ${config.environment}`, "info");
         addLog(`API Base: ${API_BASE}`, "info");
         addLog(`WebSocket Base: ${WS_BASE}`, "info");
+        addLog(
+          "💡 Tip: Use the URL Configuration section to switch between environments or set custom URLs",
+          "info"
+        );
         addLog("Please login to start testing", "info");
         enableControls(false);
       });
