@@ -365,11 +365,26 @@
           flex-direction: column;
           align-items: stretch;
         }
-
         .controls {
           flex-direction: column;
           align-items: stretch;
         }
+      } /* Environment-specific styling */
+      .stat-card:first-child .stat-number {
+        font-weight: bold;
+        padding: 2px 6px;
+        border-radius: 4px;
+        font-size: 0.9em;
+      }
+
+      .env-local {
+        background-color: #28a745;
+        color: white;
+      }
+
+      .env-production {
+        background-color: #dc3545;
+        color: white;
       }
     </style>
   </head>
@@ -389,6 +404,10 @@
           <span id="statusText">Disconnected</span>
         </div>
         <div class="stats">
+          <div class="stat-card">
+            <div class="stat-number" id="environment">-</div>
+            <div class="stat-label">Environment</div>
+          </div>
           <div class="stat-card">
             <div class="stat-number" id="messageCount">0</div>
             <div class="stat-label">Messages</div>
@@ -425,6 +444,28 @@
           <button id="disconnectBtn" onclick="disconnect()" disabled>
             Disconnect
           </button>
+
+          <div
+            style="
+              margin-left: 20px;
+              display: flex;
+              align-items: center;
+              gap: 10px;
+            "
+          >
+            <label for="envOverride" style="font-size: 12px; color: #6c757d"
+              >Override:</label
+            >
+            <select
+              id="envOverride"
+              onchange="switchEnvironment()"
+              style="font-size: 12px; padding: 4px"
+            >
+              <option value="auto">Auto-detect</option>
+              <option value="local">Force Local</option>
+              <option value="production">Force Production</option>
+            </select>
+          </div>
         </div>
       </div>
 
@@ -684,9 +725,69 @@
       let userId = null;
       let isConnected = false;
       let messageCount = 0;
-      let joinedRooms = new Set(); // API configuration
-      const API_BASE = "http://localhost:8000";
-      const WS_BASE = "ws://localhost:8000";
+      let joinedRooms = new Set();
+      // Environment detection and API configuration
+      function getEnvironmentConfig(forceEnv = null) {
+        let environment;
+
+        if (forceEnv && forceEnv !== "auto") {
+          environment = forceEnv;
+        } else {
+          const hostname = window.location.hostname;
+          const isLocal =
+            hostname === "localhost" ||
+            hostname === "127.0.0.1" ||
+            hostname.startsWith("192.168.") ||
+            hostname.startsWith("10.") ||
+            hostname.startsWith("172.");
+          environment = isLocal ? "local" : "production";
+        }
+
+        if (environment === "local") {
+          return {
+            API_BASE: "http://localhost:8000",
+            WS_BASE: "ws://localhost:8000",
+            environment: "local",
+          };
+        } else {
+          return {
+            API_BASE: "https://guzosync-fastapi.onrender.com",
+            WS_BASE: "wss://guzosync-fastapi.onrender.com",
+            environment: "production",
+          };
+        }
+      }
+
+      // Get current environment configuration
+      let config = getEnvironmentConfig();
+      let API_BASE = config.API_BASE;
+      let WS_BASE = config.WS_BASE;
+
+      // Environment switcher function
+      function switchEnvironment() {
+        const override = document.getElementById("envOverride").value;
+        config = getEnvironmentConfig(override);
+        API_BASE = config.API_BASE;
+        WS_BASE = config.WS_BASE;
+
+        // Update environment display
+        const envElement = document.getElementById("environment");
+        envElement.textContent = config.environment.toUpperCase();
+        envElement.className = `env-${config.environment}`;
+
+        // Log the change
+        addLog(`Environment switched to: ${config.environment}`, "info");
+        addLog(`API Base: ${API_BASE}`, "info");
+        addLog(`WebSocket Base: ${WS_BASE}`, "info");
+
+        // If currently connected, warn user to reconnect
+        if (isConnected) {
+          addLog(
+            "⚠️ Environment changed. Please disconnect and reconnect to use new endpoints.",
+            "warning"
+          );
+        }
+      }
 
       // Tab management
       function switchTab(tabName) {
@@ -1343,11 +1444,17 @@
         a.click();
 
         URL.revokeObjectURL(url);
-      }
-
-      // Initialize
+      } // Initialize
       document.addEventListener("DOMContentLoaded", function () {
+        // Display current environment
+        const envElement = document.getElementById("environment");
+        envElement.textContent = config.environment.toUpperCase();
+        envElement.className = `env-${config.environment}`;
+
         addLog("WebSocket Test Client initialized", "info");
+        addLog(`Environment: ${config.environment}`, "info");
+        addLog(`API Base: ${API_BASE}`, "info");
+        addLog(`WebSocket Base: ${WS_BASE}`, "info");
         addLog("Please login to start testing", "info");
         enableControls(false);
       });
