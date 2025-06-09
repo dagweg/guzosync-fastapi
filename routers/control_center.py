@@ -8,7 +8,7 @@ from core.dependencies import get_current_user
 from core.mongo_utils import transform_mongo_doc, model_to_mongo_doc
 from core.email_service import email_service
 from core import get_logger
-from core.security import generate_secure_password
+from core.security import generate_secure_password, get_password_hash
 from models import User
 from schemas.user import RegisterUserRequest, UserResponse
 from schemas.transport import (
@@ -47,12 +47,11 @@ async def register_personnel(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail="User with this email already exists"
         )
-    
     user_dict = {
         "first_name": user_data.first_name,
         "last_name": user_data.last_name,
         "email": user_data.email,
-        "password": str(uuid4()),
+        "password": get_password_hash(str(uuid4())),  # Hash the temporary password
         "role": user_data.role.value,
         "phone_number": user_data.phone_number,
         "profile_image": user_data.profile_image,
@@ -60,8 +59,9 @@ async def register_personnel(
         "created_at": datetime.utcnow()
     }
     
-    # Store the temporary password for email
-    temp_password = user_dict["password"]
+    # Store the temporary password for email (before hashing)
+    temp_password = str(uuid4())
+    user_dict["password"] = get_password_hash(temp_password)
     
     result = await request.app.state.mongodb.users.insert_one(user_dict)
     created_user = await request.app.state.mongodb.users.find_one({"_id": result.inserted_id})

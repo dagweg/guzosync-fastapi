@@ -5,6 +5,7 @@ from datetime import datetime
 from core.dependencies import get_current_user
 from core.mongo_utils import transform_mongo_doc, model_to_mongo_doc
 from core.email_service import send_welcome_email
+from core.security import get_password_hash
 from core import get_logger
 from models import User, ApprovalRequest
 from models.user import UserRole
@@ -157,13 +158,12 @@ async def process_approval_request(
         
         # If approved, create the user account
         if action_data.action == ApprovalStatus.APPROVED:
-            
-            # Create the user
+              # Create the user
             user = User( #type:ignore[unreachable]
                 first_name=approval_request["first_name"],
                 last_name=approval_request["last_name"],
                 email=approval_request["email"],
-                password="TempPassword123!",  # Generate a temporary password
+                password=get_password_hash("TempPassword123!"),  # Hash the temporary password
                 role=UserRole.CONTROL_STAFF,
                 phone_number=approval_request["phone_number"],
                 profile_image=approval_request.get("profile_image"),

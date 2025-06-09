@@ -7,6 +7,7 @@ import secrets
 from core.dependencies import get_current_user
 from core.mongo_utils import transform_mongo_doc, model_to_mongo_doc
 from core.email_service import send_password_reset_email, send_welcome_email
+from core.security import get_password_hash, verify_password
 from models import User, ApprovalRequest
 from models.user import UserRole as ModelUserRole
 from models.approval import ApprovalStatus
@@ -81,13 +82,12 @@ async def register_user(
                 status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
                 detail="Error creating approval request"
             )
-    
-    # For all other roles (including CONTROL_ADMIN), proceed with normal registration
+      # For all other roles (including CONTROL_ADMIN), proceed with normal registration
     user = User(
         first_name=user_data.first_name,
         last_name=user_data.last_name,
         email=user_data.email,
-        password=user_data.password,  # In production, hash this password
+        password=get_password_hash(user_data.password),  # Hash the password
         role=ModelUserRole(user_data.role.value),  # Convert schema enum to model enum
         phone_number=user_data.phone_number,
         profile_image=user_data.profile_image,
@@ -125,7 +125,7 @@ async def login(
     logger.info(f"Login attempt for email: {user_data.email}")
     
     user = await request.app.state.mongodb.users.find_one({"email": user_data.email})
-    if not user or user.get("password") != user_data.password or not user.get("is_active", True):  # In production, verify hashed password
+    if not user or not verify_password(user_data.password, user.get("password", "")) or not user.get("is_active", True):
         logger.warning(f"Login failed for email: {user_data.email}")
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
@@ -233,7 +233,7 @@ async def confirm_password_reset(
     user = await request.app.state.mongodb.users.find_one({
         "password_reset_token": reset_data.token,
         "password_reset_expires": {"$gt": datetime.utcnow()}
-    })
+        })
     
     if not user:
         logger.warning("Invalid or expired password reset token used")
@@ -247,7 +247,7 @@ async def confirm_password_reset(
         await request.app.state.mongodb.users.update_one(
             {"password_reset_token": reset_data.token},
             {
-                "$set": {"password": reset_data.new_password},  # In production, hash this password
+                "$set": {"password": get_password_hash(reset_data.new_password)},  # Hash the new password
                 "$unset": {"password_reset_token": "", "password_reset_expires": ""}
             }
         )

@@ -1,0 +1,5707 @@
+{
+  "type": "FeatureCollection",
+  "generator": "overpass-turbo",
+  "copyright": "The data included in this document is from www.openstreetmap.org. The data is made available under ODbL.",
+  "timestamp": "2025-04-16T13:15:35Z",
+  "features": [
+    {
+      "type": "Feature",
+      "properties": {
+        "@id": "node/724213545",
+        "bus": "yes",
+        "highway": "bus_stop",
+        "minibus": "yes",
+        "network": "Addis Ababa Public Transport",
+        "public_transport": "platform",
+        "public_transport:version": "2"
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          38.7447798,
+          9.0111213
+        ]
+      },
+      "id": "node/724213545"
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "@id": "node/724213548",
+        "highway": "bus_stop",
+        "minibus": "yes",
+        "network": "Addis Ababa Public Transport",
+        "public_transport": "platform",
+        "public_transport:version": "2"
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          38.7461849,
+          9.0094789
+        ]
+      },
+      "id": "node/724213548"
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "@id": "node/724213554",
+        "bus": "yes",
+        "highway": "bus_stop",
+        "minibus": "yes",
+        "network": "Addis Ababa Public Transport",
+        "public_transport": "platform",
+        "public_transport:version": "2"
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          38.7496507,
+          9.01225
+        ]
+      },
+      "id": "node/724213554"
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "@id": "node/724213555",
+        "bus": "yes",
+        "highway": "bus_stop",
+        "minibus": "yes",
+        "network": "Addis Ababa Public Transport",
+        "public_transport": "platform",
+        "public_transport:version": "2"
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          38.749269,
+          9.0135729
+        ]
+      },
+      "id": "node/724213555"
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "@id": "node/847244293",
+        "bus": "yes",
+        "highway": "bus_stop",
+        "loc_ref": "45/52/61",
+        "name": "Beherawi Theatre",
+        "network": "Addis Ababa Public Transport",
+        "operator": "Addis Ababa Bus Service Enterprise",
+        "public_transport": "platform",
+        "public_transport:version": "2",
+        "ref:AB": "AB022;AB032;AB045"
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          38.7525538,
+          9.0165395
+        ]
+      },
+      "id": "node/847244293"
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "@id": "node/1721643697",
+        "highway": "bus_stop",
+        "name": "2 Kutir Mazoiya",
+        "name:am": "ሁለት ቁጥር ማዞሪያ",
+        "network": "Addis Ababa Public Transport",
+        "public_transport": "platform",
+        "public_transport:version": "2"
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          38.732114,
+          8.973677
+        ]
+      },
+      "id": "node/1721643697"
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "@id": "node/1942829870",
+        "bench": "no",
+        "highway": "bus_stop",
+        "name": "Midi Bus Stop",
+        "network": "Addis Ababa Public Transport",
+        "public_transport": "platform",
+        "public_transport:version": "2",
+        "shelter": "no"
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          38.8388754,
+          8.9828995
+        ]
+      },
+      "id": "node/1942829870"
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "@id": "node/3752876608",
+        "highway": "bus_stop",
+        "name": "C.M.C",
+        "name:am": "ሲ.ኤም.ሲ",
+        "name:en": "C.M.C",
+        "network": "Addis Ababa Light Rail",
+        "operator": "Ethiopian Railway Corporation",
+        "railway": "halt",
+        "station": "light_rail"
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          38.8504557,
+          9.0209748
+        ]
+      },
+      "id": "node/3752876608"
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "@id": "node/4618297890",
+        "bus": "yes",
+        "highway": "bus_stop",
+        "name": "ታክሲ መሳፈሪያ",
+        "name:am": "ታክሲ መሳፈሪያ",
+        "name:en": "Medhanialem Taxi stop",
+        "network": "Addis Ababa Public Transport",
+        "operator": "Addis Ababa Bus Service Enterprise",
+        "public_transport": "platform",
+        "public_transport:version": "2"
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          38.7871915,
+          8.9974088
+        ]
+      },
+      "id": "node/4618297890"
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "@id": "node/4618298089",
+        "bus": "yes",
+        "highway": "bus_stop",
+        "name": "ታክሲ መጫኛ",
+        "name:am": "ታክሲ መጫኛ",
+        "name:en": "Taxi",
+        "network": "Addis Ababa Public Transport",
+        "operator": "Addis Ababa Bus Service Enterprise",
+        "public_transport": "platform",
+        "public_transport:version": "2"
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          38.7859966,
+          8.9986347
+        ]
+      },
+      "id": "node/4618298089"
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "@id": "node/4618298090",
+        "highway": "bus_stop",
+        "name": "ታክሲ መጫኛ",
+        "name:am": "ታክሲ መጫኛ",
+        "name:en": "Taxi",
+        "network": "Addis Ababa Public Transport",
+        "public_transport": "platform",
+        "public_transport:version": "2"
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          38.8018164,
+          9.0177804
+        ]
+      },
+      "id": "node/4618298090"
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "@id": "node/4681739998",
+        "highway": "bus_stop",
+        "name:en": "Gerji taxi tera",
+        "network": "Addis Ababa Public Transport",
+        "public_transport": "platform",
+        "public_transport:version": "2"
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          38.8089619,
+          8.9948695
+        ]
+      },
+      "id": "node/4681739998"
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "@id": "node/4827049843",
+        "highway": "bus_stop",
+        "name": "Samit Bete Giorgs ሳሚት ቤተ ጊዮርግስ",
+        "name:am": "Samit Bete Giorgs ሳሚት ቤተ ጊዮርግስ",
+        "network": "Addis Ababa Public Transport",
+        "public_transport": "platform",
+        "public_transport:version": "2"
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          38.8525671,
+          8.9946102
+        ]
+      },
+      "id": "node/4827049843"
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "@id": "node/4832025022",
+        "highway": "bus_stop",
+        "name": "ቦሌ ታክሲ",
+        "name:am": "Kasantshis",
+        "name:en": "Taxi to Bole",
+        "network": "Addis Ababa Public Transport",
+        "public_transport": "platform",
+        "public_transport:version": "2"
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          38.7712206,
+          9.0153923
+        ]
+      },
+      "id": "node/4832025022"
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "@id": "node/4832025024",
+        "bus": "yes",
+        "highway": "bus_stop",
+        "name": "4 Kilo",
+        "name:am": "Arat Kilo",
+        "network": "Addis Ababa Public Transport",
+        "operator": "Addis Ababa Bus Service Enterprise",
+        "public_transport": "platform",
+        "public_transport:version": "2",
+        "ref:AB": "AB041;AB110;AB055;AB064;AB068;AB122",
+        "ref:SH": "SH013 (A01);SH014 (A08);SH027;SH028;SH073;SH087;SH095"
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          38.7632408,
+          9.0344007
+        ]
+      },
+      "id": "node/4832025024"
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "@id": "node/5140795421",
+        "highway": "bus_stop",
+        "name": "ዘነበወርቅ-ወይራ-ቤተል ተክሲ ተራ",
+        "name:am": "ዘነበወርቅ-ወይራ-ቤተል ተክሲ ተራ",
+        "name:en": "Woyira sefer taxi terminal",
+        "network": "Addis Ababa Public Transport",
+        "operator": "Han",
+        "public_transport": "platform",
+        "public_transport:version": "2"
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          38.7068171,
+          9.0047931
+        ]
+      },
+      "id": "node/5140795421"
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "@id": "node/5158969226",
+        "highway": "bus_stop",
+        "name": "ተስፋሚካኤል መንገድ",
+        "name:am": "ተስፋሚካኤል መንገድ",
+        "name:en": "Tesfamichael Street",
+        "network": "Addis Ababa Public Transport",
+        "public_transport": "platform",
+        "public_transport:version": "2"
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          38.7935121,
+          9.0052236
+        ]
+      },
+      "id": "node/5158969226"
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "@id": "node/5248250426",
+        "highway": "bus_stop",
+        "name:en": "Sheger Bus",
+        "network": "Addis Ababa Public Transport",
+        "public_transport": "platform",
+        "public_transport:version": "2"
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          38.7383296,
+          8.9924754
+        ]
+      },
+      "id": "node/5248250426"
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "@id": "node/5330678521",
+        "bus": "yes",
+        "highway": "bus_stop",
+        "name": "Ambassador",
+        "network": "Addis Ababa Public Transport",
+        "operator": "Addis Ababa Bus Service Enterprise",
+        "public_transport": "platform",
+        "public_transport:version": "2",
+        "ref:AB": "AB014",
+        "ref:SH": "SH016 (C13);SH079;SH099"
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          38.7553162,
+          9.0164409
+        ]
+      },
+      "id": "node/5330678521"
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "@id": "node/5352663622",
+        "highway": "bus_stop",
+        "minibus": "yes",
+        "name": "ከቦሌ ሚካኤል ወደ ቦሌ ቡልቡላ",
+        "name:en": "Bole Michael to Bole Bulbula",
+        "network": "Addis Ababa Public Transport"
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          38.7732925,
+          8.9796529
+        ]
+      },
+      "id": "node/5352663622"
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "@id": "node/5545673134",
+        "highway": "bus_stop",
+        "name": "ካዛንችስ ተክሲ",
+        "name:en": "Taxi to Kazanchis",
+        "network": "Addis Ababa Public Transport",
+        "public_transport": "platform",
+        "public_transport:version": "2"
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          38.7755829,
+          9.0264953
+        ]
+      },
+      "id": "node/5545673134"
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "@id": "node/5545787624",
+        "highway": "bus_stop",
+        "name": "ኣዋሬ ታክሲ",
+        "name:am": "አዋሬ ታክሲ",
+        "name:en": "Taxi to Aware",
+        "network": "Addis Ababa Public Transport",
+        "public_transport": "platform",
+        "public_transport:version": "2"
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          38.7723723,
+          9.0159151
+        ]
+      },
+      "id": "node/5545787624"
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "@id": "node/5736089088",
+        "bus": "yes",
+        "highway": "bus_stop",
+        "name": "Stadium",
+        "network": "Addis Ababa Public Transport",
+        "operator": "Addis Ababa Bus Service Enterprise",
+        "public_transport": "platform",
+        "public_transport:version": "2",
+        "ref:AB": "AB029;AB055;AB068;AB130;AB127;AB078",
+        "ref:SH": "SH011 (A24);SH067;SH072;SH073;SH081"
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          38.7570321,
+          9.0120276
+        ]
+      },
+      "id": "node/5736089088"
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "@id": "node/6251054285",
+        "highway": "bus_stop",
+        "name": "Mebrathail",
+        "name:am": "መብራት ሀይል",
+        "network": "Addis Ababa Public Transport",
+        "public_transport": "platform",
+        "public_transport:version": "2",
+        "ref:AB": "AB018;AB087;AB073",
+        "ref:SH": "SH076"
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          38.7146778,
+          9.0295451
+        ]
+      },
+      "id": "node/6251054285"
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "@id": "node/6367428586",
+        "highway": "bus_stop",
+        "name:en": "Asko",
+        "network": "Addis Ababa Public Transport",
+        "public_transport": "platform",
+        "public_transport:version": "2"
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          38.6934813,
+          9.0655564
+        ]
+      },
+      "id": "node/6367428586"
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "@id": "node/6373574986",
+        "highway": "bus_stop",
+        "name": "Bole Printing Press",
+        "network": "Addis Ababa Public Transport",
+        "public_transport": "platform",
+        "public_transport:version": "2",
+        "ref:AB": "AB014",
+        "ref:SH": "SH027;SH099",
+        "shelter": "no"
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          38.7718334,
+          8.9976331
+        ]
+      },
+      "id": "node/6373574986"
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "@id": "node/6375221086",
+        "bus": "yes",
+        "highway": "bus_stop",
+        "name:en": "Mexico Square",
+        "network": "Addis Ababa Public Transport",
+        "public_transport": "platform",
+        "public_transport:version": "2"
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          38.7444829,
+          9.0103817
+        ]
+      },
+      "id": "node/6375221086"
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "@id": "node/6728576386",
+        "bus": "yes",
+        "highway": "bus_stop",
+        "name:en": "Minibus Mexico to Hayulet",
+        "network": "Addis Ababa Public Transport",
+        "public_transport": "platform",
+        "public_transport:version": "2"
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          38.746265,
+          9.0109999
+        ]
+      },
+      "id": "node/6728576386"
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "@id": "node/6728576388",
+        "bus": "yes",
+        "highway": "bus_stop",
+        "name:en": "Minibus to Merkato",
+        "network": "Addis Ababa Public Transport",
+        "public_transport": "platform",
+        "public_transport:version": "2"
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          38.7571049,
+          9.0121681
+        ]
+      },
+      "id": "node/6728576388"
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "@id": "node/6728583386",
+        "bus": "yes",
+        "highway": "bus_stop",
+        "name:en": "Minibus Piazza to Paster",
+        "network": "Addis Ababa Public Transport",
+        "public_transport": "platform",
+        "public_transport:version": "2"
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          38.7516761,
+          9.0331479
+        ]
+      },
+      "id": "node/6728583386"
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "@id": "node/6728583387",
+        "bus": "yes",
+        "highway": "bus_stop",
+        "name:en": "Minibus Piazza to Kazanchis",
+        "network": "Addis Ababa Public Transport",
+        "public_transport": "platform",
+        "public_transport:version": "2"
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          38.7536395,
+          9.0336504
+        ]
+      },
+      "id": "node/6728583387"
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "@id": "node/6728583485",
+        "highway": "bus_stop",
+        "name:en": "Taxi line Mexico to Kazanchis",
+        "network": "Addis Ababa Public Transport",
+        "public_transport": "platform",
+        "public_transport:version": "2"
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          38.7468,
+          9.0116867
+        ]
+      },
+      "id": "node/6728583485"
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "@id": "node/6728583486",
+        "highway": "bus_stop",
+        "name:en": "Minibus Piazza to Shuro Meda",
+        "network": "Addis Ababa Public Transport",
+        "public_transport": "platform",
+        "public_transport:version": "2"
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          38.7504896,
+          9.0356217
+        ]
+      },
+      "id": "node/6728583486"
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "@id": "node/6728583585",
+        "highway": "bus_stop",
+        "name:en": "Minibus Piazza to Mexico",
+        "network": "Addis Ababa Public Transport",
+        "public_transport": "platform",
+        "public_transport:version": "2"
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          38.7524588,
+          9.0352485
+        ]
+      },
+      "id": "node/6728583585"
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "@id": "node/6728599185",
+        "bus": "yes",
+        "highway": "bus_stop",
+        "name:en": "Kazanchis",
+        "network": "Addis Ababa Public Transport",
+        "public_transport": "platform",
+        "public_transport:version": "2"
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          38.771456,
+          9.0167914
+        ]
+      },
+      "id": "node/6728599185"
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "@id": "node/6728599385",
+        "highway": "bus_stop",
+        "name:en": "Minibus to Piazza",
+        "network": "Addis Ababa Public Transport",
+        "public_transport": "platform",
+        "public_transport:version": "2"
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          38.7325166,
+          9.0462708
+        ]
+      },
+      "id": "node/6728599385"
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "@id": "node/6798821585",
+        "highway": "bus_stop",
+        "name": "ከበደ ወሰኔ መንገድ",
+        "name:en": "KEBEDE WOSENE RODE",
+        "network": "Addis Ababa Public Transport",
+        "public_transport": "platform",
+        "public_transport:version": "2"
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          38.8067942,
+          8.9969145
+        ]
+      },
+      "id": "node/6798821585"
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "@id": "node/6798821586",
+        "bus": "yes",
+        "highway": "bus_stop",
+        "name": "Kebede Wessene Rd.",
+        "name:am": "ከበደ ወሰኔ መንገድ",
+        "network": "Addis Ababa Public Transport",
+        "operator": "Addis Ababa Bus Service Enterprise",
+        "public_transport": "platform",
+        "public_transport:version": "2"
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          38.8061451,
+          8.9976335
+        ]
+      },
+      "id": "node/6798821586"
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "@id": "node/6798884186",
+        "highway": "bus_stop",
+        "name": "ከበደ ወሰኔ መንገድ",
+        "name:en": "KEBEDE WOSENE RODE",
+        "network": "Addis Ababa Public Transport",
+        "public_transport": "platform",
+        "public_transport:version": "2"
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          38.8034634,
+          9.0003941
+        ]
+      },
+      "id": "node/6798884186"
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "@id": "node/6798884187",
+        "highway": "bus_stop",
+        "name": "ከበደ ወሰኔ መንገድ",
+        "name:en": "KEBEDE WOSENE RODE",
+        "network": "Addis Ababa Public Transport",
+        "public_transport": "platform",
+        "public_transport:version": "2"
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          38.8024197,
+          9.0009966
+        ]
+      },
+      "id": "node/6798884187"
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "@id": "node/6798927886",
+        "bus": "yes",
+        "highway": "bus_stop",
+        "name": "Kebede Wessene Rd.",
+        "name:am": "ከበደ ወሰኔ መንገድ",
+        "network": "Addis Ababa Public Transport",
+        "operator": "Addis Ababa Bus Service Enterprise",
+        "public_transport": "platform",
+        "public_transport:version": "2",
+        "ref:AB": "AB046"
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          38.8053365,
+          8.9986049
+        ]
+      },
+      "id": "node/6798927886"
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "@id": "node/6798927887",
+        "highway": "bus_stop",
+        "name": "ከበደ ወሰኔ መንገድ",
+        "name:en": "KEBEDE WOSENE RODE",
+        "network": "Addis Ababa Public Transport",
+        "public_transport": "platform",
+        "public_transport:version": "2"
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          38.8079264,
+          8.9956127
+        ]
+      },
+      "id": "node/6798927887"
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "@id": "node/6798927888",
+        "highway": "bus_stop",
+        "name": "ገርጂ ታክሲ ተራ",
+        "name:en": "Gerji Taxi Tera",
+        "network": "Addis Ababa Public Transport",
+        "public_transport": "platform",
+        "public_transport:version": "2"
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          38.8094008,
+          8.9947947
+        ]
+      },
+      "id": "node/6798927888"
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "@id": "node/6798927889",
+        "highway": "bus_stop",
+        "name": "ከበደ ወሰኔ መንገድ",
+        "name:en": "KEBEDE WOSENE RODE",
+        "network": "Addis Ababa Public Transport",
+        "public_transport": "platform",
+        "public_transport:version": "2"
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          38.8043902,
+          8.999679
+        ]
+      },
+      "id": "node/6798927889"
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "@id": "node/6798927890",
+        "highway": "bus_stop",
+        "name": "ከበደ ወሰኔ መንገድ",
+        "name:en": "KEBEDE WOSENE RODE",
+        "network": "Addis Ababa Public Transport",
+        "public_transport": "platform",
+        "public_transport:version": "2"
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          38.8009613,
+          9.0018274
+        ]
+      },
+      "id": "node/6798927890"
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "@id": "node/6798933387",
+        "highway": "bus_stop",
+        "name": "ከበደ ወሰኔ መንገድ",
+        "name:en": "KEBEDE WOSENE RODE",
+        "network": "Addis Ababa Public Transport",
+        "public_transport": "platform",
+        "public_transport:version": "2"
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          38.8003434,
+          9.0021649
+        ]
+      },
+      "id": "node/6798933387"
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "@id": "node/6967179323",
+        "bus": "yes",
+        "highway": "bus_stop",
+        "name": "Kera (Gofa Road)",
+        "name:am": "ቄራ",
+        "network": "Addis Ababa Public Transport",
+        "operator": "Addis Ababa Bus Service Enterprise",
+        "public_transport": "platform",
+        "public_transport:version": "2",
+        "ref:AB": "AB054",
+        "ref:SH": "SH020 (C15);SH024 (A05)"
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          38.7498599,
+          8.9825519
+        ]
+      },
+      "id": "node/6967179323"
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "@id": "node/6967281153",
+        "bus": "yes",
+        "highway": "bus_stop",
+        "name": "Friendship Building",
+        "name:am": "ፍሬንድሺፕ",
+        "network": "Addis Ababa Public Transport",
+        "operator": "Addis Ababa Bus Service Enterprise",
+        "public_transport": "platform",
+        "public_transport:version": "2",
+        "ref:AB": "AB014",
+        "ref:SH": "SH015;SH027;SH072;SH079"
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          38.7859995,
+          8.9899905
+        ]
+      },
+      "id": "node/6967281153"
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "@id": "node/6967281241",
+        "bus": "yes",
+        "highway": "bus_stop",
+        "name": "Piassa (Downtown Cafe)",
+        "network": "Addis Ababa Public Transport",
+        "operator": "Addis Ababa Bus Service Enterprise",
+        "public_transport": "platform",
+        "public_transport:version": "2",
+        "ref:AB": "AB003;AB006;AB037;AB045;AB005",
+        "ref:SH": "A18;C15;C50;SH100;SH079;SH099"
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          38.7512565,
+          9.0319356
+        ]
+      },
+      "id": "node/6967281241"
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "@id": "node/6984333646",
+        "bus": "yes",
+        "highway": "bus_stop",
+        "name": "Minibus piazza to Kidiste_Mariam",
+        "network": "Addis Ababa Public Transport",
+        "public_transport": "platform",
+        "public_transport:version": "2"
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          38.7538133,
+          9.0333037
+        ]
+      },
+      "id": "node/6984333646"
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "@id": "node/6984333647",
+        "bus": "yes",
+        "highway": "bus_stop",
+        "name": "Minibus piazza to Megenagna",
+        "network": "Addis Ababa Public Transport",
+        "public_transport": "platform",
+        "public_transport:version": "2"
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          38.7537297,
+          9.0334688
+        ]
+      },
+      "id": "node/6984333647"
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "@id": "node/6984333648",
+        "highway": "bus_stop",
+        "name": "Minibus piazza to Hayahulet",
+        "network": "Addis Ababa Public Transport",
+        "public_transport": "platform",
+        "public_transport:version": "2"
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          38.7536844,
+          9.0335473
+        ]
+      },
+      "id": "node/6984333648"
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "@id": "node/7022397409",
+        "bus": "yes",
+        "highway": "bus_stop",
+        "name": "Bole Millenium",
+        "name:am": "ሚሊኒየም አዳራሽ",
+        "network": "Addis Ababa Public Transport",
+        "operator": "Addis Ababa Bus Service Enterprise",
+        "public_transport": "platform",
+        "public_transport:version": "2",
+        "ref:AB": "AB052",
+        "ref:SH": "SH015;SH027;SH072"
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          38.7897496,
+          8.9885373
+        ]
+      },
+      "id": "node/7022397409"
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "@id": "node/7022397410",
+        "bus": "yes",
+        "highway": "bus_stop",
+        "name": "Bole Millenium",
+        "name:am": "ሚሊኒየም አዳራሽ",
+        "network": "Addis Ababa Public Transport",
+        "operator": "Addis Ababa Bus Service Enterprise",
+        "public_transport": "platform",
+        "public_transport:version": "2",
+        "ref:AB": "AB052",
+        "ref:SH": "SH015;SH027;SH072"
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          38.789886,
+          8.9887535
+        ]
+      },
+      "id": "node/7022397410"
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "@id": "node/7037142419",
+        "bus": "yes",
+        "highway": "bus_stop",
+        "name": "Yeha",
+        "network": "Addis Ababa Public Transport",
+        "operator": "Addis Ababa Bus Service Enterprise",
+        "public_transport": "platform",
+        "public_transport:version": "2",
+        "ref:AB": "AB055"
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          38.7836264,
+          9.060739
+        ]
+      },
+      "id": "node/7037142419"
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "@id": "node/7037142420",
+        "bus": "yes",
+        "highway": "bus_stop",
+        "name": "Tena Tabya",
+        "network": "Addis Ababa Public Transport",
+        "operator": "Addis Ababa Bus Service Enterprise",
+        "public_transport": "platform",
+        "public_transport:version": "2",
+        "ref:AB": "AB012;AB055;AB064"
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          38.7839285,
+          9.0608445
+        ]
+      },
+      "id": "node/7037142420"
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "@id": "node/7037142421",
+        "bus": "yes",
+        "highway": "bus_stop",
+        "name": "Biret Dildiy (Bono Wuha)",
+        "network": "Addis Ababa Public Transport",
+        "operator": "Addis Ababa Bus Service Enterprise",
+        "public_transport": "platform",
+        "public_transport:version": "2",
+        "ref:AB": "AB064;AB055",
+        "ref:SH": "SH014 (A08);SH073;SH087"
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          38.7811505,
+          9.0598571
+        ]
+      },
+      "id": "node/7037142421"
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "@id": "node/7037142422",
+        "bus": "yes",
+        "highway": "bus_stop",
+        "name": "Bret Dildy (Bono Wuha)",
+        "network": "Addis Ababa Public Transport",
+        "operator": "Addis Ababa Bus Service Enterprise",
+        "public_transport": "platform",
+        "public_transport:version": "2",
+        "ref:AB": "AB064",
+        "ref:SH": "SH014"
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          38.7810894,
+          9.0599927
+        ]
+      },
+      "id": "node/7037142422"
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "@id": "node/7037142424",
+        "bus": "yes",
+        "highway": "bus_stop",
+        "name": "Bole Medhanialem",
+        "network": "Addis Ababa Public Transport",
+        "operator": "Addis Ababa Bus Service Enterprise",
+        "public_transport": "platform",
+        "public_transport:version": "2",
+        "ref:AB": "AB009"
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          38.7860596,
+          8.9983386
+        ]
+      },
+      "id": "node/7037142424"
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "@id": "node/7037142426",
+        "bus": "yes",
+        "highway": "bus_stop",
+        "name": "Bole Medhanialem",
+        "network": "Addis Ababa Public Transport",
+        "operator": "Addis Ababa Bus Service Enterprise",
+        "public_transport": "platform",
+        "public_transport:version": "2",
+        "ref:AB": "AB009"
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          38.7862428,
+          8.9984556
+        ]
+      },
+      "id": "node/7037142426"
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "@id": "node/7037142466",
+        "bus": "yes",
+        "highway": "bus_stop",
+        "name": "Bole Dildiy",
+        "name:en": "Bole Bridge",
+        "network": "Addis Ababa Public Transport",
+        "operator": "Addis Ababa Bus Service Enterprise",
+        "public_transport": "platform",
+        "public_transport:version": "2",
+        "ref:AB": "AB048T1S2;AB093;AB125;AB014",
+        "ref:SH": "SH082;SH089"
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          38.7912061,
+          8.9869933
+        ]
+      },
+      "id": "node/7037142466"
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "@id": "node/7041052963",
+        "bus": "yes",
+        "highway": "bus_stop",
+        "name": "Bole Mickael",
+        "network": "Addis Ababa Public Transport",
+        "operator": "Addis Ababa Bus Service Enterprise",
+        "public_transport": "platform",
+        "public_transport:version": "2",
+        "ref:AB": "AB048T1S1",
+        "ref:SH": "SH083;SH092"
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          38.7772221,
+          8.9816131
+        ]
+      },
+      "id": "node/7041052963"
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "@id": "node/7041052964",
+        "bus": "yes",
+        "highway": "bus_stop",
+        "name": "MOHA (PEPSI)",
+        "network": "Addis Ababa Public Transport",
+        "operator": "Addis Ababa Bus Service Enterprise",
+        "public_transport": "platform",
+        "public_transport:version": "2",
+        "ref:SH": "SH008"
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          38.754198,
+          8.9830617
+        ]
+      },
+      "id": "node/7041052964"
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "@id": "node/7041052969",
+        "bus": "yes",
+        "highway": "bus_stop",
+        "name": "Gotera (Oilibiya)",
+        "name:am": "ጎተራ",
+        "network": "Addis Ababa Public Transport",
+        "operator": "Addis Ababa Bus Service Enterprise",
+        "public_transport": "platform",
+        "public_transport:version": "2",
+        "ref:AB": "AB104;AB004;AB029;AB110;AB014",
+        "ref:SH": "SH016 (C13);SH086",
+        "shelter": "yes"
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          38.7600125,
+          8.9762662
+        ]
+      },
+      "id": "node/7041052969"
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "@id": "node/7041052970",
+        "bus": "yes",
+        "highway": "bus_stop",
+        "name": "Gotera (Oilibiya)",
+        "name:am": "ጎተራ",
+        "network": "Addis Ababa Public Transport",
+        "operator": "Addis Ababa Bus Service Enterprise",
+        "public_transport": "platform",
+        "public_transport:version": "2",
+        "ref:AB": "AB004;AB029;AB104;AB110;AB004;AB014;AB027;AB056;AB104",
+        "ref:SH": "SH016;SH038T1A04 (B19);SH028;SH086"
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          38.7598239,
+          8.976182
+        ]
+      },
+      "id": "node/7041052970"
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "@id": "node/7041052975",
+        "bus": "yes",
+        "highway": "bus_stop",
+        "name": "St. Joseph Church",
+        "network": "Addis Ababa Public Transport",
+        "operator": "Addis Ababa Bus Service Enterprise",
+        "public_transport": "platform",
+        "public_transport:version": "2",
+        "ref:AB": "AB026;AB029;AB104",
+        "ref:SH": "SH086"
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          38.7620577,
+          8.9697308
+        ]
+      },
+      "id": "node/7041052975"
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "@id": "node/7041071348",
+        "bus": "yes",
+        "highway": "bus_stop",
+        "name": "AU (Mikael) Rounrdabout",
+        "network": "Addis Ababa Public Transport",
+        "operator": "Addis Ababa Bus Service Enterprise",
+        "public_transport": "platform",
+        "public_transport:version": "2",
+        "ref:AB": "AB067;AB117;AB092;AB121;AB103;AB107",
+        "ref:SH": "SH008;SH075"
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          38.7395945,
+          8.9990569
+        ]
+      },
+      "id": "node/7041071348"
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "@id": "node/7041071351",
+        "bus": "yes",
+        "highway": "bus_stop",
+        "name": "Lancia",
+        "network": "Addis Ababa Public Transport",
+        "operator": "Addis Ababa Bus Service Enterprise",
+        "public_transport": "platform",
+        "public_transport:version": "2",
+        "ref:AB": "ABR029S4"
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          38.7591336,
+          8.992006
+        ]
+      },
+      "id": "node/7041071351"
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "@id": "node/7041071352",
+        "bus": "yes",
+        "highway": "bus_stop",
+        "name": "Global Hotel",
+        "network": "Addis Ababa Public Transport",
+        "operator": "Addis Ababa Bus Service Enterprise",
+        "public_transport": "platform",
+        "public_transport:version": "2",
+        "ref:AB": "AB110;AB056"
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          38.7595772,
+          8.9941475
+        ]
+      },
+      "id": "node/7041071352"
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "@id": "node/7041071353",
+        "bench": "yes",
+        "bin": "yes",
+        "bus": "yes",
+        "highway": "bus_stop",
+        "name": "Global Hotel",
+        "network": "Addis Ababa Public Transport",
+        "operator": "Addis Ababa Bus Service Enterprise",
+        "public_transport": "platform",
+        "public_transport:version": "2",
+        "ref:AB": "AB029;AB110;AB027",
+        "ref:SH": "SH086",
+        "shelter": "yes"
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          38.7598183,
+          8.9941836
+        ]
+      },
+      "id": "node/7041071353"
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "@id": "node/7041071354",
+        "bus": "yes",
+        "highway": "bus_stop",
+        "name": "Beklo Bet (Global)",
+        "name:am": "በቅሎ ቤት",
+        "network": "Addis Ababa Public Transport",
+        "operator": "Addis Ababa Bus Service Enterprise",
+        "public_transport": "platform",
+        "public_transport:version": "2",
+        "ref:AB": "AB029",
+        "ref:SH": "SH016;SH018"
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          38.7596352,
+          8.9953383
+        ]
+      },
+      "id": "node/7041071354"
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "@id": "node/7041071355",
+        "bus": "yes",
+        "highway": "bus_stop",
+        "name": "Tele Garage",
+        "network": "Addis Ababa Public Transport",
+        "operator": "Addis Ababa Bus Service Enterprise",
+        "public_transport": "platform",
+        "public_transport:version": "2",
+        "ref:AB": "AB029;AB014T1S7;AB014",
+        "ref:SH": "SH028;SH086"
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          38.7584812,
+          9.000141
+        ]
+      },
+      "id": "node/7041071355"
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "@id": "node/7041071360",
+        "bus": "yes",
+        "highway": "bus_stop",
+        "name": "Filweha (Hotsprings)",
+        "network": "Addis Ababa Public Transport",
+        "operator": "Addis Ababa Bus Service Enterprise",
+        "public_transport": "platform",
+        "public_transport:version": "2",
+        "ref:AB": "AB022;AB032;AB070;AB102;AB071;AB128",
+        "ref:SH": "SH070"
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          38.7572645,
+          9.017718
+        ]
+      },
+      "id": "node/7041071360"
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "@id": "node/7041071362",
+        "bus": "yes",
+        "highway": "bus_stop",
+        "name": "Filweha (Hotsprings)",
+        "network": "Addis Ababa Public Transport",
+        "operator": "Addis Ababa Bus Service Enterprise",
+        "public_transport": "platform",
+        "public_transport:version": "2",
+        "ref:AB": "AB032;AB070;AB102;AB071;AB128",
+        "ref:SH": "SH070"
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          38.7570579,
+          9.0175554
+        ]
+      },
+      "id": "node/7041071362"
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "@id": "node/7041071363",
+        "bus": "yes",
+        "highway": "bus_stop",
+        "name": "Ghion Hotel (Enterance)",
+        "network": "Addis Ababa Public Transport",
+        "operator": "Addis Ababa Bus Service Enterprise",
+        "public_transport": "platform",
+        "public_transport:version": "2",
+        "ref:AB": "AB074"
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          38.7574492,
+          9.0137609
+        ]
+      },
+      "id": "node/7041071363"
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "@id": "node/7041071364",
+        "bus": "yes",
+        "highway": "bus_stop",
+        "name": "Ghion Hotel (Enterance)",
+        "network": "Addis Ababa Public Transport",
+        "operator": "Addis Ababa Bus Service Enterprise",
+        "public_transport": "platform",
+        "public_transport:version": "2",
+        "ref:AB": "AB074;AB052;AB014",
+        "ref:SH": "SH079;SH099"
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          38.7576145,
+          9.0138328
+        ]
+      },
+      "id": "node/7041071364"
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "@id": "node/7041071370",
+        "bench": "yes",
+        "bin": "yes",
+        "bus": "yes",
+        "highway": "bus_stop",
+        "name": "St. Joseph School",
+        "network": "Addis Ababa Public Transport",
+        "operator": "Addis Ababa Bus Service Enterprise",
+        "public_transport": "platform",
+        "public_transport:version": "2",
+        "ref:AB": "AB029;AB110",
+        "shelter": "yes"
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          38.7592761,
+          9.0104995
+        ]
+      },
+      "id": "node/7041071370"
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "@id": "node/7041071372",
+        "bus": "yes",
+        "highway": "bus_stop",
+        "name": "Lalibela Hotel",
+        "network": "Addis Ababa Public Transport",
+        "operator": "Addis Ababa Bus Service Enterprise",
+        "public_transport": "platform",
+        "public_transport:version": "2",
+        "ref:AB": "AB055",
+        "ref:SH": "SH013 (A01)"
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          38.7570112,
+          9.0118612
+        ]
+      },
+      "id": "node/7041071372"
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "@id": "node/7041071387",
+        "bus": "yes",
+        "highway": "bus_stop",
+        "name": "Goma Quteba",
+        "network": "Addis Ababa Public Transport",
+        "operator": "Addis Ababa Bus Service Enterprise",
+        "public_transport": "platform",
+        "public_transport:version": "2",
+        "ref:AB": "AB029"
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          38.7464631,
+          9.0175836
+        ]
+      },
+      "id": "node/7041071387"
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "@id": "node/7041071414",
+        "bus": "yes",
+        "highway": "bus_stop",
+        "name": "National Theatre",
+        "network": "Addis Ababa Public Transport",
+        "operator": "Addis Ababa Bus Service Enterprise",
+        "public_transport": "platform",
+        "public_transport:version": "2",
+        "ref:AB": "AB070T2S15;AB006;AB037;AB070;AB105;AB071;AB005;AB073;AB107;AB128;AB026",
+        "ref:SH": "A18;C15;C50;SH100;SH070"
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          38.751592,
+          9.0158768
+        ]
+      },
+      "id": "node/7041071414"
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "@id": "node/7041071415",
+        "bus": "yes",
+        "highway": "bus_stop",
+        "name": "National Theatre",
+        "network": "Addis Ababa Public Transport",
+        "operator": "Addis Ababa Bus Service Enterprise",
+        "public_transport": "platform",
+        "public_transport:version": "2",
+        "ref:AB": "AB006;AB058;AB070;AB082;AB090;AB105;AB071;AB005;AB073;AB107",
+        "ref:SH": "SH013 (A01);A18;C15;C50;SH100"
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          38.7513097,
+          9.0156938
+        ]
+      },
+      "id": "node/7041071415"
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "@id": "node/7041071418",
+        "bus": "yes",
+        "highway": "bus_stop",
+        "name": "A.A. Commercial College",
+        "network": "Addis Ababa Public Transport",
+        "operator": "Addis Ababa Bus Service Enterprise",
+        "public_transport": "platform",
+        "public_transport:version": "2",
+        "ref:AB": "AB070T2S14;AB105T1S15;AB037;AB070;AB090;AB105;AB071;AB005"
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          38.7495568,
+          9.0138228
+        ]
+      },
+      "id": "node/7041071418"
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "@id": "node/7041071419",
+        "bus": "yes",
+        "highway": "bus_stop",
+        "name": "Buna Ena Shay",
+        "network": "Addis Ababa Public Transport",
+        "operator": "Addis Ababa Bus Service Enterprise",
+        "public_transport": "platform",
+        "public_transport:version": "2",
+        "ref:AB": "AB068;AB130",
+        "ref:SH": "SH011 (A24);SH081"
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          38.7490599,
+          9.0114261
+        ]
+      },
+      "id": "node/7041071419"
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "@id": "node/7041071423",
+        "bus": "yes",
+        "highway": "bus_stop",
+        "name": "Mexico Shebelle Hotel",
+        "name:am": "ሜክሲኮ ሸበሌ ሆቴል",
+        "network": "Addis Ababa Public Transport",
+        "operator": "Addis Ababa Bus Service Enterprise",
+        "public_transport": "platform",
+        "public_transport:version": "2",
+        "ref:AB": "AB003T1S10;AB038T1S12;AB036;AB070;AB082;AB105;AB071;AB005;AB103;AB107",
+        "ref:SH": "A18;C15;C50;SH100"
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          38.7468862,
+          9.0119916
+        ]
+      },
+      "id": "node/7041071423"
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "@id": "node/7041071430",
+        "bus": "yes",
+        "highway": "bus_stop",
+        "name": "Lideta (Balcha Hospital)",
+        "network": "Addis Ababa Public Transport",
+        "operator": "Addis Ababa Bus Service Enterprise",
+        "public_transport": "platform",
+        "public_transport:version": "2",
+        "ref:AB": "AB071T2S11;AB004;AB068;AB070;AB071"
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          38.738603,
+          9.0109303
+        ]
+      },
+      "id": "node/7041071430"
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "@id": "node/7041071431",
+        "bus": "yes",
+        "highway": "bus_stop",
+        "name": "Lideta (Balcha Hospital)",
+        "network": "Addis Ababa Public Transport",
+        "operator": "Addis Ababa Bus Service Enterprise",
+        "public_transport": "platform",
+        "public_transport:version": "2",
+        "ref:AB": "AB071T2S17;AB037;AB068;AB070;AB090;AB105;AB071;AB073;AB050",
+        "ref:SH": "SH100"
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          38.7385604,
+          9.0111161
+        ]
+      },
+      "id": "node/7041071431"
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "@id": "node/7041071462",
+        "bus": "yes",
+        "highway": "bus_stop",
+        "name": "St. Estifanos Church",
+        "name:am": "እስቲፋኖስ",
+        "network": "Addis Ababa Public Transport",
+        "operator": "Addis Ababa Bus Service Enterprise",
+        "public_transport": "platform",
+        "public_transport:version": "2",
+        "ref:AB": "AB110;AB055;AB056;AB068",
+        "ref:SH": "SH015;SH027;SH028;SH073"
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          38.7626376,
+          9.0118738
+        ]
+      },
+      "id": "node/7041071462"
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "@id": "node/7041071465",
+        "bus": "yes",
+        "highway": "bus_stop",
+        "name": "Zenebewerk Hotel",
+        "network": "Addis Ababa Public Transport",
+        "operator": "Addis Ababa Bus Service Enterprise",
+        "public_transport": "platform",
+        "public_transport:version": "2",
+        "ref:AB": "AB009;AB039"
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          38.7680315,
+          9.0193852
+        ]
+      },
+      "id": "node/7041071465"
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "@id": "node/7041071468",
+        "bus": "yes",
+        "highway": "bus_stop",
+        "name": "Azmari Bet (Traditional Music Club)",
+        "network": "Addis Ababa Public Transport",
+        "operator": "Addis Ababa Bus Service Enterprise",
+        "public_transport": "platform",
+        "public_transport:version": "2",
+        "ref:AB": "AB032;AB070;AB102;AB071;AB128",
+        "ref:SH": "SH070"
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          38.770643,
+          9.0194316
+        ]
+      },
+      "id": "node/7041071468"
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "@id": "node/7041071469",
+        "bus": "yes",
+        "highway": "bus_stop",
+        "name": "Kazanchis (6th)",
+        "network": "Addis Ababa Public Transport",
+        "operator": "Addis Ababa Bus Service Enterprise",
+        "public_transport": "platform",
+        "public_transport:version": "2",
+        "ref:AB": "AB032;AB102;AB070;AB071"
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          38.7702335,
+          9.0166401
+        ]
+      },
+      "id": "node/7041071469"
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "@id": "node/7041071479",
+        "bus": "yes",
+        "highway": "bus_stop",
+        "name": "Arat Kilo",
+        "name:loc": "Ministry Of Education",
+        "network": "Addis Ababa Public Transport",
+        "operator": "Addis Ababa Bus Service Enterprise",
+        "public_transport": "platform",
+        "public_transport:version": "2",
+        "ref:AB": "AB015;AB068;AB056;AB068"
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          38.7633615,
+          9.0319312
+        ]
+      },
+      "id": "node/7041071479"
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "@id": "node/7041071480",
+        "bus": "yes",
+        "highway": "bus_stop",
+        "name": "Arat Kilo",
+        "name:loc": "Sellasie Church (4 Kilo)",
+        "network": "Addis Ababa Public Transport",
+        "operator": "Addis Ababa Bus Service Enterprise",
+        "public_transport": "platform",
+        "public_transport:version": "2",
+        "ref:AB": "AB010;AB064;AB040;AB046;AB129",
+        "ref:SH": "SH038 (C17);SH053 (C51)"
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          38.7652099,
+          9.0321438
+        ]
+      },
+      "id": "node/7041071480"
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "@id": "node/7041071483",
+        "bus": "yes",
+        "highway": "bus_stop",
+        "name": "Menelik II Hospital",
+        "network": "Addis Ababa Public Transport",
+        "operator": "Addis Ababa Bus Service Enterprise",
+        "public_transport": "platform",
+        "public_transport:version": "2",
+        "ref:AB": "AB083;AB068;AB080;AB112;AB023",
+        "ref:SH": "SH002;SH035;SH080"
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          38.7730556,
+          9.0385857
+        ]
+      },
+      "id": "node/7041071483"
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "@id": "node/7041071579",
+        "bus": "yes",
+        "highway": "bus_stop",
+        "name": "Piassa Arada",
+        "name:loc": "St. George Church",
+        "network": "Addis Ababa Public Transport",
+        "operator": "Addis Ababa Bus Service Enterprise",
+        "public_transport": "platform",
+        "public_transport:version": "2",
+        "ref:AB": "AB006;AB017;AB037;AB045;AB011;AB129",
+        "ref:SH": "B37;C17;C50;C51;SH101;SH099"
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          38.7522029,
+          9.0365871
+        ]
+      },
+      "id": "node/7041071579"
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "@id": "node/7041071580",
+        "bus": "yes",
+        "highway": "bus_stop",
+        "name": "Piassa Arada",
+        "name:loc": "St. George Church",
+        "network": "Addis Ababa Public Transport",
+        "operator": "Addis Ababa Bus Service Enterprise",
+        "public_transport": "platform",
+        "public_transport:version": "2",
+        "ref:AB": "AB006;AB006;AB017;AB037;AB045",
+        "ref:SH": "C50"
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          38.7524445,
+          9.0363947
+        ]
+      },
+      "id": "node/7041071580"
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "@id": "node/7041071592",
+        "bus": "yes",
+        "highway": "bus_stop",
+        "loc_name": "Menlik II Square",
+        "name": "Piassa Arada",
+        "network": "Addis Ababa Public Transport",
+        "operator": "Addis Ababa Bus Service Enterprise",
+        "public_transport": "platform",
+        "public_transport:version": "2",
+        "ref:AB": "AB014",
+        "ref:SH": "SH020 (C15);SH021 (A18);SH025 (A18)"
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          38.7523326,
+          9.0354239
+        ]
+      },
+      "id": "node/7041071592"
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "@id": "node/7041071595",
+        "bus": "yes",
+        "highway": "bus_stop",
+        "name": "Kurtu Building",
+        "network": "Addis Ababa Public Transport",
+        "operator": "Addis Ababa Bus Service Enterprise",
+        "public_transport": "platform",
+        "public_transport:version": "2",
+        "ref:AB": "AB016T1S7;AB017"
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          38.7438917,
+          9.0343899
+        ]
+      },
+      "id": "node/7041071595"
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "@id": "node/7041071596",
+        "bus": "yes",
+        "highway": "bus_stop",
+        "name": "Kurtu Building",
+        "network": "Addis Ababa Public Transport",
+        "operator": "Addis Ababa Bus Service Enterprise",
+        "public_transport": "platform",
+        "public_transport:version": "2",
+        "ref:AB": "AB015;AB017",
+        "ref:SH": "SH033 (B37)"
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          38.7437548,
+          9.0341887
+        ]
+      },
+      "id": "node/7041071596"
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "@id": "node/7041071597",
+        "bus": "yes",
+        "highway": "bus_stop",
+        "name": "Pharmacy",
+        "network": "Addis Ababa Public Transport",
+        "operator": "Addis Ababa Bus Service Enterprise",
+        "public_transport": "platform",
+        "public_transport:version": "2",
+        "ref:AB": "AB015;AB041;AB088T2S33"
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          38.7434135,
+          9.0343321
+        ]
+      },
+      "id": "node/7041071597"
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "@id": "node/7041071629",
+        "bench": "yes",
+        "bin": "yes",
+        "bus": "yes",
+        "highway": "bus_stop",
+        "name": "5 Kilo (History Museum)",
+        "network": "Addis Ababa Public Transport",
+        "operator": "Addis Ababa Bus Service Enterprise",
+        "public_transport": "platform",
+        "public_transport:version": "2",
+        "ref:AB": "AB041;AB068;AB110;AB055;AB068;AB122;AB013",
+        "ref:SH": "SH013 (A01);SH095",
+        "shelter": "yes"
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          38.7625491,
+          9.0385989
+        ]
+      },
+      "id": "node/7041071629"
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "@id": "node/7041071638",
+        "bus": "yes",
+        "highway": "bus_stop",
+        "name": "Red-Cross (St. George Total)",
+        "network": "Addis Ababa Public Transport",
+        "operator": "Addis Ababa Bus Service Enterprise",
+        "public_transport": "platform",
+        "public_transport:version": "2",
+        "ref:AB": "AB012",
+        "ref:SH": "SH033 (B37)"
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          38.7527639,
+          9.0386136
+        ]
+      },
+      "id": "node/7041071638"
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "@id": "node/7041071640",
+        "bus": "yes",
+        "highway": "bus_stop",
+        "name": "Semen Hotel",
+        "network": "Addis Ababa Public Transport",
+        "operator": "Addis Ababa Bus Service Enterprise",
+        "public_transport": "platform",
+        "public_transport:version": "2",
+        "ref:AB": "AB049;AB006;AB094;AB045;AB008;AB020",
+        "ref:SH": "SH018 (C31)"
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          38.7488778,
+          9.0436522
+        ]
+      },
+      "id": "node/7041071640"
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "@id": "node/7041071641",
+        "bus": "yes",
+        "highway": "bus_stop",
+        "name": "Semen Hotel",
+        "network": "Addis Ababa Public Transport",
+        "operator": "Addis Ababa Bus Service Enterprise",
+        "public_transport": "platform",
+        "public_transport:version": "2",
+        "ref:AB": "AB111",
+        "ref:SH": "SH103"
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          38.7482928,
+          9.0446929
+        ]
+      },
+      "id": "node/7041071641"
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "@id": "node/7041071718",
+        "bus": "yes",
+        "highway": "bus_stop",
+        "name": "Bono Weha",
+        "network": "Addis Ababa Public Transport",
+        "operator": "Addis Ababa Bus Service Enterprise",
+        "public_transport": "platform",
+        "public_transport:version": "2",
+        "ref:AB": "AB055"
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          38.7791204,
+          9.057952
+        ]
+      },
+      "id": "node/7041071718"
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "@id": "node/7041071719",
+        "bus": "yes",
+        "highway": "bus_stop",
+        "name": "Mezan",
+        "network": "Addis Ababa Public Transport",
+        "operator": "Addis Ababa Bus Service Enterprise",
+        "public_transport": "platform",
+        "public_transport:version": "2",
+        "ref:AB": "AB012;AB064",
+        "ref:SH": "SH101;SH095"
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          38.7722233,
+          9.053538
+        ]
+      },
+      "id": "node/7041071719"
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "@id": "node/7041071737",
+        "bus": "yes",
+        "highway": "bus_stop",
+        "name": "Eyesus",
+        "name:am": "41 ቁጥር አውቶቢስ ማዞሪያ",
+        "network": "Addis Ababa Public Transport",
+        "operator": "Addis Ababa Bus Service Enterprise",
+        "public_transport": "platform",
+        "public_transport:version": "2",
+        "ref:AB": "AB041"
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          38.7715088,
+          9.0649811
+        ]
+      },
+      "id": "node/7041071737"
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "@id": "node/7041071738",
+        "bus": "yes",
+        "highway": "bus_stop",
+        "name": "Hamle 19",
+        "network": "Addis Ababa Public Transport",
+        "operator": "Addis Ababa Bus Service Enterprise",
+        "public_transport": "platform",
+        "public_transport:version": "2",
+        "ref:AB": "AB041"
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          38.7680987,
+          9.0585516
+        ]
+      },
+      "id": "node/7041071738"
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "@id": "node/7041071740",
+        "bus": "yes",
+        "highway": "bus_stop",
+        "name": "Selassie",
+        "network": "Addis Ababa Public Transport",
+        "operator": "Addis Ababa Bus Service Enterprise",
+        "public_transport": "platform",
+        "public_transport:version": "2",
+        "ref:AB": "AB017;AB122"
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          38.7607205,
+          9.0692162
+        ]
+      },
+      "id": "node/7041071740"
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "@id": "node/7041071741",
+        "bus": "yes",
+        "highway": "bus_stop",
+        "name": "Sanba Nekersa-Shiromeda",
+        "network": "Addis Ababa Public Transport",
+        "operator": "Addis Ababa Bus Service Enterprise",
+        "public_transport": "platform",
+        "public_transport:version": "2",
+        "ref:AB": "AB017;AB122"
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          38.7590628,
+          9.0745256
+        ]
+      },
+      "id": "node/7041071741"
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "@id": "node/7041071742",
+        "bus": "yes",
+        "highway": "bus_stop",
+        "name": "Kuskoam",
+        "network": "Addis Ababa Public Transport",
+        "operator": "Addis Ababa Bus Service Enterprise",
+        "public_transport": "platform",
+        "public_transport:version": "2",
+        "ref:AB": "AB017;AB122"
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          38.7572536,
+          9.0777328
+        ]
+      },
+      "id": "node/7041071742"
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "@id": "node/7047495435",
+        "bus": "yes",
+        "highway": "bus_stop",
+        "name": "Meskel Flower",
+        "network": "Addis Ababa Public Transport",
+        "operator": "Addis Ababa Bus Service Enterprise",
+        "public_transport": "platform",
+        "public_transport:version": "2"
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          38.7636673,
+          8.9874678
+        ]
+      },
+      "id": "node/7047495435"
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "@id": "node/7055060064",
+        "highway": "bus_stop",
+        "name": "Legehar (Old Train Station)",
+        "network": "Addis Ababa Public Transport",
+        "operator": "Addis Ababa Bus Service Enterprise",
+        "public_transport": "platform",
+        "public_transport:version": "2",
+        "ref:AB": "AB022;AB029;AB061;AB027;AB036;AB055;AB058;AB068;AB090;AB102;AB105;AB045;AB062"
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          38.7532161,
+          9.0106346
+        ]
+      },
+      "id": "node/7055060064"
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "@id": "node/7055598742",
+        "bus": "yes",
+        "highway": "bus_stop",
+        "name": "Piassa Arada",
+        "network": "Addis Ababa Public Transport",
+        "operator": "Addis Ababa Bus Service Enterprise",
+        "public_transport": "platform",
+        "public_transport:version": "2",
+        "ref:AB": "AB009;AB010;AB081;AB089"
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          38.7534018,
+          9.0327818
+        ]
+      },
+      "id": "node/7055598742"
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "@id": "node/7055598743",
+        "bus": "yes",
+        "highway": "bus_stop",
+        "name": "St. Mary Church",
+        "network": "Addis Ababa Public Transport",
+        "operator": "Addis Ababa Bus Service Enterprise",
+        "public_transport": "platform",
+        "public_transport:version": "2",
+        "ref:AB": "AB010;AB015;AB131;AB013;AB040;AB081;AB129;AB001",
+        "ref:SH": "SH003;SH053 (C51)"
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          38.7579442,
+          9.0363807
+        ]
+      },
+      "id": "node/7055598743"
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "@id": "node/7057187392",
+        "bus": "yes",
+        "highway": "bus_stop",
+        "name": "Brass Clinic (Bole)",
+        "network": "Addis Ababa Public Transport",
+        "operator": "Addis Ababa Bus Service Enterprise",
+        "public_transport": "platform",
+        "public_transport:version": "2",
+        "ref:AB": "AB009"
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          38.7929906,
+          8.9904207
+        ]
+      },
+      "id": "node/7057187392"
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "@id": "node/7057187393",
+        "bus": "yes",
+        "highway": "bus_stop",
+        "name": "Brass Clinic (Bole)",
+        "network": "Addis Ababa Public Transport",
+        "operator": "Addis Ababa Bus Service Enterprise",
+        "public_transport": "platform",
+        "public_transport:version": "2",
+        "ref:AB": "AB009"
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          38.7932003,
+          8.9903142
+        ]
+      },
+      "id": "node/7057187393"
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "@id": "node/7062689843",
+        "bus": "yes",
+        "highway": "bus_stop",
+        "name": "Shoa Dabo",
+        "name:am": "ሸዋ ዳቦ",
+        "network": "Addis Ababa Public Transport",
+        "operator": "Addis Ababa Bus Service Enterprise",
+        "public_transport": "platform",
+        "public_transport:version": "2",
+        "ref:SH": "SHR015S1"
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          38.749825,
+          9.0343395
+        ]
+      },
+      "id": "node/7062689843"
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "@id": "node/7062689845",
+        "bus": "yes",
+        "highway": "bus_stop",
+        "name": "St. George Church (2)",
+        "name:am": "ቅዱስ ጎርጊስ",
+        "network": "Addis Ababa Public Transport",
+        "operator": "Addis Ababa Bus Service Enterprise",
+        "public_transport": "platform",
+        "public_transport:version": "2",
+        "ref:SH": "SH017;SH033 (B37)"
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          38.751629,
+          9.0358742
+        ]
+      },
+      "id": "node/7062689845"
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "@id": "node/7062689846",
+        "bus": "yes",
+        "highway": "bus_stop",
+        "name": "Piassa Giorgis",
+        "name:am": "ፒያሳ ጎርጊስ",
+        "network": "Addis Ababa Public Transport",
+        "operator": "Addis Ababa Bus Service Enterprise",
+        "public_transport": "platform",
+        "public_transport:version": "2",
+        "ref:SH": "SH016"
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          38.7525432,
+          9.0353989
+        ]
+      },
+      "id": "node/7062689846"
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "@id": "node/7062689848",
+        "bus": "yes",
+        "highway": "bus_stop",
+        "loc_name": "Gibe Hotel",
+        "name": "Piassa",
+        "name:am": "ፒያሳ",
+        "network": "Addis Ababa Public Transport",
+        "operator": "Addis Ababa Bus Service Enterprise",
+        "public_transport": "platform",
+        "public_transport:version": "2",
+        "ref:AB": "AB089",
+        "ref:SH": "SH003"
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          38.7549398,
+          9.0345896
+        ]
+      },
+      "id": "node/7062689848"
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "@id": "node/7062689850",
+        "bus": "yes",
+        "highway": "bus_stop",
+        "name": "Arat Kilo",
+        "name:am": "አራት ኪሎ",
+        "network": "Addis Ababa Public Transport",
+        "operator": "Addis Ababa Bus Service Enterprise",
+        "public_transport": "platform",
+        "public_transport:version": "2",
+        "ref:AB": "AB033;AB126;AB131;AB040;AB129;AB001",
+        "ref:SH": "SH003;SH038 (C17);SH053 (C51);SH095"
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          38.764362,
+          9.0325203
+        ]
+      },
+      "id": "node/7062689850"
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "@id": "node/7062689851",
+        "bus": "yes",
+        "highway": "bus_stop",
+        "name": "4 Kilo",
+        "name:am": "አራት ኪሎ",
+        "network": "Addis Ababa Public Transport",
+        "operator": "Addis Ababa Bus Service Enterprise",
+        "public_transport": "platform",
+        "public_transport:version": "2",
+        "ref:AB": "AB041;AB110;AB055;AB056;AB068",
+        "ref:SH": "SH013 (A01);SH014 (A08);SH015;SH027;SH028;SH073;SH087"
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          38.7630946,
+          9.0344021
+        ]
+      },
+      "id": "node/7062689851"
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "@id": "node/7062689854",
+        "bus": "yes",
+        "highway": "bus_stop",
+        "name": "Education Bureau (6 Kilo)",
+        "name:am": "ስድስት ኪሎ",
+        "network": "Addis Ababa Public Transport",
+        "operator": "Addis Ababa Bus Service Enterprise",
+        "public_transport": "platform",
+        "public_transport:version": "2",
+        "ref:AB": "AB041;AB064;AB055;AB013",
+        "ref:SH": "SH014 (A08);SH016;SH101;SH073;SH087;SH095"
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          38.7635923,
+          9.044142
+        ]
+      },
+      "id": "node/7062689854"
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "@id": "node/7062689856",
+        "bus": "yes",
+        "highway": "bus_stop",
+        "name": "Frensaye Kela",
+        "name:am": "ኬላ",
+        "network": "Addis Ababa Public Transport",
+        "operator": "Addis Ababa Bus Service Enterprise",
+        "public_transport": "platform",
+        "public_transport:version": "2",
+        "ref:SH": "SH014 (A08);SH016;SH073;SH087"
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          38.7742742,
+          9.0557922
+        ]
+      },
+      "id": "node/7062689856"
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "@id": "node/7062689857",
+        "bus": "yes",
+        "highway": "bus_stop",
+        "name": "Frensaye Kela",
+        "name:am": "ኬላ",
+        "network": "Addis Ababa Public Transport",
+        "operator": "Addis Ababa Bus Service Enterprise",
+        "public_transport": "platform",
+        "public_transport:version": "2",
+        "ref:AB": "AB041",
+        "ref:SH": "SH014 (A08);SH016;SH101;SH073;SH087;SH095"
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          38.7736282,
+          9.0551762
+        ]
+      },
+      "id": "node/7062689857"
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "@id": "node/7062689858",
+        "bus": "yes",
+        "highway": "bus_stop",
+        "name": "Abo Mazoriya",
+        "name:am": "አቦ ማዞሪያ",
+        "network": "Addis Ababa Public Transport",
+        "operator": "Addis Ababa Bus Service Enterprise",
+        "public_transport": "platform",
+        "public_transport:version": "2",
+        "ref:AB": "AB064",
+        "ref:SH": "SH014 (A08);SH073;SH087"
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          38.7777387,
+          9.0569998
+        ]
+      },
+      "id": "node/7062689858"
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "@id": "node/7067942461",
+        "bus": "yes",
+        "highway": "bus_stop",
+        "name": "Mamo (NFSL TVET)",
+        "name:am": "ማሞ",
+        "network": "Addis Ababa Public Transport",
+        "operator": "Addis Ababa Bus Service Enterprise",
+        "public_transport": "platform",
+        "public_transport:version": "2",
+        "ref:AB": "AB004;AB071;AB014;AB027;AB104",
+        "ref:SH": "SH008;SH016 (C13);SH038T2A04 (B19)"
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          38.7608987,
+          8.9730894
+        ]
+      },
+      "id": "node/7067942461"
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "@id": "node/7067942462",
+        "bus": "yes",
+        "highway": "bus_stop",
+        "name": "Agona Cinema",
+        "name:am": "አጎና ሲኒማ",
+        "network": "Addis Ababa Public Transport",
+        "operator": "Addis Ababa Bus Service Enterprise",
+        "public_transport": "platform",
+        "public_transport:version": "2",
+        "ref:AB": "AB029;AB110;AB014;AB027;AB056",
+        "ref:SH": "SH016;SH086"
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          38.7595747,
+          8.988213
+        ]
+      },
+      "id": "node/7067942462"
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "@id": "node/7067942463",
+        "bus": "yes",
+        "highway": "bus_stop",
+        "name": "Agona Cinema",
+        "name:am": "አጎና ሲኒማ",
+        "network": "Addis Ababa Public Transport",
+        "operator": "Addis Ababa Bus Service Enterprise",
+        "public_transport": "platform",
+        "public_transport:version": "2",
+        "ref:AB": "AB029;AB110;AB014",
+        "ref:SH": "SH016 (C13);SH028;SH086"
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          38.7597959,
+          8.9882665
+        ]
+      },
+      "id": "node/7067942463"
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "@id": "node/7067942464",
+        "bus": "yes",
+        "highway": "bus_stop",
+        "name": "Concord Hotel",
+        "network": "Addis Ababa Public Transport",
+        "operator": "Addis Ababa Bus Service Enterprise",
+        "public_transport": "platform",
+        "public_transport:version": "2",
+        "ref:AB": "AB029"
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          38.7593562,
+          8.9899694
+        ]
+      },
+      "id": "node/7067942464"
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "@id": "node/7070861696",
+        "bus": "yes",
+        "highway": "bus_stop",
+        "name": "SNAP Building",
+        "network": "Addis Ababa Public Transport",
+        "operator": "Addis Ababa Bus Service Enterprise",
+        "public_transport": "platform",
+        "public_transport:version": "2",
+        "ref:AB": "AB003",
+        "ref:SH": "SH099"
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          38.7872174,
+          8.9897614
+        ]
+      },
+      "id": "node/7070861696"
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "@id": "node/7070861697",
+        "bus": "yes",
+        "highway": "bus_stop",
+        "name": "Friendship",
+        "network": "Addis Ababa Public Transport",
+        "operator": "Addis Ababa Bus Service Enterprise",
+        "public_transport": "platform",
+        "public_transport:version": "2",
+        "ref:AB": "AB014",
+        "ref:SH": "SH015;SH072;SH079;SH099"
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          38.7844888,
+          8.9908557
+        ]
+      },
+      "id": "node/7070861697"
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "@id": "node/7070861698",
+        "bus": "yes",
+        "highway": "bus_stop",
+        "name": "Heber Restaurant",
+        "network": "Addis Ababa Public Transport",
+        "operator": "Addis Ababa Bus Service Enterprise",
+        "public_transport": "platform",
+        "public_transport:version": "2",
+        "ref:AB": "AB030;AB014",
+        "ref:SH": "SH015;SH099"
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          38.7822311,
+          8.9917592
+        ]
+      },
+      "id": "node/7070861698"
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "@id": "node/7070861699",
+        "bus": "yes",
+        "highway": "bus_stop",
+        "name": "RWANDA (Werbek House)",
+        "network": "Addis Ababa Public Transport",
+        "operator": "Addis Ababa Bus Service Enterprise",
+        "public_transport": "platform",
+        "public_transport:version": "2",
+        "ref:AB": "AB014",
+        "ref:SH": "SH015;SH027;SH072;SH099"
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          38.7791533,
+          8.992295
+        ]
+      },
+      "id": "node/7070861699"
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "@id": "node/7070861700",
+        "bus": "yes",
+        "highway": "bus_stop",
+        "name": "Wollo Sefer",
+        "network": "Addis Ababa Public Transport",
+        "operator": "Addis Ababa Bus Service Enterprise",
+        "public_transport": "platform",
+        "public_transport:version": "2",
+        "ref:AB": "AB031;AB014",
+        "ref:SH": "SH015;SH072"
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          38.7740953,
+          8.9946542
+        ]
+      },
+      "id": "node/7070861700"
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "@id": "node/7070861701",
+        "bus": "yes",
+        "highway": "bus_stop",
+        "name": "Rwanda",
+        "network": "Addis Ababa Public Transport",
+        "operator": "Addis Ababa Bus Service Enterprise",
+        "public_transport": "platform",
+        "public_transport:version": "2",
+        "ref:AB": "AB031;AB052;AB014",
+        "ref:SH": "SH015;SH072;SH079;SH099"
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          38.7798477,
+          8.9924
+        ]
+      },
+      "id": "node/7070861701"
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "@id": "node/7070861702",
+        "bus": "yes",
+        "highway": "bus_stop",
+        "name": "Bole Printing Press",
+        "network": "Addis Ababa Public Transport",
+        "operator": "Addis Ababa Bus Service Enterprise",
+        "public_transport": "platform",
+        "public_transport:version": "2",
+        "ref:AB": "AB031",
+        "ref:SH": "SH015;SH079;SH099"
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          38.7723732,
+          8.9966227
+        ]
+      },
+      "id": "node/7070861702"
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "@id": "node/7070861703",
+        "bus": "yes",
+        "highway": "bus_stop",
+        "name": "Bole Printing Press",
+        "network": "Addis Ababa Public Transport",
+        "operator": "Addis Ababa Bus Service Enterprise",
+        "public_transport": "platform",
+        "public_transport:version": "2",
+        "ref:SH": "SH015;SH027;SH072;SH079"
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          38.7715908,
+          8.9976714
+        ]
+      },
+      "id": "node/7070861703"
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "@id": "node/7070861704",
+        "bus": "yes",
+        "highway": "bus_stop",
+        "name": "Mega Printing Press",
+        "network": "Addis Ababa Public Transport",
+        "operator": "Addis Ababa Bus Service Enterprise",
+        "public_transport": "platform",
+        "public_transport:version": "2",
+        "ref:AB": "AB032",
+        "ref:SH": "SH072;SH099"
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          38.7708659,
+          8.9993469
+        ]
+      },
+      "id": "node/7070861704"
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "@id": "node/7070861706",
+        "bus": "yes",
+        "highway": "bus_stop",
+        "name": "Getu Commercial Center",
+        "network": "Addis Ababa Public Transport",
+        "operator": "Addis Ababa Bus Service Enterprise",
+        "public_transport": "platform",
+        "public_transport:version": "2",
+        "ref:AB": "AB031;AB014",
+        "ref:SH": "SH015;SH079;SH099"
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          38.7697673,
+          9.0014126
+        ]
+      },
+      "id": "node/7070861706"
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "@id": "node/7070861710",
+        "bus": "yes",
+        "highway": "bus_stop",
+        "name": "Flamingo",
+        "network": "Addis Ababa Public Transport",
+        "operator": "Addis Ababa Bus Service Enterprise",
+        "public_transport": "platform",
+        "public_transport:version": "2",
+        "ref:SH": "SH015;SH027;SH072;SH079;SH099"
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          38.7634195,
+          9.0100482
+        ]
+      },
+      "id": "node/7070861710"
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "@id": "node/7070861712",
+        "bus": "yes",
+        "description": "On the Roundabout",
+        "highway": "bus_stop",
+        "loc_name": "Menlik II Square",
+        "name": "Piassa Arada",
+        "network": "Addis Ababa Public Transport",
+        "operator": "Addis Ababa Bus Service Enterprise",
+        "public_transport": "platform",
+        "public_transport:version": "2",
+        "ref:AB": "AB014;AB094",
+        "ref:SH": "C13;SH025;C15;SH021;A18;SH099"
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          38.7528459,
+          9.0358386
+        ]
+      },
+      "id": "node/7070861712"
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "@id": "node/7074330400",
+        "bus": "yes",
+        "highway": "bus_stop",
+        "name": "Alemayehu",
+        "name:am": "አለማየሁ",
+        "network": "Addis Ababa Public Transport",
+        "operator": "Addis Ababa Bus Service Enterprise",
+        "public_transport": "platform",
+        "public_transport:version": "2",
+        "ref:AB": "AB082;AB124;AB113;AB042",
+        "ref:SH": "SH007 (D26);SH038 (D52);SH078"
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          38.820944,
+          8.999474
+        ]
+      },
+      "id": "node/7074330400"
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "@id": "node/7074585943",
+        "bus": "yes",
+        "highway": "bus_stop",
+        "loc_name": "City Hall (Giorgis)",
+        "name": "Piassa Arada",
+        "network": "Addis Ababa Public Transport",
+        "operator": "Addis Ababa Bus Service Enterprise",
+        "public_transport": "platform",
+        "public_transport:version": "2",
+        "ref:AB": "AB059;AB081",
+        "ref:SH": "SH017T2S11;SH033 (B37);SH017 (C14)"
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          38.7514315,
+          9.0357438
+        ]
+      },
+      "id": "node/7074585943"
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "@id": "node/7074585944",
+        "bus": "yes",
+        "highway": "bus_stop",
+        "name": "Arat Kilo",
+        "name:am": "አራት ኪሎ",
+        "network": "Addis Ababa Public Transport",
+        "operator": "Addis Ababa Bus Service Enterprise",
+        "public_transport": "platform",
+        "public_transport:version": "2",
+        "ref:SH": "SH017"
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          38.7633143,
+          9.0324015
+        ]
+      },
+      "id": "node/7074585944"
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "@id": "node/7074599697",
+        "bus": "yes",
+        "highway": "bus_stop",
+        "name": "Beklo Bet (Global)",
+        "name:am": "በቅሎ ቤት",
+        "network": "Addis Ababa Public Transport",
+        "operator": "Addis Ababa Bus Service Enterprise",
+        "public_transport": "platform",
+        "public_transport:version": "2",
+        "ref:AB": "AB014",
+        "ref:SH": "SH016 (C13);SH018;SH028"
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          38.759835,
+          8.9953761
+        ]
+      },
+      "id": "node/7074599697"
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "@id": "node/7074707878",
+        "bus": "yes",
+        "highway": "bus_stop",
+        "name": "Mexico",
+        "name:am": "ሜክሲኮ",
+        "network": "Addis Ababa Public Transport",
+        "operator": "Addis Ababa Bus Service Enterprise",
+        "public_transport": "platform",
+        "public_transport:version": "2",
+        "ref:SH": "SH011 (A24);SH013 (A01);SH067"
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          38.7471393,
+          9.010735
+        ]
+      },
+      "id": "node/7074707878"
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "@id": "node/7074819178",
+        "bus": "yes",
+        "highway": "bus_stop",
+        "name": "Mamo (NFSL TVET)",
+        "name:am": "ማሞ",
+        "network": "Addis Ababa Public Transport",
+        "operator": "Addis Ababa Bus Service Enterprise",
+        "public_transport": "platform",
+        "public_transport:version": "2",
+        "ref:AB": "AB004;AB029;AB071;AB110;AB004;AB027;AB056;AB104",
+        "ref:SH": "SH008;SH016;SH038T1A04 (B19)"
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          38.7607684,
+          8.9725713
+        ]
+      },
+      "id": "node/7074819178"
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "@id": "node/7075101459",
+        "bus": "yes",
+        "highway": "bus_stop",
+        "name": "Kera (Gofa Stop)",
+        "name:am": "ጎፋ ማዞሪያ",
+        "network": "Addis Ababa Public Transport",
+        "operator": "Addis Ababa Bus Service Enterprise",
+        "public_transport": "platform",
+        "public_transport:version": "2",
+        "ref:AB": "AB054",
+        "ref:SH": "SH014;SH020 (C15);SH024 (A05)"
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          38.7497528,
+          8.9837158
+        ]
+      },
+      "id": "node/7075101459"
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "@id": "node/7076294506",
+        "bus": "yes",
+        "highway": "bus_stop",
+        "name": "Heber Restaurant",
+        "network": "Addis Ababa Public Transport",
+        "operator": "Addis Ababa Bus Service Enterprise",
+        "public_transport": "platform",
+        "public_transport:version": "2",
+        "ref:AB": "AB030",
+        "ref:SH": "SH015"
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          38.7815317,
+          8.9917473
+        ]
+      },
+      "id": "node/7076294506"
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "@id": "node/7076294510",
+        "bus": "yes",
+        "highway": "bus_stop",
+        "name": "Shero Meda",
+        "name:am": "ሽሮ ሜዳ",
+        "network": "Addis Ababa Public Transport",
+        "operator": "Addis Ababa Bus Service Enterprise",
+        "public_transport": "platform",
+        "public_transport:version": "2",
+        "ref:AB": "AB056",
+        "ref:SH": "SH027 (A13);SH035"
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          38.7612538,
+          9.0622823
+        ]
+      },
+      "id": "node/7076294510"
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "@id": "node/7076294511",
+        "bus": "yes",
+        "highway": "bus_stop",
+        "loc_name": "Spain Embassy",
+        "loc_name:am": "እስፔን ኤምባሲ",
+        "name": "Shero Meda",
+        "name:am": "ሽሮ ሜዳ",
+        "network": "Addis Ababa Public Transport",
+        "operator": "Addis Ababa Bus Service Enterprise",
+        "public_transport": "platform",
+        "public_transport:version": "2",
+        "ref:SH": "SH011;SH033 (B37)"
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          38.7613619,
+          9.0618175
+        ]
+      },
+      "id": "node/7076294511"
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "@id": "node/7076294515",
+        "bus": "yes",
+        "highway": "bus_stop",
+        "name": "Shiromeda Selassie",
+        "network": "Addis Ababa Public Transport",
+        "operator": "Addis Ababa Bus Service Enterprise",
+        "public_transport": "platform",
+        "public_transport:version": "2",
+        "ref:AB": "AB017"
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          38.7607132,
+          9.0692159
+        ]
+      },
+      "id": "node/7076294515"
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "@id": "node/7076294516",
+        "bus": "yes",
+        "highway": "bus_stop",
+        "loc_name": "Spain Embassy",
+        "loc_name:am": "እስፔን ኤምባሲ",
+        "name": "Shero Meda",
+        "name:am": "ሽሮ ሜዳ",
+        "network": "Addis Ababa Public Transport",
+        "operator": "Addis Ababa Bus Service Enterprise",
+        "public_transport": "platform",
+        "public_transport:version": "2",
+        "ref:AB": "AB122",
+        "ref:SH": "SH011;SH033 (B37);SH035"
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          38.7613887,
+          9.0618235
+        ]
+      },
+      "id": "node/7076294516"
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "@id": "node/7076310931",
+        "bus": "yes",
+        "highway": "bus_stop",
+        "name": "Shero Meda",
+        "name:am": "ሽሮ ሜዳ",
+        "network": "Addis Ababa Public Transport",
+        "operator": "Addis Ababa Bus Service Enterprise",
+        "public_transport": "platform",
+        "public_transport:version": "2",
+        "ref:AB": "AB016;AB110;AB017",
+        "ref:SH": "SH013 (A01);SH028;AB080"
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          38.7612397,
+          9.0626379
+        ]
+      },
+      "id": "node/7076310931"
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "@id": "node/7077601626",
+        "bus": "yes",
+        "highway": "bus_stop",
+        "name": "Ambassador",
+        "network": "Addis Ababa Public Transport",
+        "operator": "Addis Ababa Bus Service Enterprise",
+        "public_transport": "platform",
+        "public_transport:version": "2",
+        "ref:AB": "AB014;AB073",
+        "ref:SH": "SH016;SH099"
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          38.7551039,
+          9.0163885
+        ]
+      },
+      "id": "node/7077601626"
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "@id": "node/7080440194",
+        "bus": "yes",
+        "highway": "bus_stop",
+        "name": "Estifanos",
+        "network": "Addis Ababa Public Transport",
+        "operator": "Addis Ababa Bus Service Enterprise",
+        "public_transport": "platform",
+        "public_transport:version": "2",
+        "ref:AB": "AB078",
+        "ref:SH": "SH011 (A24);SH067"
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          38.76366,
+          9.0110028
+        ]
+      },
+      "id": "node/7080440194"
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "@id": "node/7080440198",
+        "bus": "yes",
+        "highway": "bus_stop",
+        "name": "22 (Haya Hulet)",
+        "name:en": "22 (Haya Hulet)",
+        "network": "Addis Ababa Public Transport",
+        "operator": "Addis Ababa Bus Service Enterprise",
+        "public_transport": "platform",
+        "public_transport:version": "2",
+        "ref:AB": "AB130;AB127",
+        "ref:SH": "SH011 (A24);SH067;SH081"
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          38.7896417,
+          9.0164226
+        ]
+      },
+      "id": "node/7080440198"
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "@id": "node/7080440205",
+        "bus": "yes",
+        "highway": "bus_stop",
+        "name": "22 (Haya Hulet)",
+        "name:en": "22 (Haya Hulet)",
+        "network": "Addis Ababa Public Transport",
+        "operator": "Addis Ababa Bus Service Enterprise",
+        "public_transport": "platform",
+        "public_transport:version": "2",
+        "ref:AB": "AB082;AB130;AB127",
+        "ref:SH": "SH011 (A24);SH067"
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          38.7896635,
+          9.0162149
+        ]
+      },
+      "id": "node/7080440205"
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "@id": "node/7080440208",
+        "bus": "yes",
+        "highway": "bus_stop",
+        "name": "Mexico",
+        "name:am": "ሜክሲኮ",
+        "network": "Addis Ababa Public Transport",
+        "operator": "Addis Ababa Bus Service Enterprise",
+        "public_transport": "platform",
+        "public_transport:version": "2",
+        "ref:AB": "AB130",
+        "ref:SH": "SH013 (A01);SH011 (A24)"
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          38.7467585,
+          9.0104304
+        ]
+      },
+      "id": "node/7080440208"
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "@id": "node/7081034797",
+        "bus": "yes",
+        "highway": "bus_stop",
+        "name": "Abo Mazoriya",
+        "name:am": "አቦ ማዞሪያ",
+        "network": "Addis Ababa Public Transport",
+        "operator": "Addis Ababa Bus Service Enterprise",
+        "public_transport": "platform",
+        "public_transport:version": "2",
+        "ref:SH": "SH014 (A08);SH073;SH087"
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          38.7785478,
+          9.0574672
+        ]
+      },
+      "id": "node/7081034797"
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "@id": "node/7081034799",
+        "bus": "yes",
+        "highway": "bus_stop",
+        "name": "Education Bureau (6 Kilo)",
+        "name:am": "ስድስት ኪሎ",
+        "network": "Addis Ababa Public Transport",
+        "operator": "Addis Ababa Bus Service Enterprise",
+        "public_transport": "platform",
+        "public_transport:version": "2",
+        "ref:AB": "AB064;AB013;SH101",
+        "ref:SH": "SH014 (A08);SH073;SH087;SH095"
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          38.7640045,
+          9.0441923
+        ]
+      },
+      "id": "node/7081034799"
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "@id": "node/7084722458",
+        "bench": "yes",
+        "bus": "yes",
+        "covered": "yes",
+        "highway": "bus_stop",
+        "name": "Dej. Wube (Ras Abebe School)",
+        "network": "Addis Ababa Public Transport",
+        "operator": "Addis Ababa Bus Service Enterprise",
+        "public_transport": "platform",
+        "public_transport:version": "2",
+        "ref:AB": "AB017;AB023",
+        "ref:SH": "SH033 (B37);SH101",
+        "shelter": "yes"
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          38.7533374,
+          9.0404538
+        ]
+      },
+      "id": "node/7084722458"
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "@id": "node/7084722461",
+        "bus": "yes",
+        "highway": "bus_stop",
+        "name": "Tsehay Chora (ShiroMeda)",
+        "network": "Addis Ababa Public Transport",
+        "operator": "Addis Ababa Bus Service Enterprise",
+        "public_transport": "platform",
+        "public_transport:version": "2",
+        "ref:SH": "SH033 (B37)"
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          38.7598297,
+          9.0584002
+        ]
+      },
+      "id": "node/7084722461"
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "@id": "node/7105398617",
+        "bus": "yes",
+        "highway": "bus_stop",
+        "name": "Post Office (Ambassador)",
+        "network": "Addis Ababa Public Transport",
+        "operator": "Addis Ababa Bus Service Enterprise",
+        "public_transport": "platform",
+        "public_transport:version": "2",
+        "ref:AB": "AB052",
+        "ref:SH": "SH013 (A01);SH079;SH099"
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          38.7534558,
+          9.0185243
+        ]
+      },
+      "id": "node/7105398617"
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "@id": "node/7105584908",
+        "bus": "yes",
+        "highway": "bus_stop",
+        "name": "Arat Kilo",
+        "name:loc": "Tourist Hotel",
+        "network": "Addis Ababa Public Transport",
+        "operator": "Addis Ababa Bus Service Enterprise",
+        "public_transport": "platform",
+        "public_transport:version": "2",
+        "ref:AB": "AB011;AB126;AB013",
+        "ref:SH": "SH038 (C17)"
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          38.762507,
+          9.0332665
+        ]
+      },
+      "id": "node/7105584908"
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "@id": "node/7105840325",
+        "bus": "yes",
+        "highway": "bus_stop",
+        "name": "Yohannes",
+        "network": "Addis Ababa Public Transport",
+        "operator": "Addis Ababa Bus Service Enterprise",
+        "public_transport": "platform",
+        "public_transport:version": "2",
+        "ref:AB": "AB111;AB108;AB081",
+        "ref:SH": "SH017 (C14)"
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          38.745898,
+          9.0424895
+        ]
+      },
+      "id": "node/7105840325"
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "@id": "node/7107789219",
+        "bus": "yes",
+        "highway": "bus_stop",
+        "name": "Piassa (Downtown Cafe)",
+        "network": "Addis Ababa Public Transport",
+        "operator": "Addis Ababa Bus Service Enterprise",
+        "public_transport": "platform",
+        "public_transport:version": "2",
+        "ref:AB": "AB003;AB045",
+        "ref:SH": "SH021 (A18);SH025 (A18);SH099"
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          38.7511477,
+          9.0319297
+        ]
+      },
+      "id": "node/7107789219"
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "@id": "node/7110725241",
+        "bus": "yes",
+        "highway": "bus_stop",
+        "name": "Bole Mickael (2)",
+        "network": "Addis Ababa Public Transport",
+        "operator": "Addis Ababa Bus Service Enterprise",
+        "public_transport": "platform",
+        "public_transport:version": "2",
+        "ref:AB": "AB076;AB125",
+        "ref:SH": "SH089"
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          38.7723221,
+          8.9799499
+        ]
+      },
+      "id": "node/7110725241"
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "@id": "node/7110725242",
+        "bus": "yes",
+        "highway": "bus_stop",
+        "name": "Bole Bridge",
+        "name:en": "Bole Bridge",
+        "network": "Addis Ababa Public Transport",
+        "operator": "Addis Ababa Bus Service Enterprise",
+        "public_transport": "platform",
+        "public_transport:version": "2",
+        "ref:AB": "AB048T1S2;AB076;AB125;AB014",
+        "ref:SH": "SH082;SH089;SH092;SH092;SH096"
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          38.7903601,
+          8.9867261
+        ]
+      },
+      "id": "node/7110725242"
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "@id": "node/7110725243",
+        "bus": "yes",
+        "highway": "bus_stop",
+        "name": "MOENCO",
+        "network": "Addis Ababa Public Transport",
+        "operator": "Addis Ababa Bus Service Enterprise",
+        "public_transport": "platform",
+        "public_transport:version": "2",
+        "ref:AB": "AB076",
+        "ref:SH": "SH082"
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          38.7957512,
+          8.9948785
+        ]
+      },
+      "id": "node/7110725243"
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "@id": "node/7110725249",
+        "bus": "yes",
+        "highway": "bus_stop",
+        "name": "MOENCO",
+        "network": "Addis Ababa Public Transport",
+        "operator": "Addis Ababa Bus Service Enterprise",
+        "public_transport": "platform",
+        "public_transport:version": "2",
+        "ref:AB": "AB076"
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          38.7961036,
+          8.9950941
+        ]
+      },
+      "id": "node/7110725249"
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "@id": "node/7110725250",
+        "bus": "yes",
+        "highway": "bus_stop",
+        "name": "Bole (Bora Amusement)",
+        "network": "Addis Ababa Public Transport",
+        "operator": "Addis Ababa Bus Service Enterprise",
+        "public_transport": "platform",
+        "public_transport:version": "2",
+        "ref:AB": "AB076;AB093",
+        "ref:SH": "SH082"
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          38.7947105,
+          8.9910225
+        ]
+      },
+      "id": "node/7110725250"
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "@id": "node/7110725251",
+        "bus": "yes",
+        "highway": "bus_stop",
+        "name": "Bole Mickael (2)",
+        "network": "Addis Ababa Public Transport",
+        "operator": "Addis Ababa Bus Service Enterprise",
+        "public_transport": "platform",
+        "public_transport:version": "2",
+        "ref:AB": "AB076;AB125",
+        "ref:SH": "SH083;SH089;SH092;SH096"
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          38.7721474,
+          8.9795995
+        ]
+      },
+      "id": "node/7110725251"
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "@id": "node/7111821011",
+        "bus": "yes",
+        "highway": "bus_stop",
+        "name": "Piassa (EPPCO)",
+        "network": "Addis Ababa Public Transport",
+        "operator": "Addis Ababa Bus Service Enterprise",
+        "public_transport": "platform",
+        "public_transport:version": "2",
+        "ref:AB": "AB015;AB041"
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          38.7538404,
+          9.0325113
+        ]
+      },
+      "id": "node/7111821011"
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "@id": "node/7112123458",
+        "highway": "bus_stop",
+        "name": "Mebrathail",
+        "name:am": "መብራት ሀይል",
+        "network": "Addis Ababa Public Transport",
+        "public_transport": "platform",
+        "public_transport:version": "2",
+        "ref:AB": "AB018;AB087",
+        "ref:SH": "SH076"
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          38.7149359,
+          9.0294949
+        ]
+      },
+      "id": "node/7112123458"
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "@id": "node/7112755343",
+        "bus": "yes",
+        "highway": "bus_stop",
+        "name": "Meteorology",
+        "network": "Addis Ababa Public Transport",
+        "operator": "Addis Ababa Bus Service Enterprise",
+        "public_transport": "platform",
+        "public_transport:version": "2",
+        "ref:AB": "AB029;AB052"
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          38.7468282,
+          9.0194238
+        ]
+      },
+      "id": "node/7112755343"
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "@id": "node/7112755344",
+        "bus": "yes",
+        "highway": "bus_stop",
+        "name": "Sengatera",
+        "network": "Addis Ababa Public Transport",
+        "operator": "Addis Ababa Bus Service Enterprise",
+        "public_transport": "platform",
+        "public_transport:version": "2",
+        "ref:AB": "AB029"
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          38.7468427,
+          9.0148435
+        ]
+      },
+      "id": "node/7112755344"
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "@id": "node/7113158623",
+        "bus": "yes",
+        "highway": "bus_stop",
+        "name": "Eyesus",
+        "network": "Addis Ababa Public Transport",
+        "operator": "Addis Ababa Bus Service Enterprise",
+        "public_transport": "platform",
+        "public_transport:version": "2",
+        "ref:AB": "AB041"
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          38.7712666,
+          9.0652655
+        ]
+      },
+      "id": "node/7113158623"
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "@id": "node/7180461664",
+        "highway": "bus_stop",
+        "name": "Millennium Park"
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          38.7635301,
+          9.0213724
+        ]
+      },
+      "id": "node/7180461664"
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "@id": "node/7191643885",
+        "highway": "bus_stop",
+        "name": "Burayu tsarasiyon"
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          38.664872,
+          9.0706696
+        ]
+      },
+      "id": "node/7191643885"
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "@id": "node/7214490240",
+        "bus": "yes",
+        "highway": "bus_stop",
+        "name": "4 Kilo Minilik School",
+        "network": "Addis Ababa Public Transport",
+        "operator": "Addis Ababa Bus Service Enterprise",
+        "public_transport": "platform",
+        "public_transport:version": "2",
+        "ref:AB": "AB013",
+        "ref:SH": "SH095"
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          38.7629695,
+          9.0351361
+        ]
+      },
+      "id": "node/7214490240"
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "@id": "node/7470359985",
+        "highway": "bus_stop",
+        "name:en": "Goro Square"
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          38.8297955,
+          8.9906424
+        ]
+      },
+      "id": "node/7470359985"
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "@id": "node/7528067486",
+        "highway": "bus_stop",
+        "name:en": "Airtena"
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          38.7129272,
+          8.9723729
+        ]
+      },
+      "id": "node/7528067486"
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "@id": "node/7840028491",
+        "highway": "bus_stop",
+        "name": "ሰፈራ",
+        "name:en": "Sefera"
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          38.7342334,
+          8.9198322
+        ]
+      },
+      "id": "node/7840028491"
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "@id": "node/8223223818",
+        "highway": "bus_stop",
+        "name:en": "Mexico to Haile Garment"
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          38.7437443,
+          9.0087639
+        ]
+      },
+      "id": "node/8223223818"
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "@id": "node/8273216817",
+        "highway": "bus_stop",
+        "name": "ኬላ",
+        "name:en": "Check point"
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          38.8727837,
+          9.0614488
+        ]
+      },
+      "id": "node/8273216817"
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "@id": "node/8437825317",
+        "highway": "bus_stop",
+        "name": "ጆሞ ወደ 22 እና መገናኛ",
+        "name:en": "Jomo to 22 and Megenagna"
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          38.7118188,
+          8.9600033
+        ]
+      },
+      "id": "node/8437825317"
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "@id": "node/8561065217",
+        "highway": "bus_stop",
+        "name": "93 bus staiton"
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          38.7854579,
+          8.9601009
+        ]
+      },
+      "id": "node/8561065217"
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "@id": "node/8561813617",
+        "highway": "bus_stop",
+        "name:en": "Summit Cherkos"
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          38.860213,
+          8.9922421
+        ]
+      },
+      "id": "node/8561813617"
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "@id": "node/8561820517",
+        "highway": "bus_stop",
+        "name:en": "Summit Cherkos"
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          38.8598529,
+          8.9975946
+        ]
+      },
+      "id": "node/8561820517"
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "@id": "node/8750070217",
+        "highway": "bus_stop",
+        "name": "Betel Beg Tera"
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          38.6932507,
+          9.0008546
+        ]
+      },
+      "id": "node/8750070217"
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "@id": "node/8809825017",
+        "bus": "yes",
+        "highway": "bus_stop",
+        "name": "02መግቢያ",
+        "public_transport": "platform"
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          38.7598099,
+          9.0719022
+        ]
+      },
+      "id": "node/8809825017"
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "@id": "node/9073301119",
+        "highway": "bus_stop",
+        "name": "መሀንዲስ ሰፈር",
+        "name:en": "Mehandis Sefer"
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          38.7033074,
+          8.9992299
+        ]
+      },
+      "id": "node/9073301119"
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "@id": "node/9073301417",
+        "highway": "bus_stop",
+        "name": "72 ሰፈር ባጃጅ ተራ",
+        "name:en": "72 Sefer Bajaj Tera"
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          38.7030146,
+          8.9963677
+        ]
+      },
+      "id": "node/9073301417"
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "@id": "node/9222109517",
+        "bench": "no",
+        "highway": "bus_stop",
+        "name": "Geji",
+        "note": "bad conditions ",
+        "public_transport": "platform",
+        "route_ref": "BoleGerji",
+        "shelter": "no",
+        "wheelchair": "no"
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          38.8104278,
+          8.9945249
+        ]
+      },
+      "id": "node/9222109517"
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "@id": "node/10768858722",
+        "bus": "yes",
+        "highway": "bus_stop",
+        "name": "Kera (Gofa Road)",
+        "name:am": "ቄራ",
+        "network": "Addis Ababa Public Transport",
+        "operator": "Addis Ababa Bus Service Enterprise",
+        "public_transport": "platform",
+        "public_transport:version": "2",
+        "ref:AB": "AB034"
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          38.7496962,
+          8.9813388
+        ]
+      },
+      "id": "node/10768858722"
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "@id": "node/11034031011",
+        "bus": "yes",
+        "highway": "bus_stop",
+        "name": "Shero Meda",
+        "name:am": "ሽሮ ሜዳ",
+        "network": "Addis Ababa Public Transport",
+        "operator": "Addis Ababa Bus Service Enterprise",
+        "public_transport": "platform",
+        "public_transport:version": "2",
+        "ref:AB": "AB016;AB110;AB017",
+        "ref:SH": "SH013;SH028;AB080"
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          38.7612633,
+          9.0626384
+        ]
+      },
+      "id": "node/11034031011"
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "@id": "node/11034427398",
+        "bus": "yes",
+        "highway": "bus_stop",
+        "name": "Abo Mazoriya",
+        "name:am": "አቦ ማዞሪያ",
+        "network": "Addis Ababa Public Transport",
+        "operator": "Addis Ababa Bus Service Enterprise",
+        "public_transport": "platform",
+        "public_transport:version": "2",
+        "ref:AB": "AB064",
+        "ref:SH": "SH014 (A08)"
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          38.777181,
+          9.0571131
+        ]
+      },
+      "id": "node/11034427398"
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "@id": "node/11034427399",
+        "bus": "yes",
+        "highway": "bus_stop",
+        "name": "Yeha",
+        "network": "Addis Ababa Public Transport",
+        "operator": "Addis Ababa Bus Service Enterprise",
+        "public_transport": "platform",
+        "public_transport:version": "2",
+        "ref:AB": "AB055"
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          38.7835816,
+          9.0608545
+        ]
+      },
+      "id": "node/11034427399"
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "@id": "node/11035607129",
+        "bus": "yes",
+        "highway": "bus_stop",
+        "name": "Zenebewerk Hotel",
+        "network": "Addis Ababa Public Transport",
+        "operator": "Addis Ababa Bus Service Enterprise",
+        "public_transport": "platform",
+        "public_transport:version": "2",
+        "ref:AB": "AB009;AB039;AB082"
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          38.7682089,
+          9.0191017
+        ]
+      },
+      "id": "node/11035607129"
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "@id": "node/11035607130",
+        "bus": "yes",
+        "highway": "bus_stop",
+        "name": "Estifanos",
+        "name:am": "እስቲፋኖስ",
+        "network": "Addis Ababa Public Transport",
+        "operator": "Anbessa City Bus;Sheger City Bus",
+        "public_transport": "platform",
+        "ref:AB": "AB082;AB130;AB127;SH067"
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          38.7636411,
+          9.0107497
+        ]
+      },
+      "id": "node/11035607130"
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "@id": "node/11171800354",
+        "bus": "yes",
+        "highway": "bus_stop",
+        "loc_ref": "45/52/61",
+        "name": "Ambassador",
+        "network": "Addis Ababa Public Transport",
+        "operator": "Addis Ababa Bus Service Enterprise",
+        "public_transport": "platform",
+        "public_transport:version": "2",
+        "ref:AB": "AB022;AB032;AB045"
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          38.7552159,
+          9.0173538
+        ]
+      },
+      "id": "node/11171800354"
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "@id": "node/11171800355",
+        "bus": "yes",
+        "highway": "bus_stop",
+        "name": "Bole Mickael",
+        "network": "Addis Ababa Public Transport",
+        "operator": "Addis Ababa Bus Service Enterprise",
+        "public_transport": "platform",
+        "public_transport:version": "2",
+        "ref:AB": "AB048T1S1",
+        "ref:SH": "SH092;SH096"
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          38.7767317,
+          8.981728
+        ]
+      },
+      "id": "node/11171800355"
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "@id": "node/11171800356",
+        "bus": "yes",
+        "highway": "bus_stop",
+        "name": "Wollo Sefer",
+        "network": "Addis Ababa Public Transport",
+        "operator": "Addis Ababa Bus Service Enterprise",
+        "public_transport": "platform",
+        "public_transport:version": "2",
+        "ref:AB": "AB031;AB014",
+        "ref:SH": "SH015;SH079;SH099"
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          38.7750827,
+          8.9934713
+        ]
+      },
+      "id": "node/11171800356"
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "@id": "node/11171800357",
+        "bus": "yes",
+        "highway": "bus_stop",
+        "name": "Dembel",
+        "network": "Addis Ababa Public Transport",
+        "operator": "Addis Ababa Bus Service Enterprise",
+        "public_transport": "platform",
+        "public_transport:version": "2",
+        "ref:SH": "SH015;SH027;SH099"
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          38.7662677,
+          9.0069848
+        ]
+      },
+      "id": "node/11171800357"
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "@id": "node/11171800358",
+        "bus": "yes",
+        "highway": "bus_stop",
+        "name": "St. Urael Church",
+        "network": "Addis Ababa Public Transport",
+        "operator": "Addis Ababa Bus Service Enterprise",
+        "public_transport": "platform",
+        "public_transport:version": "2",
+        "ref:AB": "AB032;AB102;AB070;AB071"
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          38.7753536,
+          9.0095662
+        ]
+      },
+      "id": "node/11171800358"
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "@id": "node/11171800359",
+        "bus": "yes",
+        "highway": "bus_stop",
+        "name": "St. Urael Church",
+        "network": "Addis Ababa Public Transport",
+        "operator": "Addis Ababa Bus Service Enterprise",
+        "public_transport": "platform",
+        "public_transport:version": "2",
+        "ref:AB": "AB032;AB102;AB070;AB071"
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          38.7749389,
+          9.010175
+        ]
+      },
+      "id": "node/11171800359"
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "@id": "node/11171800360",
+        "bus": "yes",
+        "highway": "bus_stop",
+        "name": "Kazanchis (6th)",
+        "network": "Addis Ababa Public Transport",
+        "operator": "Addis Ababa Bus Service Enterprise",
+        "public_transport": "platform",
+        "public_transport:version": "2",
+        "ref:AB": "AB032;AB102;AB070;AB071"
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          38.7708345,
+          9.0171474
+        ]
+      },
+      "id": "node/11171800360"
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "@id": "node/11250761037",
+        "highway": "bus_stop",
+        "name": "ገብርኤል መሳለሚያ",
+        "name:en": "Gebriel Mesalemiya"
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          38.8507041,
+          9.0390931
+        ]
+      },
+      "id": "node/11250761037"
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "@id": "node/11250763638",
+        "highway": "bus_stop",
+        "name": "ኮተቤ ኮሌጅ",
+        "name:en": "Kotebe College"
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          38.8394605,
+          9.0376024
+        ]
+      },
+      "id": "node/11250763638"
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "@id": "node/11250766237",
+        "highway": "bus_stop",
+        "name": "ኮተቤ 01",
+        "name:en": "kotebe 01"
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          38.8347439,
+          9.0370924
+        ]
+      },
+      "id": "node/11250766237"
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "@id": "node/11250768337",
+        "highway": "bus_stop",
+        "name": "ደጃዝማች ወንድይራድ",
+        "name:en": "Dejazmach Wondirad"
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          38.8338607,
+          9.0370232
+        ]
+      },
+      "id": "node/11250768337"
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "@id": "node/11381162441",
+        "bus": "yes",
+        "highway": "bus_stop",
+        "name": "Stadium",
+        "network": "Addis Ababa Public Transport",
+        "operator": "Addis Ababa Bus Service Enterprise",
+        "public_transport": "platform",
+        "public_transport:version": "2",
+        "ref:AB": "AB029;AB055;AB068;AB073",
+        "ref:SH": "SH011 (A24)"
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          38.7582703,
+          9.0124228
+        ]
+      },
+      "id": "node/11381162441"
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "@id": "node/11381162442",
+        "bus": "yes",
+        "highway": "bus_stop",
+        "name": "Stadium",
+        "network": "Addis Ababa Public Transport",
+        "operator": "Addis Ababa Bus Service Enterprise",
+        "public_transport": "platform",
+        "public_transport:version": "2",
+        "ref:AB": "AB073"
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          38.7583013,
+          9.0123898
+        ]
+      },
+      "id": "node/11381162442"
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "@id": "node/11399912950",
+        "bus": "yes",
+        "highway": "bus_stop",
+        "name": "18 Kutir Mazoria",
+        "network": "Addis Ababa Public Transport",
+        "operator": "Addis Ababa Bus Service Enterprise",
+        "public_transport": "platform",
+        "public_transport:version": "2",
+        "ref:AB": "AB008"
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          38.7512405,
+          9.0649398
+        ]
+      },
+      "id": "node/11399912950"
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "@id": "node/11399912953",
+        "bus": "yes",
+        "highway": "bus_stop",
+        "name": "Semen Hotel",
+        "network": "Addis Ababa Public Transport",
+        "operator": "Addis Ababa Bus Service Enterprise",
+        "public_transport": "platform",
+        "public_transport:version": "2",
+        "ref:AB": "AB049;AB006;AB094;AB045;AB008",
+        "ref:SH": "SH018 (C31)"
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          38.7490208,
+          9.0436846
+        ]
+      },
+      "id": "node/11399912953"
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "@id": "node/11399912954",
+        "bus": "yes",
+        "highway": "bus_stop",
+        "name": "Abune Petros",
+        "network": "Addis Ababa Public Transport",
+        "operator": "Addis Ababa Bus Service Enterprise",
+        "public_transport": "platform",
+        "public_transport:version": "2",
+        "ref:AB": "AB008;AB020;AB023;AB040"
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          38.7491376,
+          9.0352687
+        ]
+      },
+      "id": "node/11399912954"
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "@id": "node/11399912960",
+        "bus": "yes",
+        "highway": "bus_stop",
+        "name": "18 Kutir Mazoria",
+        "network": "Addis Ababa Public Transport",
+        "operator": "Addis Ababa Bus Service Enterprise",
+        "public_transport": "platform",
+        "public_transport:version": "2",
+        "ref:AB": "AB008"
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          38.7512231,
+          9.0649792
+        ]
+      },
+      "id": "node/11399912960"
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "@id": "node/11399912964",
+        "bus": "yes",
+        "highway": "bus_stop",
+        "name": "Kechenie",
+        "network": "Addis Ababa Public Transport",
+        "operator": "Addis Ababa Bus Service Enterprise",
+        "public_transport": "platform",
+        "public_transport:version": "2",
+        "ref:AB": "AB008"
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          38.7511864,
+          9.0667289
+        ]
+      },
+      "id": "node/11399912964"
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "@id": "node/11399912966",
+        "bus": "yes",
+        "highway": "bus_stop",
+        "name": "Kechenie",
+        "network": "Addis Ababa Public Transport",
+        "operator": "Addis Ababa Bus Service Enterprise",
+        "public_transport": "platform",
+        "public_transport:version": "2",
+        "ref:AB": "AB008"
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          38.7512089,
+          9.0667294
+        ]
+      },
+      "id": "node/11399912966"
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "@id": "node/11400026861",
+        "bus": "yes",
+        "description": "On the Roundabout",
+        "highway": "bus_stop",
+        "loc_name": "Menlik II Square",
+        "name": "Piassa Arada",
+        "network": "Addis Ababa Public Transport",
+        "operator": "Addis Ababa Bus Service Enterprise",
+        "public_transport": "platform",
+        "public_transport:version": "2",
+        "ref:AB": "AB014;AB094;AB103;AB107",
+        "ref:SH": "C13;SH025;C15;SH021;A18;SH100;SH071"
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          38.7527875,
+          9.0361205
+        ]
+      },
+      "id": "node/11400026861"
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "@id": "node/11400973367",
+        "bus": "yes",
+        "highway": "bus_stop",
+        "name": "6 Kilo",
+        "network": "Addis Ababa Public Transport",
+        "operator": "Addis Ababa Bus Service Enterprise",
+        "public_transport": "platform",
+        "public_transport:version": "2",
+        "ref:AB": "AB112",
+        "ref:SH": "SH080"
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          38.7641678,
+          9.0428467
+        ]
+      },
+      "id": "node/11400973367"
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "@id": "node/11401004974",
+        "bus": "yes",
+        "highway": "bus_stop",
+        "name": "6 Kilo",
+        "network": "Addis Ababa Public Transport",
+        "operator": "Addis Ababa Bus Service Enterprise",
+        "public_transport": "platform",
+        "public_transport:version": "2",
+        "ref:AB": "AB112;AB023",
+        "ref:SH": "SH080"
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          38.7642074,
+          9.0429723
+        ]
+      },
+      "id": "node/11401004974"
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "@id": "node/11401435283",
+        "bus": "yes",
+        "highway": "bus_stop",
+        "name": "Mamo",
+        "network": "Addis Ababa Public Transport",
+        "operator": "Addis Ababa Bus Service Enterprise",
+        "public_transport": "platform",
+        "public_transport:version": "2",
+        "ref:AB": "AB125",
+        "ref:SH": "SH092"
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          38.7654962,
+          8.9737797
+        ]
+      },
+      "id": "node/11401435283"
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "@id": "node/11401435284",
+        "bus": "yes",
+        "highway": "bus_stop",
+        "name": "Yosef",
+        "network": "Addis Ababa Public Transport",
+        "operator": "Addis Ababa Bus Service Enterprise",
+        "public_transport": "platform",
+        "public_transport:version": "2",
+        "ref:AB": "AB125",
+        "ref:SH": "SH083;SH089;SH092"
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          38.7668165,
+          8.970564
+        ]
+      },
+      "id": "node/11401435284"
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "@id": "node/11401435291",
+        "bus": "yes",
+        "highway": "bus_stop",
+        "name": "Yosef",
+        "network": "Addis Ababa Public Transport",
+        "operator": "Addis Ababa Bus Service Enterprise",
+        "public_transport": "platform",
+        "public_transport:version": "2",
+        "ref:AB": "AB125",
+        "ref:SH": "SH089;SH092;SH096"
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          38.7665593,
+          8.9705358
+        ]
+      },
+      "id": "node/11401435291"
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "@id": "node/11401435292",
+        "bus": "yes",
+        "highway": "bus_stop",
+        "name": "Mamo",
+        "network": "Addis Ababa Public Transport",
+        "operator": "Addis Ababa Bus Service Enterprise",
+        "public_transport": "platform",
+        "public_transport:version": "2",
+        "ref:AB": "AB125",
+        "ref:SH": "SH083;SH089;SH092;SH096"
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          38.7652031,
+          8.9737884
+        ]
+      },
+      "id": "node/11401435292"
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "@id": "node/11401627123",
+        "bus": "yes",
+        "highway": "bus_stop",
+        "name": "Mexico",
+        "name:am": "ሜክሲኮ",
+        "network": "Addis Ababa Public Transport",
+        "operator": "Addis Ababa Bus Service Enterprise",
+        "public_transport": "platform",
+        "public_transport:version": "2",
+        "ref:AB": "AB128",
+        "ref:SH": "SH070"
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          38.7453436,
+          9.0111053
+        ]
+      },
+      "id": "node/11401627123"
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "@id": "node/11401627124",
+        "bus": "yes",
+        "highway": "bus_stop",
+        "name": "Mexico",
+        "network": "Addis Ababa Public Transport",
+        "operator": "Addis Ababa Bus Service Enterprise",
+        "public_transport": "platform",
+        "public_transport:version": "2",
+        "ref:AB": "AB128;AB127;SH067",
+        "ref:SH": "SH070"
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          38.7477242,
+          9.0125598
+        ]
+      },
+      "id": "node/11401627124"
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "@id": "node/11402646171",
+        "bus": "yes",
+        "highway": "bus_stop",
+        "name": "Mexico",
+        "network": "Addis Ababa Public Transport",
+        "operator": "Addis Ababa Bus Service Enterprise",
+        "public_transport": "platform",
+        "public_transport:version": "2",
+        "ref:AB": "AB127;AB078",
+        "ref:SH": "SH072;SH073"
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          38.7488494,
+          9.0113049
+        ]
+      },
+      "id": "node/11402646171"
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "@id": "node/11402726856",
+        "bus": "yes",
+        "highway": "bus_stop",
+        "name": "Jan Meda",
+        "network": "Addis Ababa Public Transport",
+        "operator": "Addis Ababa Bus Service Enterprise",
+        "public_transport": "platform",
+        "public_transport:version": "2",
+        "ref:AB": "AB013"
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          38.7687405,
+          9.0466103
+        ]
+      },
+      "id": "node/11402726856"
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "@id": "node/11403413704",
+        "bus": "yes",
+        "highway": "bus_stop",
+        "name": "Edna Mall",
+        "network": "Addis Ababa Public Transport",
+        "operator": "Addis Ababa Bus Service Enterprise",
+        "public_transport": "platform",
+        "public_transport:version": "2",
+        "ref:AB": "AB009;AB042",
+        "ref:SH": "SH078"
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          38.7869305,
+          8.9974843
+        ]
+      },
+      "id": "node/11403413704"
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "@id": "node/11403413706",
+        "bus": "yes",
+        "highway": "bus_stop",
+        "name": "Bole",
+        "network": "Addis Ababa Public Transport",
+        "operator": "Addis Ababa Bus Service Enterprise",
+        "public_transport": "platform",
+        "public_transport:version": "2",
+        "ref:AB": "AB042",
+        "ref:SH": "SH078;SH092;SH096"
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          38.794928,
+          8.9916854
+        ]
+      },
+      "id": "node/11403413706"
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "@id": "node/11403413707",
+        "bus": "yes",
+        "highway": "bus_stop",
+        "name": "Bole",
+        "network": "Addis Ababa Public Transport",
+        "operator": "Addis Ababa Bus Service Enterprise",
+        "public_transport": "platform",
+        "public_transport:version": "2",
+        "ref:AB": "AB042;AB042",
+        "ref:SH": "SH078"
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          38.7927404,
+          8.9907555
+        ]
+      },
+      "id": "node/11403413707"
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "@id": "node/11403841171",
+        "bus": "yes",
+        "highway": "bus_stop",
+        "name": "Taxi Tera",
+        "network": "Addis Ababa Public Transport",
+        "operator": "Addis Ababa Bus Service Enterprise",
+        "public_transport": "platform",
+        "public_transport:version": "2",
+        "ref:AB": "AB046;AB051"
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          38.8092196,
+          8.9947863
+        ]
+      },
+      "id": "node/11403841171"
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "@id": "node/11403841173",
+        "bus": "yes",
+        "highway": "bus_stop",
+        "name": "Gerji",
+        "network": "Addis Ababa Public Transport",
+        "operator": "Addis Ababa Bus Service Enterprise",
+        "public_transport": "platform",
+        "public_transport:version": "2",
+        "ref:AB": "AB046;AB051"
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          38.8134417,
+          8.9947353
+        ]
+      },
+      "id": "node/11403841173"
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "@id": "node/11403841174",
+        "bus": "yes",
+        "highway": "bus_stop",
+        "name": "Gerji",
+        "network": "Addis Ababa Public Transport",
+        "operator": "Addis Ababa Bus Service Enterprise",
+        "public_transport": "platform",
+        "public_transport:version": "2",
+        "ref:AB": "AB046;AB052"
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          38.8134403,
+          8.9947512
+        ]
+      },
+      "id": "node/11403841174"
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "@id": "node/11405492951",
+        "bus": "yes",
+        "highway": "bus_stop",
+        "name": "Bole (Bora Amusement)",
+        "network": "Addis Ababa Public Transport",
+        "operator": "Addis Ababa Bus Service Enterprise",
+        "public_transport": "platform",
+        "public_transport:version": "2",
+        "ref:AB": "AB076;AB093;AB052",
+        "ref:SH": "SH096"
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          38.7943416,
+          8.9911572
+        ]
+      },
+      "id": "node/11405492951"
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "@id": "node/11405492952",
+        "bus": "yes",
+        "highway": "bus_stop",
+        "name": "Taxi Tera",
+        "network": "Addis Ababa Public Transport",
+        "operator": "Addis Ababa Bus Service Enterprise",
+        "public_transport": "platform",
+        "public_transport:version": "2",
+        "ref:AB": "AB046;AB051;AB052"
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          38.8092405,
+          8.9948042
+        ]
+      },
+      "id": "node/11405492952"
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "@id": "node/11405492953",
+        "bus": "yes",
+        "highway": "bus_stop",
+        "name": "Meteorology",
+        "network": "Addis Ababa Public Transport",
+        "operator": "Addis Ababa Bus Service Enterprise",
+        "public_transport": "platform",
+        "public_transport:version": "2",
+        "ref:AB": "AB052"
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          38.7466743,
+          9.0192903
+        ]
+      },
+      "id": "node/11405492953"
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "@id": "node/11411760271",
+        "bus": "yes",
+        "highway": "bus_stop",
+        "name": "Yekatit 12 Hospital",
+        "name:am": "የካቲት",
+        "network": "Addis Ababa Public Transport",
+        "operator": "Addis Ababa Bus Service Enterprise",
+        "public_transport": "platform",
+        "public_transport:version": "2",
+        "ref:SH": "SH101"
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          38.7603148,
+          9.0440833
+        ]
+      },
+      "id": "node/11411760271"
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "@id": "node/11411760272",
+        "bench": "yes",
+        "bin": "yes",
+        "bus": "yes",
+        "highway": "bus_stop",
+        "name": "6 Kilo",
+        "network": "Addis Ababa Public Transport",
+        "operator": "Addis Ababa Bus Service Enterprise",
+        "public_transport": "platform",
+        "public_transport:version": "2",
+        "ref:SH": "SH101",
+        "shelter": "yes"
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          38.7621019,
+          9.0435287
+        ]
+      },
+      "id": "node/11411760272"
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "@id": "node/11411760274",
+        "bus": "yes",
+        "highway": "bus_stop",
+        "name": "Piassa Arada",
+        "name:loc": "St. George Church",
+        "network": "Addis Ababa Public Transport",
+        "operator": "Addis Ababa Bus Service Enterprise",
+        "public_transport": "platform",
+        "public_transport:version": "2",
+        "ref:SH": "SH101"
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          38.7526157,
+          9.0381743
+        ]
+      },
+      "id": "node/11411760274"
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "@id": "node/11411760275",
+        "bus": "yes",
+        "highway": "bus_stop",
+        "name": "Frensaye Kela",
+        "name:am": "ኬላ",
+        "network": "Addis Ababa Public Transport",
+        "operator": "Addis Ababa Bus Service Enterprise",
+        "public_transport": "platform",
+        "public_transport:version": "2",
+        "ref:AB": "AB041",
+        "ref:SH": "SH014 (A08);SH016;SH101"
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          38.7737387,
+          9.0551623
+        ]
+      },
+      "id": "node/11411760275"
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "@id": "node/11411760277",
+        "bus": "yes",
+        "highway": "bus_stop",
+        "name": "Ferensay",
+        "network": "Addis Ababa Public Transport",
+        "operator": "Addis Ababa Bus Service Enterprise",
+        "public_transport": "platform",
+        "public_transport:version": "2",
+        "ref:SH": "SH101"
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          38.7775924,
+          9.0570997
+        ]
+      },
+      "id": "node/11411760277"
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "@id": "node/11411760278",
+        "bus": "yes",
+        "highway": "bus_stop",
+        "name": "Ferensay",
+        "network": "Addis Ababa Public Transport",
+        "operator": "Addis Ababa Bus Service Enterprise",
+        "public_transport": "platform",
+        "public_transport:version": "2",
+        "ref:SH": "SH101;SH095"
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          38.7780891,
+          9.0571515
+        ]
+      },
+      "id": "node/11411760278"
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "@id": "node/11412861795",
+        "bus": "yes",
+        "highway": "bus_stop",
+        "name": "Bole Bridge",
+        "name:am": "ሚሊኒየም አዳራሽ",
+        "network": "Addis Ababa Public Transport",
+        "operator": "Addis Ababa Bus Service Enterprise",
+        "public_transport": "platform",
+        "public_transport:version": "2",
+        "ref:SH": "SH072;SH079;SH099"
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          38.7897549,
+          8.9885421
+        ]
+      },
+      "id": "node/11412861795"
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "@id": "node/11412861796",
+        "bus": "yes",
+        "highway": "bus_stop",
+        "name": "Mexico",
+        "network": "Addis Ababa Public Transport",
+        "operator": "Addis Ababa Bus Service Enterprise",
+        "public_transport": "platform",
+        "public_transport:version": "2",
+        "ref:AB": "AB127;AB078",
+        "ref:SH": "SH072;SH073"
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          38.7497526,
+          9.0113665
+        ]
+      },
+      "id": "node/11412861796"
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "@id": "node/11414368236",
+        "bus": "yes",
+        "highway": "bus_stop",
+        "name": "Bole Bridge",
+        "name:am": "ሚሊኒየም አዳራሽ",
+        "network": "Addis Ababa Public Transport",
+        "operator": "Addis Ababa Bus Service Enterprise",
+        "public_transport": "platform",
+        "public_transport:version": "2",
+        "ref:SH": "SH079;SH099"
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          38.789865,
+          8.9887101
+        ]
+      },
+      "id": "node/11414368236"
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "@id": "node/11415257682",
+        "bus": "yes",
+        "highway": "bus_stop",
+        "name": "Bole Bridge",
+        "network": "Addis Ababa Public Transport",
+        "operator": "Addis Ababa Bus Service Enterprise",
+        "public_transport": "platform",
+        "public_transport:version": "2",
+        "ref:SH": "SH083"
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          38.7884698,
+          8.9858293
+        ]
+      },
+      "id": "node/11415257682"
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "@id": "node/11415257683",
+        "bus": "yes",
+        "highway": "bus_stop",
+        "name": "Bole Bridge",
+        "network": "Addis Ababa Public Transport",
+        "operator": "Addis Ababa Bus Service Enterprise",
+        "public_transport": "platform",
+        "public_transport:version": "2",
+        "ref:SH": "SH083;SH092;SH096"
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          38.7906382,
+          8.9864965
+        ]
+      },
+      "id": "node/11415257683"
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "@id": "node/11417693225",
+        "bus": "yes",
+        "highway": "bus_stop",
+        "name": "Ferensay",
+        "network": "Addis Ababa Public Transport",
+        "operator": "Addis Ababa Bus Service Enterprise",
+        "public_transport": "platform",
+        "public_transport:version": "2",
+        "ref:SH": "SH095"
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          38.7769702,
+          9.0571149
+        ]
+      },
+      "id": "node/11417693225"
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "@id": "node/11505488527",
+        "bus": "yes",
+        "highway": "bus_stop",
+        "name": "Piassa Arada",
+        "name:loc": "St. George Church",
+        "network": "Addis Ababa Public Transport",
+        "operator": "Addis Ababa Bus Service Enterprise",
+        "public_transport": "platform",
+        "public_transport:version": "2",
+        "ref:AB": "AB001"
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          38.7529985,
+          9.037989
+        ]
+      },
+      "id": "node/11505488527"
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "@id": "node/11505488529",
+        "bus": "yes",
+        "highway": "bus_stop",
+        "name": "Piassa Arada",
+        "name:loc": "St. George Church",
+        "network": "Addis Ababa Public Transport",
+        "operator": "Addis Ababa Bus Service Enterprise",
+        "public_transport": "platform",
+        "public_transport:version": "2",
+        "ref:AB": "AB001"
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          38.7528083,
+          9.03787
+        ]
+      },
+      "id": "node/11505488529"
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "@id": "node/11519588969",
+        "highway": "bus_stop"
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          38.7989474,
+          8.9641967
+        ]
+      },
+      "id": "node/11519588969"
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "@id": "node/11539916206",
+        "bus": "yes",
+        "highway": "bus_stop",
+        "name": "Washington Hospital",
+        "network": "Addis Ababa Public Transport",
+        "operator": "Addis Ababa Bus Service Enterprise",
+        "public_transport": "platform",
+        "public_transport:version": "2",
+        "ref:AB": "AB053"
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          38.7756345,
+          8.9872884
+        ]
+      },
+      "id": "node/11539916206"
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "@id": "node/11539916209",
+        "bus": "yes",
+        "highway": "bus_stop",
+        "name": "Bole Mikael",
+        "network": "Addis Ababa Public Transport",
+        "operator": "Addis Ababa Bus Service Enterprise",
+        "public_transport": "platform",
+        "public_transport:version": "2",
+        "ref:AB": "AB053"
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          38.7729998,
+          8.9842837
+        ]
+      },
+      "id": "node/11539916209"
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "@id": "node/11808851971",
+        "highway": "bus_stop",
+        "name:en": "taxi to mexico"
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          38.771127,
+          9.0155888
+        ]
+      },
+      "id": "node/11808851971"
+    }
+  ]
+}
