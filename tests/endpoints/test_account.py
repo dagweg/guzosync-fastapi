@@ -113,7 +113,6 @@ class TestAccountRouter:
         update_data = {
             "first_name": "Updated"
         }
-        
         response = await test_client.put("/api/account/me", json=update_data)
         
         assert response.status_code == 403
@@ -121,17 +120,6 @@ class TestAccountRouter:
     @pytest.mark.asyncio
     async def test_update_notification_settings_success(self, authenticated_client, mock_mongodb):
         """Test successful notification settings update"""
-        # Mock existing settings found
-        mock_mongodb.notification_settings.find_one.return_value = {"_id": "existing"}
-        
-        # Mock successful update using AsyncMock
-        mock_update_result = AsyncMock()
-        mock_update_result.matched_count = 1
-        mock_mongodb.notification_settings.update_one = AsyncMock(return_value=mock_update_result)
-        
-        # Mock the direct insert_one call as AsyncMock 
-        mock_mongodb.notification_settings.insert_one = AsyncMock()
-        
         # Mock updated settings - using correct schema with email_enabled
         updated_settings = {
             "_id": "ObjectId",
@@ -139,7 +127,20 @@ class TestAccountRouter:
             "user_id": authenticated_client.test_user.id,
             "email_enabled": True,
         }
-        mock_mongodb.notification_settings.find_one.return_value = updated_settings
+        
+        # Mock existing settings found on first call, updated settings on second call
+        mock_mongodb.notification_settings.find_one = AsyncMock()
+        mock_mongodb.notification_settings.find_one.side_effect = [
+            {"_id": "existing"},  # First call - existing settings
+            updated_settings      # Second call - updated settings
+        ]
+        
+        # Mock successful update using AsyncMock
+        mock_update_result = AsyncMock()
+        mock_update_result.matched_count = 1
+        mock_mongodb.notification_settings.update_one = AsyncMock(return_value=mock_update_result)
+          # Mock the direct insert_one call as AsyncMock 
+        mock_mongodb.notification_settings.insert_one = AsyncMock()
         
         settings_data = {
             "email_notifications": True,
@@ -155,6 +156,7 @@ class TestAccountRouter:
     async def test_update_notification_settings_create_new(self, authenticated_client, mock_mongodb):
         """Test creating new notification settings if none exist"""
         # Mock no existing settings found on first call, then return created settings
+        mock_mongodb.notification_settings.find_one = AsyncMock()
         mock_mongodb.notification_settings.find_one.side_effect = [
             None,  # First call - no existing settings
             {      # Second call - return created settings

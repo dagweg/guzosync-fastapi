@@ -93,3 +93,30 @@ async def get_current_user_websocket(token: str, app_state):
     except Exception as e:
         logger.error(f"Authentication error: {e}")
         return None
+
+async def require_admin(current_user: User = Depends(get_current_user)) -> User:
+    """Dependency that requires the current user to be an admin"""
+    if current_user.role != "CONTROL_ADMIN":
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Admin access required"
+        )
+    return current_user
+
+async def require_regulator(current_user: User = Depends(get_current_user)) -> User:
+    """Dependency that requires the current user to be a regulator"""
+    if current_user.role != "QUEUE_REGULATOR":
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Regulator access required"
+        )
+    return current_user
+
+async def require_admin_or_regulator(current_user: User = Depends(get_current_user)) -> User:
+    """Dependency that requires the current user to be either an admin or regulator"""
+    if current_user.role not in ["CONTROL_ADMIN", "QUEUE_REGULATOR"]:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Admin or regulator access required"
+        )
+    return current_user

@@ -133,8 +133,7 @@ class TestAlertsRouter:
         assert response.status_code == status.HTTP_200_OK
         data = response.json()
         assert len(data) == 5
-        
-        # Test second page
+          # Test second page
         response = await passenger_client.get("/api/alerts?skip=5&limit=5")
         assert response.status_code == status.HTTP_200_OK
         data = response.json()
@@ -147,7 +146,7 @@ class TestAlertsRouter:
         """Test retrieving alerts without authentication."""
         response = await test_client.get("/api/alerts")
         
-        assert response.status_code == status.HTTP_401_UNAUTHORIZED
+        assert response.status_code == status.HTTP_403_FORBIDDEN
 
     @pytest.mark.asyncio
     async def test_create_alert_success_admin(

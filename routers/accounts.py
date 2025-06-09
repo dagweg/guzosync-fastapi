@@ -125,7 +125,7 @@ async def login(
     logger.info(f"Login attempt for email: {user_data.email}")
     
     user = await request.app.state.mongodb.users.find_one({"email": user_data.email})
-    if not user or user.get("password") != user_data.password:  # In production, verify hashed password
+    if not user or user.get("password") != user_data.password or not user.get("is_active", True):  # In production, verify hashed password
         logger.warning(f"Login failed for email: {user_data.email}")
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,

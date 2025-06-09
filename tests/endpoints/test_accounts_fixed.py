@@ -17,20 +17,14 @@ class TestAccountsRouter:
         # Mock user doesn't exist initially and no pending approval requests
         mock_mongodb.users.find_one = AsyncMock(return_value=None)
         mock_mongodb.approval_requests.find_one = AsyncMock(return_value=None)
-          # Mock successful user creation
+        
+        # Mock successful user creation
         user_id = str(uuid4())
         mock_mongodb.users.insert_one = AsyncMock(return_value=AsyncMock(inserted_id=ObjectId()))
-        
-        # Create the user data that will be returned after registration
         created_user = TestFixtures.create_test_user(user_id=user_id, email="john.doe@example.com")
-        created_user.update({
-            "first_name": "John",
-            "last_name": "Doe",
-            "phone_number": "+1234567890",
-            "role": "PASSENGER"
-        })
-          # Mock the find_one calls: first returns None (user doesn't exist), second returns created user after insertion
-        mock_mongodb.users.find_one = AsyncMock(side_effect=[None, created_user])
+        
+        # Mock the find_one call after creation to return the created user
+        mock_mongodb.users.find_one = AsyncMock(side_effect=[None, None, created_user])
         
         # Test data
         registration_data = {

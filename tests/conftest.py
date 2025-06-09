@@ -28,7 +28,6 @@ class TestFixtures:
         self.admin_user = self.create_test_user(role=UserRole.CONTROL_ADMIN)
         self.driver_user = self.create_test_user(role=UserRole.BUS_DRIVER)
         self.regulator_user = self.create_test_user(role=UserRole.QUEUE_REGULATOR)
-    
     @staticmethod
     def create_test_user(
         role: UserRole = UserRole.PASSENGER,
@@ -36,7 +35,9 @@ class TestFixtures:
         **kwargs
     ) -> Dict[str, Any]:
         user_id = user_id or str(uuid4())
+        object_id = ObjectId()
         user = {
+            "_id": object_id,  # Add MongoDB ObjectId
             "id": str(user_id),  # Ensure id is always a string
             "first_name": kwargs.get("first_name", "Test"),
             "last_name": kwargs.get("last_name", "User"),
@@ -241,3 +242,35 @@ async def regulator_client(test_client, mock_mongodb):
     test_client.test_user_data = regulator_user_data
     
     return test_client
+
+
+@pytest_asyncio.fixture
+async def passenger_client(test_client, mock_mongodb):
+    """Test client with passenger user"""
+    # Create passenger user
+    passenger_user_data = TestFixtures.create_test_user(role=UserRole.PASSENGER)
+    passenger_user = User(**{k: v for k, v in passenger_user_data.items() if k != "_id"})
+    
+    # Mock user lookup
+    mock_mongodb.users.find_one.return_value = passenger_user_data
+    
+    # Create JWT token
+    jwt_secret = os.getenv("JWT_SECRET", "test-secret")
+    token_payload = {
+        "sub": str(passenger_user_data["_id"]),
+        "exp": datetime.utcnow() + timedelta(hours=1)
+    }
+    token = jwt.encode(token_payload, jwt_secret, algorithm="HS256")
+    
+    # Set authorization header
+    test_client.headers = {"Authorization": f"Bearer {token}"}
+    test_client.test_user = passenger_user
+    test_client.test_user_data = passenger_user_data
+    
+    return test_client
+
+
+@pytest.fixture
+def test_fixtures():
+    """Provide test fixtures with pre-generated data"""
+    return TestFixtures()

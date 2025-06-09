@@ -12,6 +12,45 @@ from core import transform_mongo_doc
 
 router = APIRouter(prefix="/api/buses", tags=["buses"])
 
+@router.get("/", response_model=List[BusResponse])
+async def get_all_buses(
+    request: Request,
+    search: Optional[str] = None,
+    filter_by: Optional[str] = None,
+    status: Optional[str] = None,
+    page: int = Query(1, alias="pn", ge=1),
+    page_size: int = Query(10, alias="ps", ge=1, le=100),
+    current_user: User = Depends(get_current_user)
+):    
+    """Get all buses with optional search, filtering, and pagination"""
+    
+    # Build query
+    query: dict = {}
+    
+    # Add status filter
+    if status:
+        query["bus_status"] = status.upper()
+    
+    # Add search conditions  
+    if search:
+        query["$or"] = [
+            {"license_plate": {"$regex": search, "$options": "i"}},
+            {"bus_model": {"$regex": search, "$options": "i"}}
+        ]
+    
+    if filter_by:
+        # Additional filtering based on filter_by parameter
+        # Could be used for bus_type, capacity range, etc.
+        pass
+    
+    # Calculate skip for pagination
+    skip = (page - 1) * page_size
+    
+    # Get buses from database
+    buses = await request.app.state.mongodb.buses.find(query).skip(skip).limit(page_size).to_list(length=page_size)
+    
+    return [transform_mongo_doc(bus, BusResponse) for bus in buses]
+
 @router.get("/stops", response_model=List[BusStopResponse])
 async def get_bus_stops(
     request: Request,
@@ -174,3 +213,4 @@ async def unsubscribe_from_bus_tracking(
     """Unsubscribe from real-time bus tracking updates"""
     bus_tracking_service.unsubscribe_from_bus(str(current_user.id), bus_id)
     return {"message": f"Unsubscribed from bus {bus_id} tracking"}
+
