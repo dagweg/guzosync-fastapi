@@ -10,6 +10,7 @@ from core.email_service import email_service
 from core import get_logger
 from core.security import generate_secure_password, get_password_hash
 from models import User, BusStop, Route, Location
+from models.approval import ApprovalRequest, ApprovalStatus
 from schemas.user import RegisterUserRequest, UserResponse
 from schemas.transport import (
     CreateBusStopRequest, UpdateBusStopRequest, BusStopResponse,
@@ -28,6 +29,40 @@ logger = get_logger(__name__)
 
 
 router = APIRouter(prefix="/api/control-center", tags=["control-center"])
+
+# Debug endpoint to check approval requests
+@router.get("/debug/approval-requests")
+async def debug_approval_requests(
+    request: Request,
+    current_user: User = Depends(get_current_user)
+):
+    """Debug endpoint to check approval requests (CONTROL_ADMIN only)"""
+    if current_user.role != UserRole.CONTROL_ADMIN:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Only CONTROL_ADMIN can access debug endpoints"
+        )
+
+    try:
+        # Get all approval requests
+        approval_requests = await request.app.state.mongodb.approval_requests.find({}).to_list(length=None)
+
+        # Get collection stats
+        collection_stats = await request.app.state.mongodb.approval_requests.count_documents({})
+
+        return {
+            "total_count": collection_stats,
+            "requests": approval_requests,
+            "collection_name": "approval_requests",
+            "database_name": request.app.state.mongodb.name
+        }
+    except Exception as e:
+        logger.error(f"Debug endpoint error: {str(e)}", exc_info=True)
+        return {
+            "error": str(e),
+            "total_count": 0,
+            "requests": []
+        }
 
 # Helper functions for populating driver information
 def build_bus_aggregation_pipeline(match_query: Optional[dict] = None) -> List[dict]:
@@ -104,7 +139,7 @@ async def register_personnel(
     temp_password = str(uuid4())
     
     # Create User model instance
-    user = User(
+    user = User(    
         first_name=user_data.first_name,
         last_name=user_data.last_name,
         email=user_data.email,
@@ -112,13 +147,63 @@ async def register_personnel(
         role=UserRole(user_data.role.value),
         phone_number=user_data.phone_number,
         profile_image=user_data.profile_image,
-        is_active=True
+        is_active=False
     )
 
     # Convert model to MongoDB document
     user_doc = model_to_mongo_doc(user)
     result = await request.app.state.mongodb.users.insert_one(user_doc)
     created_user = await request.app.state.mongodb.users.find_one({"id": user.id})
+
+    # Add to approval request with proper error handling
+    try:
+        # Check if approval_requests collection exists and is accessible
+        collection_exists = await request.app.state.mongodb.approval_requests.find_one({}, {"_id": 1})
+        logger.info(f"Approval requests collection accessible: {collection_exists is not None or True}")
+
+        approval_request = ApprovalRequest(
+            first_name=user_data.first_name,
+            last_name=user_data.last_name,
+            email=user_data.email,
+            phone_number=user_data.phone_number,
+            profile_image=user_data.profile_image,
+            role=user_data.role.value,
+            status=ApprovalStatus.PENDING,
+            requested_at=datetime.utcnow()
+        )
+
+        # Convert model to MongoDB document
+        request_doc = model_to_mongo_doc(approval_request)
+        logger.info(f"Approval request document prepared: {request_doc}")
+
+        # Insert the approval request
+        approval_result = await request.app.state.mongodb.approval_requests.insert_one(request_doc)
+
+        # Verify the approval request was created
+        if approval_result.inserted_id:
+            # Double-check by retrieving the created document
+            created_approval = await request.app.state.mongodb.approval_requests.find_one({"id": approval_request.id})
+            if created_approval:
+                logger.info(f"Approval request created and verified for {user_data.role.value}",
+                           extra={"email": user_data.email, "approval_request_id": str(approval_result.inserted_id)})
+                print(f"✅ DEBUG: Approval request created for {user_data.role.value} '{user_data.first_name} {user_data.last_name}' - ID: {approval_result.inserted_id}")
+            else:
+                logger.error("Approval request inserted but not found when retrieving",
+                            extra={"email": user_data.email, "inserted_id": str(approval_result.inserted_id)})
+                print(f"⚠️ DEBUG: Approval request inserted but not retrievable for {user_data.email}")
+        else:
+            logger.error("Failed to create approval request - no inserted_id returned",
+                        extra={"email": user_data.email})
+            print(f"❌ DEBUG: No inserted_id returned for approval request: {user_data.email}")
+
+    except Exception as e:
+        logger.error(f"Error creating approval request: {str(e)}",
+                    extra={"email": user_data.email, "role": user_data.role.value}, exc_info=True)
+        print(f"❌ DEBUG: Failed to create approval request for {user_data.email}: {str(e)}")
+        # Don't raise the exception here as user creation was successful
+        # Just log the error for debugging
+
+
 
     # Log temporary password for debugging purposes
     role_display = user_data.role.value.replace("_", " ").title()

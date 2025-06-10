@@ -76,7 +76,7 @@ async def get_approval_request(
     try:
         # Fetch the approval request using UUID string (not ObjectId)
         approval_request = await request.app.state.mongodb.approval_requests.find_one(
-            {"_id": request_id}
+            {"id": request_id}
         )
         
         if not approval_request:
@@ -116,7 +116,7 @@ async def process_approval_request(
     try:
         # Fetch the approval request using UUID string (not ObjectId)
         approval_request = await request.app.state.mongodb.approval_requests.find_one(
-            {"_id": request_id}
+            {"id": request_id}
         )
         
         if not approval_request:
@@ -131,17 +131,30 @@ async def process_approval_request(
                 detail="This request has already been processed"
             )
         
-        # If approving, check if user already exists before updating approval status
+        # If approving, check if user already exists and handle accordingly
+        existing_user = None
         if action_data.action == ApprovalStatus.APPROVED:
-            # Check if user already exists (safety check)
-            existing_user = await request.app.state.mongodb.users.find_one( #type:ignore[unreachable]
+            # Check if user already exists
+            existing_user = await request.app.state.mongodb.users.find_one(
                 {"email": approval_request["email"]}
             )
+
             if existing_user:
-                raise HTTPException(
-                    status_code=status.HTTP_400_BAD_REQUEST,
-                    detail="User account already exists for this email"
-                )
+                is_active = existing_user.get("is_active", False)
+                logger.info(f"Found existing user for approval",
+                           extra={"email": approval_request["email"], "is_active": is_active, "user_id": existing_user.get("id")})
+                print(f"🔍 DEBUG: Found existing user {approval_request['email']} - is_active: {is_active}")
+
+                # If user exists and is active, that's an error
+                if is_active:
+                    raise HTTPException(
+                        status_code=status.HTTP_400_BAD_REQUEST,
+                        detail="Active user account already exists for this email"
+                    )
+            else:
+                logger.info(f"No existing user found for approval - will create new account",
+                           extra={"email": approval_request["email"]})
+                print(f"🔍 DEBUG: No existing user found for {approval_request['email']} - will create new account")
         
         # Update the approval request
         update_data = {
@@ -152,31 +165,60 @@ async def process_approval_request(
         }
         
         await request.app.state.mongodb.approval_requests.update_one(
-            {"_id": request_id},
+            {"id": request_id},
             {"$set": update_data}
         )
         
-        # If approved, create the user account
+        # If approved, create or activate the user account
         if action_data.action == ApprovalStatus.APPROVED:
-              # Create the user
-            user = User( #type:ignore[unreachable]
-                first_name=approval_request["first_name"],
-                last_name=approval_request["last_name"],
-                email=approval_request["email"],
-                password=get_password_hash("TempPassword123!"),  # Hash the temporary password
-                role=UserRole.CONTROL_STAFF,
-                phone_number=approval_request["phone_number"],
-                profile_image=approval_request.get("profile_image"),
-                is_active=True,
-                pending_approval=False
-            )
-            
-            # Insert user into database
-            user_doc = model_to_mongo_doc(user)
-            result = await request.app.state.mongodb.users.insert_one(user_doc)
-            
-            # Retrieve the created user
-            created_user = await request.app.state.mongodb.users.find_one({"_id": result.inserted_id})
+            if existing_user:
+                # User exists but is inactive - activate them
+                print(f"✅ DEBUG: Activating existing inactive user: {approval_request['email']}")
+                await request.app.state.mongodb.users.update_one(
+                    {"email": approval_request["email"]},
+                    {"$set": {
+                        "is_active": True,
+                        "updated_at": datetime.utcnow()
+                    }}
+                )
+
+                # Retrieve the updated user
+                created_user = await request.app.state.mongodb.users.find_one({"email": approval_request["email"]})
+                logger.info(f"Activated existing user account for approval",
+                           extra={"email": approval_request["email"], "user_id": created_user.get("id") if created_user else None})
+                print(f"✅ DEBUG: User activated successfully: {created_user.get('id') if created_user else 'NOT_FOUND'}")
+            else:
+                # Create new user account
+                # Convert role string to UserRole enum
+                role_str = approval_request["role"]
+                if role_str == "CONTROL_STAFF":
+                    user_role = UserRole.CONTROL_STAFF
+                elif role_str == "BUS_DRIVER":
+                    user_role = UserRole.BUS_DRIVER
+                elif role_str == "QUEUE_REGULATOR":
+                    user_role = UserRole.QUEUE_REGULATOR
+                else:
+                    user_role = UserRole.CONTROL_STAFF  # Default fallback
+
+                user = User(
+                    first_name=approval_request["first_name"],
+                    last_name=approval_request["last_name"],
+                    email=approval_request["email"],
+                    password=get_password_hash("TempPassword123!"),  # Hash the temporary password
+                    role=user_role,
+                    phone_number=approval_request["phone_number"],
+                    profile_image=approval_request.get("profile_image"),
+                    is_active=True
+                )
+
+                # Insert user into database
+                user_doc = model_to_mongo_doc(user)
+                result = await request.app.state.mongodb.users.insert_one(user_doc)
+
+                # Retrieve the created user
+                created_user = await request.app.state.mongodb.users.find_one({"id": user.id})
+                logger.info(f"Created new user account for approval",
+                           extra={"email": approval_request["email"], "user_id": user.id})
               # Send welcome email with temporary password
             full_name = f"{approval_request['first_name']} {approval_request['last_name']}"
             email_sent = await send_welcome_email(approval_request["email"], full_name)

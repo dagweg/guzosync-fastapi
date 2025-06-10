@@ -68,12 +68,12 @@ async def register_user(
             result = await request.app.state.mongodb.approval_requests.insert_one(request_doc)
             
             # Retrieve the created approval request
-            created_request = await request.app.state.mongodb.approval_requests.find_one({"_id": result.inserted_id})
+            created_request = await request.app.state.mongodb.approval_requests.find_one({"id": approval_request.id})
             
             logger.info("Approval request created for CONTROL_STAFF", extra={"email": user_data.email})
             return {
                 "message": "Registration request submitted successfully. Please wait for admin approval.",
-                "request_id": str(result.inserted_id),
+                "request_id": approval_request.id,
                 "status": "PENDING_APPROVAL"
             }
         except Exception as e:
@@ -100,7 +100,7 @@ async def register_user(
         result = await request.app.state.mongodb.users.insert_one(user_doc)
         
         # Retrieve and return the created user
-        created_user = await request.app.state.mongodb.users.find_one({"_id": result.inserted_id})
+        created_user = await request.app.state.mongodb.users.find_one({"id": user.id})
         
         # Send welcome email
         full_name = f"{user_data.first_name} {user_data.last_name}"
