@@ -123,6 +123,7 @@ async def mock_mongodb():
     mock_db.incidents = AsyncMock()
     mock_db.alerts = AsyncMock()
     mock_db.attendance = AsyncMock()
+    mock_db.daily_attendance = AsyncMock()
     mock_db.conversations = AsyncMock()
     mock_db.messages = AsyncMock()
     mock_db.payments = AsyncMock()

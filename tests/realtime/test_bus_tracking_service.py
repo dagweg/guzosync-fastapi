@@ -237,35 +237,37 @@ class TestBusTrackingService:
         assert message["route_id"] == route_id
         assert message["room_id"] == room_id
     
-    def test_unsubscribe_from_bus(self, websocket_manager_mock):
+    @pytest.mark.asyncio
+    async def test_unsubscribe_from_bus(self, websocket_manager_mock):
         """Test unsubscribing from bus tracking"""
         user_id = str(uuid4())
         bus_id = str(uuid4())
         room_id = f"bus_tracking:{bus_id}"
-        
+
         # First subscribe
         websocket_manager_mock.join_room(user_id, room_id)
         assert user_id in websocket_manager_mock.get_room_users(room_id)
-        
+
         # Unsubscribe
-        bus_tracking_service.unsubscribe_from_bus(user_id, bus_id)
+        await bus_tracking_service.unsubscribe_from_bus(user_id, bus_id)
         
         # Verify user was removed from room
         room_users = websocket_manager_mock.get_room_users(room_id)
         assert user_id not in room_users
     
-    def test_unsubscribe_from_route(self, websocket_manager_mock):
+    @pytest.mark.asyncio
+    async def test_unsubscribe_from_route(self, websocket_manager_mock):
         """Test unsubscribing from route tracking"""
         user_id = str(uuid4())
         route_id = str(uuid4())
         room_id = f"route_tracking:{route_id}"
-        
+
         # First subscribe
         websocket_manager_mock.join_room(user_id, room_id)
         assert user_id in websocket_manager_mock.get_room_users(room_id)
-        
+
         # Unsubscribe
-        bus_tracking_service.unsubscribe_from_route(user_id, route_id)
+        await bus_tracking_service.unsubscribe_from_route(user_id, route_id)
         
         # Verify user was removed from room
         room_users = websocket_manager_mock.get_room_users(room_id)
@@ -528,7 +530,7 @@ class TestBusTrackingServiceIntegration:
             assert mock_manager.send_room_message.call_count == 2
             
             # Unsubscribe
-            bus_tracking_service.unsubscribe_from_bus(user_id, bus_id)
-            bus_tracking_service.unsubscribe_from_route(user_id, route_id)
+            await bus_tracking_service.unsubscribe_from_bus(user_id, bus_id)
+            await bus_tracking_service.unsubscribe_from_route(user_id, route_id)
             
             assert mock_manager.leave_room.call_count == 2

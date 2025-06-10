@@ -77,7 +77,7 @@ class TestRealTimeIntegration:
             assert latest_message["location"]["longitude"] == location["lng"]
         
         # Step 3: Unsubscribe from bus tracking
-        bus_tracking_service.unsubscribe_from_bus(user_id, bus_id)
+        await bus_tracking_service.unsubscribe_from_bus(user_id, bus_id)
         
         # Verify user is no longer in room
         room_users = websocket_manager_mock.get_room_users(f"bus_tracking:{bus_id}")
@@ -194,8 +194,8 @@ class TestRealTimeIntegration:
         assert user1_messages[0]["message_id"] == message_id
         
         # Step 5: Both users leave conversation
-        chat_service.leave_conversation(user1_id, conversation_id)
-        chat_service.leave_conversation(user2_id, conversation_id)
+        await chat_service.leave_conversation(user1_id, conversation_id)
+        await chat_service.leave_conversation(user2_id, conversation_id)
         
         # Verify room is empty
         room_users = websocket_manager_mock.get_room_users(f"conversation:{conversation_id}")

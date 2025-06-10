@@ -3,7 +3,7 @@ Real-time chat/conversation service
 """
 from datetime import datetime
 
-from core.websocket_manager import websocket_manager
+from core.socketio_manager import socketio_manager
 from core.logger import get_logger
 
 logger = get_logger(__name__)
@@ -45,9 +45,10 @@ class ChatService:
             
             # Send to conversation room
             room_id = f"conversation:{conversation_id}"
-            await websocket_manager.send_room_message(
-                room_id, 
-                websocket_message, 
+            await socketio_manager.send_room_message(
+                room_id,
+                "new_message",
+                websocket_message,
                 exclude_user=str(sender_id)  # Don't send back to sender
             )
             
@@ -55,18 +56,18 @@ class ChatService:
             for participant_id in participants:
                 if str(participant_id) != str(sender_id):
                     # Check if user is in the conversation room
-                    room_users = websocket_manager.get_room_users(room_id)
+                    room_users = socketio_manager.get_room_users(room_id)
                     if str(participant_id) not in room_users:
                         # Send as personal notification
                         notification_message = {
-                            "type": "message_notification",
                             "conversation_id": str(conversation_id),
                             "from_user_id": str(sender_id),
                             "preview": content[:100] + "..." if len(content) > 100 else content,
                             "timestamp": datetime.utcnow().isoformat()
                         }
-                        await websocket_manager.send_personal_message(
-                            str(participant_id), 
+                        await socketio_manager.send_personal_message(
+                            str(participant_id),
+                            "message_notification",
                             notification_message
                         )
             
@@ -91,17 +92,16 @@ class ChatService:
             
             # Join conversation room
             room_id = f"conversation:{conversation_id}"
-            websocket_manager.join_room(user_id, room_id)
-            
+            await socketio_manager.join_room_user(user_id, room_id)
+
             # Send confirmation
             message = {
-                "type": "conversation_joined",
                 "conversation_id": str(conversation_id),
                 "room_id": room_id,
                 "message": f"Joined conversation {conversation_id}"
             }
-            
-            await websocket_manager.send_personal_message(user_id, message)
+
+            await socketio_manager.send_personal_message(user_id, "conversation_joined", message)
             logger.info(f"User {user_id} joined conversation {conversation_id}")
             return True
             
@@ -110,10 +110,10 @@ class ChatService:
             return False
     
     @staticmethod
-    def leave_conversation(user_id: str, conversation_id: str):
+    async def leave_conversation(user_id: str, conversation_id: str):
         """Remove user from conversation room"""
         room_id = f"conversation:{conversation_id}"
-        websocket_manager.leave_room(user_id, room_id)
+        await socketio_manager.leave_room_user(user_id, room_id)
         logger.info(f"User {user_id} left conversation {conversation_id}")
     
     @staticmethod
@@ -129,9 +129,10 @@ class ChatService:
                 "timestamp": datetime.utcnow().isoformat()
             }
             
-            await websocket_manager.send_room_message(
-                room_id, 
-                message, 
+            await socketio_manager.send_room_message(
+                room_id,
+                "typing_status",
+                message,
                 exclude_user=user_id  # Don't send back to typing user
             )
             
@@ -151,9 +152,10 @@ class ChatService:
                 "timestamp": datetime.utcnow().isoformat()
             }
             
-            await websocket_manager.send_room_message(
-                room_id, 
-                message, 
+            await socketio_manager.send_room_message(
+                room_id,
+                "message_read",
+                message,
                 exclude_user=user_id
             )
             

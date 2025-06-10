@@ -4,17 +4,15 @@ Real-time analytics service for live dashboard updates.
 
 import asyncio
 import logging
-from typing import Dict, Any, List
+from typing import Dict, Any, List, Union
 from datetime import datetime, timedelta, timezone
-
-from core.websocket_manager import WebSocketManager
 
 logger = logging.getLogger(__name__)
 
 class RealTimeAnalyticsService:
     """Service for real-time analytics and dashboard updates."""
-    
-    def __init__(self, mongodb_client, websocket_manager: WebSocketManager):
+
+    def __init__(self, mongodb_client, websocket_manager):
         self.db = mongodb_client
         self.websocket_manager = websocket_manager
         self.is_running = False
@@ -47,6 +45,20 @@ class RealTimeAnalyticsService:
         # Wait for tasks to complete
         await asyncio.gather(*self._tasks, return_exceptions=True)
         logger.info("Real-time analytics service stopped")
+
+    async def _broadcast_to_room(self, room_id: str, event: str, data: dict):
+        """Compatibility method to broadcast to room using either WebSocket or Socket.IO"""
+        try:
+            # Check if it's a Socket.IO manager
+            if hasattr(self.websocket_manager, 'sio'):
+                # Socket.IO manager
+                await self.websocket_manager.send_room_message(room_id, event, data)
+            else:
+                # WebSocket manager - convert to old format
+                message = {"type": event, **data}
+                await self.websocket_manager.broadcast_to_room(room_id, message)
+        except Exception as e:
+            logger.error(f"Error broadcasting to room {room_id}: {e}")
     
     async def _live_metrics_updater(self):
         """Update live metrics every 30 seconds."""
@@ -55,10 +67,10 @@ class RealTimeAnalyticsService:
                 # Generate current metrics
                 metrics = await self._get_live_metrics()
                   # Broadcast to all connected control center users
-                await self.websocket_manager.broadcast_to_room(
+                await self._broadcast_to_room(
                     room_id="control_center:live_dashboard",
-                    message={
-                        "type": "live_metrics_update",
+                    event="live_metrics_update",
+                    data={
                         "data": metrics,
                         "timestamp": datetime.now(timezone.utc).isoformat()
                     }
@@ -77,10 +89,10 @@ class RealTimeAnalyticsService:
                 critical_alerts = await self._check_critical_alerts()
                 
                 for alert in critical_alerts:
-                    await self.websocket_manager.broadcast_to_room(
+                    await self._broadcast_to_room(
                         room_id="control_center:alerts",
-                        message={
-                            "type": "critical_alert",
+                        event="critical_alert",
+                        data={
                             "data": alert,
                             "timestamp": datetime.now(timezone.utc).isoformat()
                         }
@@ -89,10 +101,10 @@ class RealTimeAnalyticsService:
                 threshold_breaches = await self._check_kpi_thresholds()
                 
                 for breach in threshold_breaches:
-                    await self.websocket_manager.broadcast_to_room(
+                    await self._broadcast_to_room(
                         room_id="control_center:kpi_alerts",
-                        message={
-                            "type": "kpi_threshold_breach",
+                        event="kpi_threshold_breach",
+                        data={
                             "data": breach,
                             "timestamp": datetime.now(timezone.utc).isoformat()
                         }
@@ -114,10 +126,10 @@ class RealTimeAnalyticsService:
                 anomalies = await self._detect_anomalies(trends)
                 
                 if anomalies:
-                    await self.websocket_manager.broadcast_to_room(
+                    await self._broadcast_to_room(
                         room_id="control_center:performance_alerts",
-                        message={
-                            "type": "performance_anomaly",
+                        event="performance_anomaly",
+                        data={
                             "data": anomalies,
                             "timestamp": datetime.now(timezone.utc).isoformat()
                         }

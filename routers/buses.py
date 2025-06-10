@@ -423,6 +423,6 @@ async def unsubscribe_from_bus_tracking(
     current_user: User = Depends(get_current_user)
 ):
     """Unsubscribe from real-time bus tracking updates"""
-    bus_tracking_service.unsubscribe_from_bus(str(current_user.id), bus_id)
+    await bus_tracking_service.unsubscribe_from_bus(str(current_user.id), bus_id)
     return {"message": f"Unsubscribed from bus {bus_id} tracking"}
 

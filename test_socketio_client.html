@@ -1,0 +1,264 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>GuzoSync Socket.IO Test Client</title>
+    <script src="https://cdn.socket.io/4.7.2/socket.io.min.js"></script>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        .container {
+            border: 1px solid #ccc;
+            padding: 20px;
+            margin: 10px 0;
+            border-radius: 5px;
+        }
+        .status {
+            padding: 10px;
+            margin: 10px 0;
+            border-radius: 5px;
+        }
+        .connected { background-color: #d4edda; color: #155724; }
+        .disconnected { background-color: #f8d7da; color: #721c24; }
+        .authenticated { background-color: #d1ecf1; color: #0c5460; }
+        button {
+            padding: 10px 15px;
+            margin: 5px;
+            border: none;
+            border-radius: 3px;
+            cursor: pointer;
+            background-color: #007bff;
+            color: white;
+        }
+        button:disabled {
+            background-color: #6c757d;
+            cursor: not-allowed;
+        }
+        input, select {
+            padding: 8px;
+            margin: 5px;
+            border: 1px solid #ccc;
+            border-radius: 3px;
+        }
+        #messages {
+            height: 300px;
+            overflow-y: auto;
+            border: 1px solid #ccc;
+            padding: 10px;
+            background-color: #f8f9fa;
+        }
+        .message {
+            margin: 5px 0;
+            padding: 5px;
+            border-left: 3px solid #007bff;
+            background-color: white;
+        }
+        .error {
+            border-left-color: #dc3545;
+            background-color: #f8d7da;
+        }
+    </style>
+</head>
+<body>
+    <h1>GuzoSync Socket.IO Test Client</h1>
+    
+    <div class="container">
+        <h3>Connection Status</h3>
+        <div id="status" class="status disconnected">Disconnected</div>
+        <button id="connectBtn" onclick="connect()">Connect</button>
+        <button id="disconnectBtn" onclick="disconnect()" disabled>Disconnect</button>
+    </div>
+
+    <div class="container">
+        <h3>Authentication</h3>
+        <input type="text" id="tokenInput" placeholder="Enter JWT token" style="width: 400px;">
+        <button id="authBtn" onclick="authenticate()" disabled>Authenticate</button>
+    </div>
+
+    <div class="container">
+        <h3>Room Management</h3>
+        <input type="text" id="roomInput" placeholder="Enter room ID (e.g., conversation:123)" style="width: 300px;">
+        <button onclick="joinRoom()" disabled id="joinBtn">Join Room</button>
+        <button onclick="leaveRoom()" disabled id="leaveBtn">Leave Room</button>
+    </div>
+
+    <div class="container">
+        <h3>Test Actions</h3>
+        <button onclick="sendPing()" disabled id="pingBtn">Send Ping</button>
+        <button onclick="getStats()">Get Stats</button>
+    </div>
+
+    <div class="container">
+        <h3>Messages</h3>
+        <div id="messages"></div>
+        <button onclick="clearMessages()">Clear Messages</button>
+    </div>
+
+    <script>
+        let socket = null;
+        let isConnected = false;
+        let isAuthenticated = false;
+
+        function updateStatus(message, className) {
+            const statusDiv = document.getElementById('status');
+            statusDiv.textContent = message;
+            statusDiv.className = `status ${className}`;
+        }
+
+        function addMessage(message, isError = false) {
+            const messagesDiv = document.getElementById('messages');
+            const messageDiv = document.createElement('div');
+            messageDiv.className = `message ${isError ? 'error' : ''}`;
+            messageDiv.innerHTML = `<strong>${new Date().toLocaleTimeString()}</strong>: ${message}`;
+            messagesDiv.appendChild(messageDiv);
+            messagesDiv.scrollTop = messagesDiv.scrollHeight;
+        }
+
+        function updateButtons() {
+            document.getElementById('connectBtn').disabled = isConnected;
+            document.getElementById('disconnectBtn').disabled = !isConnected;
+            document.getElementById('authBtn').disabled = !isConnected || isAuthenticated;
+            document.getElementById('joinBtn').disabled = !isAuthenticated;
+            document.getElementById('leaveBtn').disabled = !isAuthenticated;
+            document.getElementById('pingBtn').disabled = !isAuthenticated;
+        }
+
+        function connect() {
+            if (socket) {
+                socket.disconnect();
+            }
+
+            socket = io('http://localhost:8000', {
+                transports: ['websocket', 'polling'],
+                upgrade: true
+            });
+
+            socket.on('connect', () => {
+                isConnected = true;
+                updateStatus('Connected', 'connected');
+                addMessage('Connected to GuzoSync Socket.IO server');
+                updateButtons();
+            });
+
+            socket.on('disconnect', (reason) => {
+                isConnected = false;
+                isAuthenticated = false;
+                updateStatus('Disconnected', 'disconnected');
+                addMessage(`Disconnected: ${reason}`, true);
+                updateButtons();
+            });
+
+            socket.on('authenticated', (data) => {
+                isAuthenticated = true;
+                updateStatus('Connected & Authenticated', 'authenticated');
+                addMessage(`Authenticated: ${JSON.stringify(data)}`);
+                updateButtons();
+            });
+
+            socket.on('auth_error', (error) => {
+                addMessage(`Authentication error: ${JSON.stringify(error)}`, true);
+            });
+
+            socket.on('room_joined', (data) => {
+                addMessage(`Joined room: ${JSON.stringify(data)}`);
+            });
+
+            socket.on('room_left', (data) => {
+                addMessage(`Left room: ${JSON.stringify(data)}`);
+            });
+
+            socket.on('pong', (data) => {
+                addMessage(`Pong received: ${JSON.stringify(data)}`);
+            });
+
+            socket.on('error', (error) => {
+                addMessage(`Error: ${JSON.stringify(error)}`, true);
+            });
+
+            socket.on('connect_error', (error) => {
+                addMessage(`Connection error: ${error.message}`, true);
+            });
+
+            // Listen for real-time events
+            socket.on('new_message', (data) => {
+                addMessage(`New message: ${JSON.stringify(data)}`);
+            });
+
+            socket.on('notification', (data) => {
+                addMessage(`Notification: ${JSON.stringify(data)}`);
+            });
+
+            socket.on('bus_location_update', (data) => {
+                addMessage(`Bus location update: ${JSON.stringify(data)}`);
+            });
+        }
+
+        function disconnect() {
+            if (socket) {
+                socket.disconnect();
+            }
+        }
+
+        function authenticate() {
+            const token = document.getElementById('tokenInput').value;
+            if (!token) {
+                addMessage('Please enter a JWT token', true);
+                return;
+            }
+
+            socket.emit('authenticate', { token: token });
+            addMessage(`Sent authentication request with token: ${token.substring(0, 20)}...`);
+        }
+
+        function joinRoom() {
+            const roomId = document.getElementById('roomInput').value;
+            if (!roomId) {
+                addMessage('Please enter a room ID', true);
+                return;
+            }
+
+            socket.emit('join_room', { room_id: roomId });
+            addMessage(`Sent join room request: ${roomId}`);
+        }
+
+        function leaveRoom() {
+            const roomId = document.getElementById('roomInput').value;
+            if (!roomId) {
+                addMessage('Please enter a room ID', true);
+                return;
+            }
+
+            socket.emit('leave_room', { room_id: roomId });
+            addMessage(`Sent leave room request: ${roomId}`);
+        }
+
+        function sendPing() {
+            socket.emit('ping', { timestamp: new Date().toISOString() });
+            addMessage('Sent ping');
+        }
+
+        async function getStats() {
+            try {
+                const response = await fetch('http://localhost:8000/socket.io/stats');
+                const stats = await response.json();
+                addMessage(`Server stats: ${JSON.stringify(stats, null, 2)}`);
+            } catch (error) {
+                addMessage(`Error getting stats: ${error.message}`, true);
+            }
+        }
+
+        function clearMessages() {
+            document.getElementById('messages').innerHTML = '';
+        }
+
+        // Initialize
+        updateButtons();
+        addMessage('Socket.IO test client loaded. Click Connect to start.');
+    </script>
+</body>
+</html>

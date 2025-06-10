@@ -134,7 +134,7 @@ async def leave_conversation_websocket(
     current_user: User = Depends(get_current_user)
 ):
     """Leave a conversation's real-time updates"""
-    chat_service.leave_conversation(str(current_user.id), conversation_id)
+    await chat_service.leave_conversation(str(current_user.id), conversation_id)
     return {"message": f"Left conversation {conversation_id} real-time updates"}
 
 @router.post("/{conversation_id}/typing")

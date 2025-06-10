@@ -4,7 +4,7 @@ Real-time bus tracking service
 from datetime import datetime
 from typing import Optional
 
-from core.websocket_manager import websocket_manager
+from core.socketio_manager import socketio_manager
 from core.logger import get_logger
 import asyncio
 
@@ -57,14 +57,14 @@ class BusTrackingService:
                 "timestamp": datetime.utcnow().isoformat()
             }
             
-            await websocket_manager.send_room_message(room_id, message)
-            
+            await socketio_manager.send_room_message(room_id, "bus_location_update", message)
+
             # Also broadcast to route subscribers if bus is on a route
             if app_state and app_state.mongodb:
                 bus = await app_state.mongodb.buses.find_one({"id": bus_id})
                 if bus and bus.get("assigned_route_id"):
                     route_room_id = f"route_tracking:{bus['assigned_route_id']}"
-                    await websocket_manager.send_room_message(route_room_id, message)
+                    await socketio_manager.send_room_message(route_room_id, "bus_location_update", message)
             
             logger.debug(f"Updated location for bus {bus_id}")
             
@@ -75,47 +75,45 @@ class BusTrackingService:
     async def subscribe_to_bus(user_id: str, bus_id: str):
         """Subscribe user to bus tracking updates"""
         room_id = f"bus_tracking:{bus_id}"
-        websocket_manager.join_room(user_id, room_id)
-        
+        await socketio_manager.join_room_user(user_id, room_id)
+
         # Send initial location if available
         message = {
-            "type": "bus_tracking_subscribed",
             "bus_id": str(bus_id),
             "room_id": room_id,
             "message": f"Subscribed to bus {bus_id} tracking"
         }
-        
-        await websocket_manager.send_personal_message(user_id, message)
+
+        await socketio_manager.send_personal_message(user_id, "bus_tracking_subscribed", message)
         logger.info(f"User {user_id} subscribed to bus {bus_id} tracking")
     
     @staticmethod
     async def subscribe_to_route(user_id: str, route_id: str):
         """Subscribe user to all buses on a route"""
         room_id = f"route_tracking:{route_id}"
-        websocket_manager.join_room(user_id, room_id)
-        
+        await socketio_manager.join_room_user(user_id, room_id)
+
         message = {
-            "type": "route_tracking_subscribed",
             "route_id": str(route_id),
             "room_id": room_id,
             "message": f"Subscribed to route {route_id} tracking"
         }
-        
-        await websocket_manager.send_personal_message(user_id, message)
+
+        await socketio_manager.send_personal_message(user_id, "route_tracking_subscribed", message)
         logger.info(f"User {user_id} subscribed to route {route_id} tracking")
     
     @staticmethod
-    def unsubscribe_from_bus(user_id: str, bus_id: str):
+    async def unsubscribe_from_bus(user_id: str, bus_id: str):
         """Unsubscribe user from bus tracking"""
         room_id = f"bus_tracking:{bus_id}"
-        websocket_manager.leave_room(user_id, room_id)
+        await socketio_manager.leave_room_user(user_id, room_id)
         logger.info(f"User {user_id} unsubscribed from bus {bus_id} tracking")
-    
+
     @staticmethod
-    def unsubscribe_from_route(user_id: str, route_id: str):
+    async def unsubscribe_from_route(user_id: str, route_id: str):
         """Unsubscribe user from route tracking"""
         room_id = f"route_tracking:{route_id}"
-        websocket_manager.leave_room(user_id, room_id)
+        await socketio_manager.leave_room_user(user_id, room_id)
         logger.info(f"User {user_id} unsubscribed from route {route_id} tracking")
 
 

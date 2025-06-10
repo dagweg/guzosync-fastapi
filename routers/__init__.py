@@ -1,6 +1,6 @@
 from . import (
     accounts,
-    account, 
+    account,
     notifications,
     config,
     buses,
@@ -18,12 +18,13 @@ from . import (
     payments,
     analytics,
     websocket,
+    socketio,
     realtime_demo
 )
 
 __all__ = [
     "accounts",
-    "account", 
+    "account",
     "notifications",
     "config",
     "buses",
@@ -40,5 +41,6 @@ __all__ = [
     "approvals",
     "payments",
     "websocket",
+    "socketio",
     "realtime_demo"
 ]

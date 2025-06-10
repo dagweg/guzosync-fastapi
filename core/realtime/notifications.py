@@ -4,7 +4,7 @@ Real-time notifications service
 from datetime import datetime
 from typing import List, Optional
 
-from core.websocket_manager import websocket_manager
+from core.socketio_manager import socketio_manager
 from core.logger import get_logger
 
 logger = get_logger(__name__)
@@ -53,7 +53,7 @@ class NotificationService:
                 }
             }
             
-            await websocket_manager.send_personal_message(str(user_id), websocket_message)
+            await socketio_manager.send_personal_message(str(user_id), "notification", websocket_message)
             logger.info(f"Sent real-time notification to user {user_id}: {title}")
             
         except Exception as e:
@@ -120,14 +120,14 @@ class NotificationService:
             if target_user_ids:
                 # Send to specific users
                 for user_id in target_user_ids:
-                    await websocket_manager.send_personal_message(str(user_id), websocket_message)
+                    await socketio_manager.send_personal_message(str(user_id), "notification", websocket_message)
             elif target_users:
                 # Send to users from database query
                 for user in target_users:
-                    await websocket_manager.send_personal_message(str(user["id"]), websocket_message)
+                    await socketio_manager.send_personal_message(str(user["id"]), "notification", websocket_message)
             else:
                 # Broadcast to all connected users
-                await websocket_manager.broadcast_message(websocket_message)
+                await socketio_manager.broadcast_message("notification", websocket_message)
             
             recipient_count = len(target_user_ids) if target_user_ids else len(target_users)
             logger.info(f"Broadcast notification to {recipient_count} users: {title}")
@@ -186,16 +186,16 @@ class NotificationService:
                 # Send to individual participants
                 if participants:
                     for participant_id in participants:
-                        await websocket_manager.send_personal_message(str(participant_id), websocket_message)
-                
+                        await socketio_manager.send_personal_message(str(participant_id), "trip_notification", websocket_message)
+
                 # Also send to users tracking this specific trip/route
                 room_id = f"trip_tracking:{trip_id}"
-                await websocket_manager.send_room_message(room_id, websocket_message)
-                
+                await socketio_manager.send_room_message(room_id, "trip_notification", websocket_message)
+
                 # Also send to route subscribers
                 if route_id:
                     route_room_id = f"route_tracking:{route_id}"
-                    await websocket_manager.send_room_message(route_room_id, websocket_message)
+                    await socketio_manager.send_room_message(route_room_id, "trip_notification", websocket_message)
                 
                 logger.info(f"Sent trip update notification for trip {trip_id}")
             

@@ -1,7 +1,7 @@
 from fastapi import FastAPI
 from motor.motor_asyncio import AsyncIOMotorClient
 from fastapi.middleware.cors import CORSMiddleware
-# from fastapi_socketio import SocketManager  # Commented out - conflicts with native WebSocket
+import socketio
 import googlemaps
 from dotenv import load_dotenv
 import os
@@ -18,7 +18,7 @@ from core.scheduled_analytics import ScheduledAnalyticsService
 # Import routers
 from routers import (
     accounts, account, notifications, config, buses, routes, feedback, issues, attendance,
-    alerts, conversations, drivers, regulators, control_center, approvals, trip, payments, websocket, realtime_demo, analytics
+    alerts, conversations, drivers, regulators, control_center, approvals, trip, payments, websocket, socketio as socketio_router, realtime_demo, analytics
 )
 
 # Load environment variables
@@ -60,10 +60,16 @@ async def lifespan(app: FastAPI):
         from core.scheduled_analytics import ScheduledAnalyticsService
         from core.websocket_manager import websocket_manager
         
-        # Initialize real-time analytics service
+        # Initialize Socket.IO manager
+        from core.socketio_manager import socketio_manager
+
+        # Store app state in Socket.IO manager for authentication
+        socketio_manager.sio.app_state = app.state
+
+        # Initialize real-time analytics service with Socket.IO
         app.state.realtime_analytics = RealTimeAnalyticsService(
             mongodb_client=app.state.mongodb,
-            websocket_manager=websocket_manager
+            websocket_manager=socketio_manager  # Use Socket.IO manager instead
         )
         await app.state.realtime_analytics.start()
         logger.info("Real-time analytics service started")
@@ -139,7 +145,12 @@ app.include_router(approvals.router)
 app.include_router(payments.router)
 app.include_router(analytics.router)
 app.include_router(websocket.router)
+app.include_router(socketio_router.router)
 app.include_router(realtime_demo.router)
+
+# Mount Socket.IO server
+from core.socketio_manager import socketio_manager
+socket_app = socketio.ASGIApp(socketio_manager.sio, app)
 
 @app.get("/")
 async def root():
@@ -150,5 +161,5 @@ async def root():
 
 if __name__ == "__main__":
     import uvicorn
-    logger.info("Starting Uvicorn server...")
-    uvicorn.run(app, host="0.0.0.0", port=8000)
+    logger.info("Starting Uvicorn server with Socket.IO support...")
+    uvicorn.run(socket_app, host="0.0.0.0", port=8000)

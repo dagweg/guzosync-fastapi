@@ -200,7 +200,8 @@ class TestChatService:
         room_users = websocket_manager_mock.get_room_users(room_id)
         assert user_id in room_users
     
-    def test_leave_conversation(self, websocket_manager_mock):
+    @pytest.mark.asyncio
+    async def test_leave_conversation(self, websocket_manager_mock):
         """Test leaving a conversation"""
         user_id = str(uuid4())
         conversation_id = str(uuid4())
@@ -211,7 +212,7 @@ class TestChatService:
         assert user_id in websocket_manager_mock.get_room_users(room_id)
         
         # Leave conversation
-        chat_service.leave_conversation(user_id, conversation_id)
+        await chat_service.leave_conversation(user_id, conversation_id)
         
         # Verify user was removed from room
         room_users = websocket_manager_mock.get_room_users(room_id)
@@ -514,7 +515,7 @@ class TestChatServiceIntegration:
             assert mock_manager.send_room_message.called
             
             # Leave conversation
-            chat_service.leave_conversation(user1_id, conversation_id)
-            chat_service.leave_conversation(user2_id, conversation_id)
+            await chat_service.leave_conversation(user1_id, conversation_id)
+            await chat_service.leave_conversation(user2_id, conversation_id)
             
             assert mock_manager.leave_room.call_count == 2
