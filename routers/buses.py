@@ -692,6 +692,41 @@ async def unassign_driver_from_bus(
         previous_driver_id=current_driver_id
     )
 
+@router.get("/available-drivers", response_model=List[UserResponse])
+async def get_available_drivers(
+    request: Request,
+    current_user: User = Depends(get_current_user)
+):
+    """Get list of bus drivers that are not currently assigned to any bus"""
+
+    # Check permissions - only control admins can view available drivers
+    if current_user.role != UserRole.CONTROL_ADMIN:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Only control center admins can view available drivers"
+        )
+
+    # Get all bus drivers
+    all_drivers = await request.app.state.mongodb.users.find({
+        "role": UserRole.BUS_DRIVER,
+        "is_active": True
+    }).to_list(length=None)
+
+    # Get all currently assigned driver IDs
+    assigned_buses = await request.app.state.mongodb.buses.find({
+        "assigned_driver_id": {"$exists": True, "$ne": None}
+    }, {"assigned_driver_id": 1}).to_list(length=None)
+
+    assigned_driver_ids = {bus["assigned_driver_id"] for bus in assigned_buses}
+
+    # Filter out assigned drivers
+    available_drivers = [
+        driver for driver in all_drivers
+        if str(driver["_id"]) not in assigned_driver_ids
+    ]
+
+    return [transform_mongo_doc(driver, UserResponse) for driver in available_drivers]
+
 @router.put("/{bus_id}", response_model=BusResponse)
 async def update_bus(
     request: Request,

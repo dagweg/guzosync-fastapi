@@ -116,6 +116,7 @@ async def report_driver_incident(
     incident_data = {
         "reported_by_user_id": current_user.id,
         "description": incident_request.description,
+        "incident_type": incident_request.incident_type,
         "severity": incident_request.severity,
         "location": incident_request.location,
         "related_bus_id": incident_request.related_bus_id,

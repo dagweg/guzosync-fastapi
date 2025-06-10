@@ -3,7 +3,7 @@ from typing import List
 
 
 from core.dependencies import get_current_user
-from models import User, Incident, Location, IncidentSeverity
+from models import User, Incident, Location, IncidentSeverity, IncidentType
 from schemas.feedback import ReportIncidentRequest, IncidentResponse
 
 from core import transform_mongo_doc
@@ -22,10 +22,12 @@ async def report_issue(
     incident = Incident(
         reported_by_user_id=current_user.id,
         description=incident_request.description,
+        incident_type=IncidentType(incident_request.incident_type.value),
         location=Location(
             latitude=incident_request.location.latitude,
             longitude=incident_request.location.longitude
-        ) if incident_request.location else None,        related_bus_id=incident_request.related_bus_id,
+        ) if incident_request.location else None,
+        related_bus_id=incident_request.related_bus_id,
         related_route_id=incident_request.related_route_id,
         severity=IncidentSeverity(incident_request.severity.value)
     )

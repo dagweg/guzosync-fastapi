@@ -47,6 +47,7 @@ BUS_STATUS = ["OPERATIONAL", "MAINTENANCE", "BREAKDOWN", "IDLE"]
 PAYMENT_METHODS = ["telebirr", "mpesa", "cbebirr", "ebirr", "enat_bank"]
 TICKET_TYPES = ["SINGLE_TRIP", "ROUND_TRIP", "DAILY_PASS", "WEEKLY_PASS", "MONTHLY_PASS"]
 INCIDENT_SEVERITY = ["LOW", "MEDIUM", "HIGH", "CRITICAL"]
+INCIDENT_TYPES = ["VEHICLE_ISSUE", "SAFETY_CONCERN", "OTHER"]
 NOTIFICATION_TYPES = ["ALERT", "UPDATE", "PROMOTION", "REMINDER", "GENERAL", "TRIP_UPDATE", "SERVICE_ALERT"]
 ATTENDANCE_STATUS = ["PRESENT", "ABSENT", "LATE"]
 TRIP_STATUS = ["SCHEDULED", "IN_PROGRESS", "COMPLETED", "CANCELLED", "DELAYED"]
@@ -840,12 +841,14 @@ async def create_incidents(db, users, buses, routes, bus_stops, count=12):
     for i in range(count):
         reporter = random.choice(reporters)
         severity = random.choice(INCIDENT_SEVERITY)
+        incident_type = random.choice(INCIDENT_TYPES)
         is_resolved = random.random() > 0.4
 
         incident = {
             "id": generate_uuid(),
             "reported_by_user_id": reporter["id"],
             "description": random.choice(incident_descriptions),
+            "incident_type": incident_type,
             "location": random_location() if random.random() > 0.3 else None,
             "related_bus_id": random.choice(bus_ids) if bus_ids and random.random() > 0.4 else None,
             "related_route_id": random.choice(route_ids) if route_ids and random.random() > 0.3 else None,

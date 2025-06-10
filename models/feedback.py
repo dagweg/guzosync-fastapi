@@ -11,6 +11,11 @@ class IncidentSeverity(str, Enum):
     HIGH = "HIGH"
     CRITICAL = "CRITICAL"
 
+class IncidentType(str, Enum):
+    VEHICLE_ISSUE = "VEHICLE_ISSUE"
+    SAFETY_CONCERN = "SAFETY_CONCERN"
+    OTHER = "OTHER"
+
 class Feedback(BaseDBModel):
     submitted_by_user_id: str
     content: str
@@ -21,6 +26,7 @@ class Feedback(BaseDBModel):
 class Incident(BaseDBModel):
     reported_by_user_id: str
     description: str
+    incident_type: IncidentType
     location: Optional[Location] = None
     related_bus_id: Optional[str] = None
     related_route_id: Optional[str] = None
