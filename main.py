@@ -66,7 +66,22 @@ async def lifespan(app: FastAPI):
             logger.error("MongoDB ping timeout - continuing without database verification")
         except Exception as e:
             logger.error(f"MongoDB ping failed: {e} - continuing without database verification")
-          # Initialize analytics services
+          # Seed database if empty
+        logger.info("Checking database seeding...")
+        try:
+            bus_count = await app.state.mongodb.buses.count_documents({})
+            bus_stop_count = await app.state.mongodb.bus_stops.count_documents({})
+            route_count = await app.state.mongodb.routes.count_documents({})
+
+            if bus_count == 0 or bus_stop_count == 0 or route_count == 0:
+                logger.info(f"Database appears empty (buses: {bus_count}, stops: {bus_stop_count}, routes: {route_count})")
+                logger.info("Consider running: python seed_db_startup.py --minimal")
+            else:
+                logger.info(f"Database has data (buses: {bus_count}, stops: {bus_stop_count}, routes: {route_count})")
+        except Exception as e:
+            logger.warning(f"Could not check database content: {e}")
+
+        # Initialize analytics services
         logger.info("Initializing analytics services...")
         from core.realtime_analytics import RealTimeAnalyticsService
         from core.scheduled_analytics import ScheduledAnalyticsService

@@ -19,6 +19,30 @@ from core.services.mapbox_service import mapbox_service
 
 router = APIRouter(prefix="/api/routes", tags=["routes"])
 
+# Debug endpoint to check database content
+@router.get("/debug/count")
+async def debug_route_count(
+    request: Request,
+    current_user: User = Depends(get_current_user)
+):
+    """Debug endpoint to check route counts"""
+    try:
+        route_count = await request.app.state.mongodb.routes.count_documents({})
+
+        # Get sample documents
+        sample_route = await request.app.state.mongodb.routes.find_one({})
+
+        return {
+            "route_count": route_count,
+            "sample_route": sample_route,
+            "database_name": request.app.state.mongodb.name
+        }
+    except Exception as e:
+        return {
+            "error": str(e),
+            "route_count": 0
+        }
+
 @router.post("/", response_model=RouteResponse, status_code=status.HTTP_201_CREATED)
 async def create_route(
     request: Request,
@@ -92,7 +116,7 @@ async def get_route(
 ):
     
     
-    route = await request.app.state.mongodb.routes.find_one({"_id": route_id})
+    route = await request.app.state.mongodb.routes.find_one({"id": route_id})
     if not route:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
@@ -119,7 +143,7 @@ async def update_route(
     update_dict["updated_at"] = datetime.utcnow()
     
     result = await request.app.state.mongodb.routes.update_one(
-        {"_id": route_id},
+        {"id": route_id},
         {"$set": update_dict}
     )
     
@@ -129,7 +153,7 @@ async def update_route(
             detail="Route not found"
         )
     
-    updated_route = await request.app.state.mongodb.routes.find_one({"_id": route_id})
+    updated_route = await request.app.state.mongodb.routes.find_one({"id": route_id})
     return transform_mongo_doc(updated_route, RouteResponse)
 
 @router.delete("/{route_id}")
@@ -145,7 +169,7 @@ async def delete_route(
             detail="Only control center admins can delete routes"
         )
     
-    result = await request.app.state.mongodb.routes.delete_one({"_id": route_id})
+    result = await request.app.state.mongodb.routes.delete_one({"id": route_id})
     
     if result.deleted_count == 0:
         raise HTTPException(

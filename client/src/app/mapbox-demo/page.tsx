@@ -7,6 +7,7 @@ import WebSocketProvider from "@/components/WebSocketProvider";
 import { Bus, BusStop, Route } from "@/types";
 import axios from "axios";
 import toast from "react-hot-toast";
+import { apiClient } from "@/lib/api";
 
 export default function MapboxDemo() {
   const [buses, setBuses] = useState<Bus[]>([]);
@@ -27,7 +28,7 @@ export default function MapboxDemo() {
     try {
       setLoading(true);
       const token = localStorage.getItem("access_token");
-      
+
       if (!token) {
         toast.error("Please login to access the demo");
         return;
@@ -35,20 +36,20 @@ export default function MapboxDemo() {
 
       const headers = { Authorization: `Bearer ${token}` };
 
-      // Load buses, bus stops, and routes in parallel
-      const [busesRes, stopsRes, routesRes] = await Promise.all([
-        axios.get("/api/buses", { headers }),
-        axios.get("/api/buses/stops", { headers }),
-        axios.get("/api/routes", { headers })
+      // Load buses, bus stops, and routes in parallel using apiClient
+      const [busesData, stopsData, routesData] = await Promise.all([
+        apiClient.getBuses(),
+        apiClient.getBusStops(),
+        apiClient.getRoutes(),
       ]);
 
-      setBuses(busesRes.data);
-      setBusStops(stopsRes.data);
-      setRoutes(routesRes.data);
+      setBuses(busesData);
+      setBusStops(stopsData);
+      setRoutes(routesData);
 
       // Select first route by default
-      if (routesRes.data.length > 0) {
-        setSelectedRoute(routesRes.data[0].id);
+      if (routesData.length > 0) {
+        setSelectedRoute(routesData[0].id);
       }
 
       toast.success("Data loaded successfully");
@@ -65,20 +66,16 @@ export default function MapboxDemo() {
     toast.success(`Selected bus: ${bus.license_plate}`);
   };
 
-  const handleLocationUpdate = async (busId: string, location: { latitude: number; longitude: number }) => {
+  const handleLocationUpdate = async (
+    busId: string,
+    location: { latitude: number; longitude: number }
+  ) => {
     try {
-      const token = localStorage.getItem("access_token");
-      if (!token) return;
-
-      await axios.post(
-        `/api/buses/${busId}/location`,
-        {
-          latitude: location.latitude,
-          longitude: location.longitude,
-          timestamp: new Date().toISOString()
-        },
-        { headers: { Authorization: `Bearer ${token}` } }
-      );
+      await apiClient.updateBusLocation(busId, {
+        latitude: location.latitude,
+        longitude: location.longitude,
+        timestamp: new Date().toISOString(),
+      });
 
       toast.success("Bus location updated");
     } catch (error) {
@@ -89,15 +86,7 @@ export default function MapboxDemo() {
 
   const generateRouteShape = async (routeId: string) => {
     try {
-      const token = localStorage.getItem("access_token");
-      if (!token) return;
-
-      await axios.post(
-        `/api/routes/${routeId}/generate-shape`,
-        {},
-        { headers: { Authorization: `Bearer ${token}` } }
-      );
-
+      await apiClient.generateRouteShape(routeId);
       toast.success("Route shape generated successfully");
     } catch (error) {
       console.error("Error generating route shape:", error);
@@ -150,7 +139,9 @@ export default function MapboxDemo() {
             <div className="lg:col-span-1 space-y-6">
               {/* Route Selection */}
               <div className="bg-white rounded-lg shadow p-4">
-                <h3 className="font-semibold text-gray-900 mb-3">Route Selection</h3>
+                <h3 className="font-semibold text-gray-900 mb-3">
+                  Route Selection
+                </h3>
                 <select
                   value={selectedRoute}
                   onChange={(e) => setSelectedRoute(e.target.value)}
@@ -175,7 +166,9 @@ export default function MapboxDemo() {
 
               {/* Display Options */}
               <div className="bg-white rounded-lg shadow p-4">
-                <h3 className="font-semibold text-gray-900 mb-3">Display Options</h3>
+                <h3 className="font-semibold text-gray-900 mb-3">
+                  Display Options
+                </h3>
                 <div className="space-y-2">
                   <label className="flex items-center">
                     <input
@@ -184,7 +177,9 @@ export default function MapboxDemo() {
                       onChange={(e) => setShowRouteShapes(e.target.checked)}
                       className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
                     />
-                    <span className="ml-2 text-sm text-gray-700">Show Route Shapes</span>
+                    <span className="ml-2 text-sm text-gray-700">
+                      Show Route Shapes
+                    </span>
                   </label>
                   <label className="flex items-center">
                     <input
@@ -193,7 +188,9 @@ export default function MapboxDemo() {
                       onChange={(e) => setShowETAs(e.target.checked)}
                       className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
                     />
-                    <span className="ml-2 text-sm text-gray-700">Show ETAs</span>
+                    <span className="ml-2 text-sm text-gray-700">
+                      Show ETAs
+                    </span>
                   </label>
                 </div>
               </div>
@@ -217,7 +214,10 @@ export default function MapboxDemo() {
                   <div className="flex justify-between">
                     <span className="text-gray-600">Operational:</span>
                     <span className="font-medium text-green-600">
-                      {buses.filter(b => b.bus_status === "OPERATIONAL").length}
+                      {
+                        buses.filter((b) => b.bus_status === "OPERATIONAL")
+                          .length
+                      }
                     </span>
                   </div>
                 </div>

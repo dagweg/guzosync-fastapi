@@ -376,7 +376,7 @@ async def create_users(db, count=25):
 
             # Profile Information
             "profile_image": None if random.random() > 0.3 else f"https://randomuser.me/api/portraits/{portrait_gender}/{random.randint(1, 99)}.jpg",
-            "date_of_birth": fake.date_of_birth(minimum_age=18, maximum_age=70) if random.random() > 0.2 else None,
+            "date_of_birth": datetime.combine(fake.date_of_birth(minimum_age=18, maximum_age=70), datetime.min.time()) if random.random() > 0.2 else None,
             "gender": gender if random.random() > 0.1 else None,
             "nationality": "Ethiopian" if random.random() > 0.1 else fake.country(),
             "national_id": fake.bothify(text='##########') if random.random() > 0.3 else None,
@@ -432,7 +432,7 @@ async def create_users(db, count=25):
                 "profile_image": None,
 
                 # Profile Information
-                "date_of_birth": fake.date_of_birth(minimum_age=25, maximum_age=60),
+                "date_of_birth": datetime.combine(fake.date_of_birth(minimum_age=25, maximum_age=60), datetime.min.time()),
                 "gender": gender,
                 "nationality": "Ethiopian",
                 "country": "Ethiopia",
@@ -472,7 +472,7 @@ async def create_users(db, count=25):
             "profile_image": None,
 
             # Profile Information
-            "date_of_birth": fake.date_of_birth(minimum_age=25, maximum_age=45),
+            "date_of_birth": datetime.combine(fake.date_of_birth(minimum_age=25, maximum_age=45), datetime.min.time()),
             "gender": "MALE",
             "nationality": "Ethiopian",
             "country": "Ethiopia",

@@ -18,6 +18,35 @@ from core.mongo_utils import model_to_mongo_doc
 
 router = APIRouter(prefix="/api/buses", tags=["buses"])
 
+# Debug endpoint to check database content
+@router.get("/debug/count")
+async def debug_bus_count(
+    request: Request,
+    current_user: User = Depends(get_current_user)
+):
+    """Debug endpoint to check bus and bus stop counts"""
+    try:
+        bus_count = await request.app.state.mongodb.buses.count_documents({})
+        bus_stop_count = await request.app.state.mongodb.bus_stops.count_documents({})
+
+        # Get sample documents
+        sample_bus = await request.app.state.mongodb.buses.find_one({})
+        sample_stop = await request.app.state.mongodb.bus_stops.find_one({})
+
+        return {
+            "bus_count": bus_count,
+            "bus_stop_count": bus_stop_count,
+            "sample_bus": sample_bus,
+            "sample_stop": sample_stop,
+            "database_name": request.app.state.mongodb.name
+        }
+    except Exception as e:
+        return {
+            "error": str(e),
+            "bus_count": 0,
+            "bus_stop_count": 0
+        }
+
 # Helper functions for populating driver information
 def build_bus_aggregation_pipeline(match_query: Optional[dict] = None) -> List[dict]:
     """Build aggregation pipeline to populate driver information"""
@@ -198,7 +227,7 @@ async def get_bus_stop(
 ):
     """Get a specific bus stop by ID"""
 
-    bus_stop = await request.app.state.mongodb.bus_stops.find_one({"_id": bus_stop_id})
+    bus_stop = await request.app.state.mongodb.bus_stops.find_one({"id": bus_stop_id})
     if not bus_stop:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
@@ -282,7 +311,7 @@ async def get_incoming_buses(
     """Get incoming buses for a specific bus stop"""
 
     # First, verify bus stop exists
-    bus_stop = await request.app.state.mongodb.bus_stops.find_one({"_id": bus_stop_id})
+    bus_stop = await request.app.state.mongodb.bus_stops.find_one({"id": bus_stop_id})
     if not bus_stop:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
@@ -359,7 +388,7 @@ async def get_bus(
     """Get a specific bus with populated driver information"""
 
     # Build aggregation pipeline for single bus
-    pipeline = build_bus_aggregation_pipeline({"_id": bus_id})
+    pipeline = build_bus_aggregation_pipeline({"id": bus_id})
 
     # Execute aggregation
     buses = await request.app.state.mongodb.buses.aggregate(pipeline).to_list(length=1)
@@ -382,7 +411,7 @@ async def get_bus_details(
 
     # Build aggregation pipeline for detailed bus information
     pipeline = [
-        {"$match": {"_id": bus_id}},
+        {"$match": {"id": bus_id}},
 
         # Lookup driver information
         {
