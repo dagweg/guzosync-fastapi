@@ -15,7 +15,8 @@ from .regulators import (
 
 __all__ = [
     "BaseDBModel",
-    "User", "UserRole",    "Bus", "BusType", "BusStatus", "BusStop", "Route", "Location", "Alert", "AlertType", "AlertSeverity",
+    "User", "UserRole",
+    "Bus", "BusType", "BusStatus", "BusStop", "Route", "Location", "Alert", "AlertType", "AlertSeverity",
     "Trip", "TripStatus", "Schedule",
     "Notification", "NotificationType", "NotificationSettings", "RelatedEntity",
     "Feedback", "Incident", "IncidentSeverity",

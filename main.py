@@ -11,12 +11,14 @@ from bson import UuidRepresentation  # Added import for UuidRepresentation
 # Import centralized logger
 from core.logger import setup_logging, get_logger
 from core.action_logging_middleware import ActionLoggingMiddleware
-from core.email_service import EmailConfig
+# EmailConfig is imported inside the lifespan function when needed
+from core.realtime_analytics import RealTimeAnalyticsService
+from core.scheduled_analytics import ScheduledAnalyticsService
 
 # Import routers
 from routers import (
     accounts, account, notifications, config, buses, routes, feedback, issues, attendance,
-    alerts, conversations, drivers, regulators, control_center, approvals, trip, payments, websocket, realtime_demo
+    alerts, conversations, drivers, regulators, control_center, approvals, trip, payments, websocket, realtime_demo, analytics
 )
 
 # Load environment variables
@@ -48,10 +50,40 @@ async def lifespan(app: FastAPI):
             mongodb_url,
             uuidRepresentation="unspecified"
         )
-        app.state.mongodb = app.state.mongodb_client[database_name]
-
+        app.state.mongodb = app.state.mongodb_client[database_name]       
         await app.state.mongodb.command('ping')
         logger.info("Successfully connected to MongoDB")
+        
+        # Initialize analytics services
+        logger.info("Initializing analytics services...")
+        from core.realtime_analytics import RealTimeAnalyticsService
+        from core.scheduled_analytics import ScheduledAnalyticsService
+        from core.websocket_manager import websocket_manager
+        
+        # Initialize real-time analytics service
+        app.state.realtime_analytics = RealTimeAnalyticsService(
+            mongodb_client=app.state.mongodb,
+            websocket_manager=websocket_manager
+        )
+        await app.state.realtime_analytics.start()
+        logger.info("Real-time analytics service started")
+        
+        # Initialize scheduled analytics service
+        app.state.scheduled_analytics = ScheduledAnalyticsService(
+            mongodb_client=app.state.mongodb
+        )
+        await app.state.scheduled_analytics.start()
+        logger.info("Scheduled analytics service started")
+
+        # Check email configuration
+        from core.email_service import EmailConfig
+        email_config = EmailConfig()
+        if email_config.is_configured():
+            logger.info("✅ Email service is configured and ready")
+        else:
+            logger.warning("⚠️  Email service is not configured - emails will be logged only")
+            logger.warning("   Add SMTP settings to .env file to enable email sending")
+
     except Exception as e:
         logger.error("Error connecting to MongoDB", exc_info=True)
         raise
@@ -105,6 +137,7 @@ app.include_router(regulators.router)
 app.include_router(control_center.router)
 app.include_router(approvals.router)
 app.include_router(payments.router)
+app.include_router(analytics.router)
 app.include_router(websocket.router)
 app.include_router(realtime_demo.router)
 
@@ -113,16 +146,7 @@ async def root():
     logger.info("Root endpoint accessed")
     return {"message": "Welcome to GuzoSync API"}
 
-@app.on_event("startup")
-async def startup_event():
-    """Application startup event"""
-    # Check email configuration
-    email_config = EmailConfig()
-    if email_config.is_configured():
-        logger.info("✅ Email service is configured and ready")
-    else:
-        logger.warning("⚠️  Email service is not configured - emails will be logged only")
-        logger.warning("   Add SMTP settings to .env file to enable email sending")
+# Email configuration is now handled in the lifespan function above
 
 if __name__ == "__main__":
     import uvicorn

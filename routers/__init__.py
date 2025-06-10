@@ -16,6 +16,7 @@ from . import (
     control_center,
     approvals,
     payments,
+    analytics,
     websocket,
     realtime_demo
 )
