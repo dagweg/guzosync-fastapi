@@ -6,7 +6,7 @@ echo.
 
 echo 🌱 Seeding database with test data...
 python init_payments.py
-python seed_db_startup.py
+python init_db_complete.py
 
 if %ERRORLEVEL% NEQ 0 (
     echo ❌ Database seeding failed!

@@ -7,7 +7,7 @@ echo
 
 echo "🌱 Seeding database with test data..."
 python init_payments.py
-python seed_db_startup.py
+python init_db_complete.py
 
 if [ $? -ne 0 ]; then
     echo "❌ Database seeding failed!"
