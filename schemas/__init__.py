@@ -8,7 +8,8 @@ from .transport import (
     BusType, BusStatus, CreateBusRequest, UpdateBusRequest, BusResponse,
     CreateBusStopRequest, UpdateBusStopRequest, BusStopResponse,
     AlertType, AlertSeverity, CreateAlertRequest, UpdateAlertRequest, AlertResponse,
-    InstructionType, InstructionResponse
+    InstructionType, InstructionResponse, BusDetailedResponse, RouteInfo, CurrentTripInfo,
+    DriverAssignmentResponse
 )
 from .route import (
     CreateRouteRequest, UpdateRouteRequest, RouteResponse, ScheduleResponse,
@@ -56,6 +57,7 @@ __all__ = [
     "ResetPasswordRequest", "UpdateUserRequest", "UserResponse",
     "BusType", "BusStatus", "CreateBusRequest", "UpdateBusRequest", "BusResponse",
     "CreateBusStopRequest", "UpdateBusStopRequest", "BusStopResponse",
+    "BusDetailedResponse", "RouteInfo", "CurrentTripInfo", "DriverAssignmentResponse",
     "CreateRouteRequest", "UpdateRouteRequest", "RouteResponse", "ScheduleResponse",
     "TripStatus", "SimplifiedTripResponse", "TripResponse",
     "NotificationType", "BroadcastNotificationRequest", "NotificationResponse",

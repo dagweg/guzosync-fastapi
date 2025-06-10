@@ -144,3 +144,68 @@ class InstructionResponse(DateTimeModelMixin):
     priority: str
     acknowledged: bool
     acknowledged_at: Optional[datetime] = None
+
+# Detailed bus information for when a bus is clicked
+class RouteInfo(BaseModel):
+    """Route information for detailed bus response"""
+    id: str
+    name: str
+    description: Optional[str] = None
+    total_distance: Optional[float] = None
+    estimated_duration: Optional[float] = None
+    start_destination: Optional[BusStopResponse] = None  # First stop
+    end_destination: Optional[BusStopResponse] = None    # Last stop
+    total_stops: int = 0
+
+class CurrentTripInfo(BaseModel):
+    """Current trip information for detailed bus response"""
+    id: str
+    status: str  # SCHEDULED, IN_PROGRESS, COMPLETED, CANCELLED, DELAYED
+    actual_departure_time: Optional[datetime] = None
+    estimated_arrival_time: Optional[datetime] = None
+    passenger_count: Optional[int] = None
+
+class BusDetailedResponse(DateTimeModelMixin):
+    """Comprehensive bus information returned when a bus is clicked"""
+    # Basic bus information
+    id: str
+    license_plate: str
+    bus_type: BusType
+    capacity: int
+    bus_status: BusStatus
+    manufacture_year: Optional[int] = None
+    bus_model: Optional[str] = None
+
+    # Location and movement data
+    current_location: Optional[Location] = None
+    last_location_update: Optional[datetime] = None
+    heading: Optional[float] = None
+    speed: Optional[float] = None
+    location_accuracy: Optional[float] = None
+    current_address: Optional[str] = None
+
+    # Driver information
+    assigned_driver: Optional[UserResponse] = None
+
+    # Route and trip information
+    current_route: Optional[RouteInfo] = None
+    current_trip: Optional[CurrentTripInfo] = None
+
+    # Real-time status
+    is_tracking_active: bool = False
+    last_ping: Optional[datetime] = None
+
+    # Operational metrics
+    total_trips_today: Optional[int] = None
+    average_speed_today: Optional[float] = None
+    distance_covered_today: Optional[float] = None
+
+# Driver assignment schemas
+class DriverAssignmentResponse(BaseModel):
+    """Response for driver assignment operations"""
+    message: str
+    bus_id: str
+    driver_id: Optional[str] = None
+    driver_name: Optional[str] = None
+    assignment_timestamp: datetime
+    previous_driver_id: Optional[str] = None
