@@ -3,10 +3,14 @@
 Complete GuzoSync Database Seeding Script
 
 This script provides comprehensive database initialization with:
-1. Real bus stops from GeoJSON file
+1. Real bus stops and routes from CSV files (data/stops.txt & data/routes.txt)
 2. Complete mock data for all collections
 3. Proper data relationships and validation
 4. Hybrid approach for performance and consistency
+
+Data Sources:
+- 1,340+ bus stops from data/stops.txt
+- 190+ routes from data/routes.txt
 
 Run this script with: python init_db_complete.py
 """
@@ -15,6 +19,7 @@ import asyncio
 import json
 import random
 import os
+import csv
 from datetime import datetime, timedelta
 from typing import Dict, List, Any, Optional
 from uuid import uuid4, UUID
@@ -189,6 +194,155 @@ async def import_bus_stops_from_geojson(db, file_path: str = "busStops.geojson")
     
     print(f"📊 Bus stops: {imported_count} imported, {skipped_count} skipped (already exist)")
     return bus_stops
+
+async def import_bus_stops_from_csv(db, file_path: str = "data/stops.txt") -> List[Dict[str, Any]]:
+    """Import bus stops from CSV file."""
+    print(f"🚏 Importing bus stops from {file_path}...")
+
+    try:
+        with open(file_path, 'r', encoding='utf-8') as f:
+            csv_reader = csv.DictReader(f)
+            csv_data = list(csv_reader)
+    except FileNotFoundError:
+        print(f"❌ CSV file not found: {file_path}")
+        return []
+    except Exception as e:
+        print(f"❌ Error reading CSV file: {e}")
+        return []
+
+    bus_stops = []
+    imported_count = 0
+    skipped_count = 0
+
+    for row in csv_data:
+        # Skip if essential data is missing
+        if not row.get('stop_name') or not row.get('stop_lat') or not row.get('stop_lon'):
+            continue
+
+        try:
+            latitude = float(row['stop_lat'])
+            longitude = float(row['stop_lon'])
+        except (ValueError, TypeError):
+            continue
+
+        # Only import stops (location_type = 0), skip stations
+        location_type = row.get('location_type', '0')
+        if location_type != '0':
+            continue
+
+        name = row['stop_name'].strip()
+
+        # Check if bus stop already exists
+        existing_stop = await db.bus_stops.find_one({"name": name})
+        if existing_stop:
+            skipped_count += 1
+            continue
+
+        # Create bus stop model
+        bus_stop = {
+            "id": generate_uuid(),
+            "name": name,
+            "location": {
+                "latitude": latitude,
+                "longitude": longitude
+            },
+            "capacity": random.randint(20, 100),
+            "is_active": True,
+            "created_at": datetime.utcnow(),
+            "updated_at": datetime.utcnow(),
+            # Store original CSV data for reference
+            "csv_stop_id": row.get('stop_id', ''),
+            "parent_station": row.get('parent_station', '')
+        }
+
+        bus_stops.append(model_to_mongo_doc(bus_stop))
+        imported_count += 1
+
+    if bus_stops:
+        result = await db.bus_stops.insert_many(bus_stops)
+        print(f"✅ Imported {len(result.inserted_ids)} bus stops from CSV")
+
+    print(f"📊 Bus stops: {imported_count} imported, {skipped_count} skipped (already exist)")
+    return bus_stops
+
+async def import_routes_from_csv(db, bus_stops, file_path: str = "data/routes.txt") -> List[Dict[str, Any]]:
+    """Import routes from CSV file."""
+    print(f"🛣️ Importing routes from {file_path}...")
+
+    try:
+        with open(file_path, 'r', encoding='utf-8') as f:
+            csv_reader = csv.DictReader(f)
+            csv_data = list(csv_reader)
+    except FileNotFoundError:
+        print(f"❌ CSV file not found: {file_path}")
+        return []
+    except Exception as e:
+        print(f"❌ Error reading CSV file: {e}")
+        return []
+
+    routes = []
+    imported_count = 0
+    skipped_count = 0
+
+    # Get bus stop IDs for random assignment (since we don't have stop_times.txt)
+    bus_stop_ids = [stop["id"] for stop in bus_stops] if bus_stops else []
+
+    for row in csv_data:
+        # Skip if essential data is missing
+        if not row.get('route_long_name'):
+            continue
+
+        route_name = row['route_long_name'].strip()
+
+        # Check if route already exists
+        existing_route = await db.routes.find_one({"name": route_name})
+        if existing_route:
+            skipped_count += 1
+            continue
+
+        # Create description from available fields
+        description_parts = []
+        if row.get('route_desc'):
+            description_parts.append(row['route_desc'].strip())
+        if row.get('route_short_name'):
+            description_parts.append(f"Route Code: {row['route_short_name'].strip()}")
+
+        description = " | ".join(description_parts) if description_parts else f"Bus route: {route_name}"
+
+        # Assign random stops since we don't have stop sequence data
+        # In a real implementation, you'd need stop_times.txt to get the actual stops
+        num_stops = min(random.randint(4, 12), len(bus_stop_ids)) if bus_stop_ids else 0
+        selected_stops = random.sample(bus_stop_ids, num_stops) if num_stops > 0 else []
+
+        # Create route model
+        route = {
+            "id": generate_uuid(),
+            "name": route_name,
+            "description": description,
+            "stop_ids": selected_stops,
+            "total_distance": round(random.uniform(8, 35), 2),  # km - estimated
+            "estimated_duration": round(random.uniform(30, 120), 2),  # minutes - estimated
+            "is_active": True,
+            "created_at": datetime.utcnow(),
+            "updated_at": datetime.utcnow(),
+            # Store original CSV data for reference
+            "csv_route_id": row.get('route_id', ''),
+            "route_short_name": row.get('route_short_name', ''),
+            "route_type": row.get('route_type', ''),
+            "agency_id": row.get('agency_id', ''),
+            "route_color": row.get('route_color', ''),
+            "route_text_color": row.get('route_text_color', '')
+        }
+
+        routes.append(model_to_mongo_doc(route))
+        imported_count += 1
+
+    if routes:
+        result = await db.routes.insert_many(routes)
+        print(f"✅ Imported {len(result.inserted_ids)} routes from CSV")
+
+    print(f"📊 Routes: {imported_count} imported, {skipped_count} skipped (already exist)")
+    return routes
 
 async def create_users(db, count=25):
     """Create mock users with different roles."""
@@ -1180,44 +1334,50 @@ async def main():
         print("🌱 STARTING DATABASE SEEDING")
         print("="*60)
 
-        # Step 1: Import bus stops from GeoJSON
-        bus_stops = await import_bus_stops_from_geojson(db)
+        # Step 1: Import bus stops from CSV
+        print("\n📍 IMPORTING BUS STOPS...")
+        bus_stops = await import_bus_stops_from_csv(db)
 
-        # Step 2: Create users
+        # Step 2: Import routes from CSV
+        print("\n🛣️ IMPORTING ROUTES...")
+        routes_csv = await import_routes_from_csv(db, bus_stops)
+
+        # Step 3: Create additional mock routes if needed
+        additional_routes = await create_routes(db, bus_stops, count=5)
+        routes = routes_csv + additional_routes
+
+        # Step 4: Create users
         users = await create_users(db, count=30)
 
-        # Step 3: Create buses
+        # Step 5: Create buses
         buses = await create_buses(db, count=18)
 
-        # Step 4: Create routes
-        routes = await create_routes(db, bus_stops, count=12)
-
-        # Step 5: Create schedules
+        # Step 6: Create schedules
         drivers = [user for user in users if user["role"] == "BUS_DRIVER"]
         schedules = await create_schedules(db, routes, buses, drivers, count=25)
 
-        # Step 6: Create trips
+        # Step 7: Create trips
         trips = await create_trips(db, buses, routes, drivers, schedules, count=40)
 
-        # Step 7: Create payments
+        # Step 8: Create payments
         payments = await create_payments(db, users, count=35)
 
-        # Step 8: Create tickets
+        # Step 9: Create tickets
         tickets = await create_tickets(db, payments, routes, bus_stops, count=40)
 
-        # Step 9: Create feedback
+        # Step 10: Create feedback
         feedback = await create_feedback(db, users, trips, buses, count=25)
 
-        # Step 10: Create incidents
+        # Step 11: Create incidents
         incidents = await create_incidents(db, users, buses, routes, bus_stops, count=15)
 
-        # Step 11: Create notifications
+        # Step 12: Create notifications
         notifications = await create_notifications(db, users, count=40)
 
-        # Step 12: Create notification settings
+        # Step 13: Create notification settings
         notification_settings = await create_notification_settings(db, users)
 
-        # Step 13: Create attendance records (2 months of data)
+        # Step 14: Create attendance records (2 months of data)
         attendance_records = await create_attendance(db, users, months=2)
 
         # Step 15: Create approval requests
@@ -1238,10 +1398,10 @@ async def main():
 
         # Print summary
         print(f"\n📊 SEEDING SUMMARY:")
-        print(f"   🚏 Bus Stops: {len(bus_stops)}")
+        print(f"   🚏 Bus Stops: {len(bus_stops)} (from CSV)")
+        print(f"   🛣️ Routes: {len(routes)} (CSV: {len(routes_csv)}, Mock: {len(additional_routes)})")
         print(f"   👥 Users: {len(users)}")
         print(f"   🚌 Buses: {len(buses)}")
-        print(f"   🛣️ Routes: {len(routes)}")
         print(f"   📅 Schedules: {len(schedules)}")
         print(f"   🚐 Trips: {len(trips)}")
         print(f"   💳 Payments: {len(payments)}")
