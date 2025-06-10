@@ -64,3 +64,26 @@ class OvercrowdingReportResponse(DateTimeModelMixin):
     location: Optional[Location] = None
     is_resolved: bool = False
     resolution_notes: Optional[str] = None
+
+class ReallocationHistoryResponse(DateTimeModelMixin):
+    id: str
+    bus_id: str
+    bus_number: Optional[str] = None  # Bus license plate/number for display
+    old_route_id: Optional[str] = None
+    old_route_name: Optional[str] = None
+    new_route_id: Optional[str] = None
+    new_route_name: Optional[str] = None
+    reason: Optional[ReallocationReason] = None
+    description: Optional[str] = None
+    priority: Optional[str] = None
+    status: ReallocationStatus
+    requested_by_user_id: Optional[str] = None  # For formal requests
+    requested_by_name: Optional[str] = None
+    reallocated_by: Optional[str] = None  # For direct reallocations
+    reallocated_by_name: Optional[str] = None
+    reviewed_by: Optional[str] = None
+    reviewed_by_name: Optional[str] = None
+    reviewed_at: Optional[str] = None
+    reallocated_at: Optional[str] = None  # For direct reallocations
+    review_notes: Optional[str] = None
+    reallocation_type: str  # "FORMAL_REQUEST" or "DIRECT_REALLOCATION"

@@ -1,6 +1,6 @@
 from faker import Faker
 from fastapi import APIRouter, Depends, HTTPException, status, Query, Request
-from typing import Any, List, Optional
+from typing import Any, List, Optional, Dict
 
 from datetime import datetime
 
@@ -18,6 +18,7 @@ from schemas.transport import (
 from schemas.route import CreateRouteRequest, UpdateRouteRequest, RouteResponse
 from models.user import UserRole
 from schemas.control_center import (RegisterPersonnelRequest, RegisterControlStaffRequest)
+from schemas.regulators import ReallocationHistoryResponse
 from uuid import uuid4
 from core.ai_agent import route_optimization_agent
 
@@ -117,7 +118,7 @@ async def register_personnel(
     # Convert model to MongoDB document
     user_doc = model_to_mongo_doc(user)
     result = await request.app.state.mongodb.users.insert_one(user_doc)
-    created_user = await request.app.state.mongodb.users.find_one({"_id": result.inserted_id})
+    created_user = await request.app.state.mongodb.users.find_one({"id": user.id})
 
     # Log temporary password for debugging purposes
     role_display = user_data.role.value.replace("_", " ").title()
@@ -153,7 +154,7 @@ async def get_queue_regulators(
         )
     
     regulators = await request.app.state.mongodb.users.find(
-        {"role": "REGULATOR"}
+        {"role": "QUEUE_REGULATOR"}
     ).skip(skip).limit(limit).to_list(length=limit)
     
     return [transform_mongo_doc(regulator, UserResponse) for regulator in regulators]
@@ -172,8 +173,8 @@ async def get_queue_regulator(
         )
 
     regulator = await request.app.state.mongodb.users.find_one({
-        "_id": regulator_id,
-        "role": "REGULATOR"
+        "id": regulator_id,
+        "role": "QUEUE_REGULATOR"
     })
     
     if not regulator:
@@ -199,17 +200,17 @@ async def update_queue_regulator(
         )
     
     result = await request.app.state.mongodb.users.update_one(
-        {"_id": regulator_id, "role": "REGULATOR"},
+        {"id": regulator_id, "role": "QUEUE_REGULATOR"},
         {"$set": update_data}
     )
-    
+
     if result.modified_count == 0:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
             detail="Regulator not found"
         )
-    
-    updated_regulator = await request.app.state.mongodb.users.find_one({"_id": regulator_id})
+
+    updated_regulator = await request.app.state.mongodb.users.find_one({"id": regulator_id})
     return transform_mongo_doc(updated_regulator, UserResponse)
 
 @router.delete("/personnel/queue-regulators/{regulator_id}")
@@ -226,8 +227,8 @@ async def delete_queue_regulator(
         )
     
     result = await request.app.state.mongodb.users.delete_one({
-        "_id": regulator_id,
-        "role": "REGULATOR"
+        "id": regulator_id,
+        "role": "QUEUE_REGULATOR"
     })
     
     if result.deleted_count == 0:
@@ -254,8 +255,8 @@ async def assign_regulator_to_bus_stop(
     
     # Check if regulator exists
     regulator = await request.app.state.mongodb.users.find_one({
-        "_id": regulator_id,
-        "role": "REGULATOR"
+        "id": regulator_id,
+        "role": "QUEUE_REGULATOR"
     })
     if not regulator:
         raise HTTPException(
@@ -303,7 +304,7 @@ async def get_bus_drivers(
         )
     
     drivers = await request.app.state.mongodb.users.find(
-        {"role": "DRIVER"}
+        {"role": "BUS_DRIVER"}
     ).skip(skip).limit(limit).to_list(length=limit)
     
     return [transform_mongo_doc(driver, UserResponse) for driver in drivers]
@@ -322,8 +323,8 @@ async def get_bus_driver(
         )
     
     driver = await request.app.state.mongodb.users.find_one({
-        "_id": driver_id,
-        "role": "DRIVER"
+        "id": driver_id,
+        "role": "BUS_DRIVER"
     })
     
     if not driver:
@@ -349,17 +350,17 @@ async def update_bus_driver(
         )
     
     result = await request.app.state.mongodb.users.update_one(
-        {"_id": driver_id, "role": "DRIVER"},
+        {"id": driver_id, "role": "BUS_DRIVER"},
         {"$set": update_data}
     )
-    
+
     if result.modified_count == 0:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
             detail="Driver not found"
         )
-    
-    updated_driver = await request.app.state.mongodb.users.find_one({"_id": driver_id})
+
+    updated_driver = await request.app.state.mongodb.users.find_one({"id": driver_id})
     return transform_mongo_doc(updated_driver, UserResponse)
 
 @router.delete("/personnel/bus-drivers/{driver_id}")
@@ -376,8 +377,8 @@ async def delete_bus_driver(
         )
     
     result = await request.app.state.mongodb.users.delete_one({
-        "_id": driver_id,
-        "role": "DRIVER"
+        "id": driver_id,
+        "role": "BUS_DRIVER"
     })
     
     if result.deleted_count == 0:
@@ -404,8 +405,8 @@ async def assign_driver_to_bus(
     
     # Check if driver exists
     driver = await request.app.state.mongodb.users.find_one({
-        "_id": driver_id,
-        "role": "DRIVER"
+        "id": driver_id,
+        "role": "BUS_DRIVER"
     })
     if not driver:
         raise HTTPException(
@@ -1106,3 +1107,283 @@ async def get_pending_reallocation_requests(
     }).sort("created_at", -1).skip(skip).limit(limit).to_list(length=limit)
     
     return requests
+
+@router.get("/reallocation-history", response_model=List[ReallocationHistoryResponse])
+async def get_reallocation_history(
+    request: Request,
+    bus_id: Optional[str] = Query(None, description="Filter by bus ID"),
+    route_id: Optional[str] = Query(None, description="Filter by route ID (old or new)"),
+    status_filter: Optional[str] = Query(None, description="Filter by status"),
+    start_date: Optional[str] = Query(None, description="Start date filter (YYYY-MM-DD)"),
+    end_date: Optional[str] = Query(None, description="End date filter (YYYY-MM-DD)"),
+    skip: int = Query(0, ge=0),
+    limit: int = Query(20, ge=1, le=100),
+    current_user: User = Depends(get_current_user)
+):
+    """Get comprehensive reallocation history with filtering options"""
+    if current_user.role != "CONTROL_CENTER_ADMIN":
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Only control center admins can view reallocation history"
+        )
+
+    # Build match query for filtering
+    match_query: Dict[str, Any] = {}
+
+    if bus_id:
+        match_query["bus_id"] = bus_id
+
+    if route_id:
+        match_query["$or"] = [
+            {"current_route_id": route_id},
+            {"requested_route_id": route_id},
+            {"old_route_id": route_id},
+            {"new_route_id": route_id}
+        ]
+
+    if status_filter:
+        match_query["status"] = status_filter.upper()
+
+    # Date filtering
+    date_filter: Dict[str, Any] = {}
+    if start_date:
+        try:
+            start_datetime = datetime.fromisoformat(start_date)
+            date_filter["$gte"] = start_datetime
+        except ValueError:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Invalid start_date format. Use YYYY-MM-DD"
+            )
+
+    if end_date:
+        try:
+            end_datetime = datetime.fromisoformat(end_date + "T23:59:59")
+            date_filter["$lte"] = end_datetime
+        except ValueError:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Invalid end_date format. Use YYYY-MM-DD"
+            )
+
+    if date_filter:
+        match_query["$or"] = [
+            {"created_at": date_filter},
+            {"reallocated_at": date_filter}
+        ]
+
+    # Build aggregation pipeline to enrich data
+    pipeline: List[Dict[str, Any]] = []
+
+    if match_query:
+        pipeline.append({"$match": match_query})
+
+    # Add lookups for related data
+    pipeline.extend([
+        # Lookup bus information
+        {
+            "$lookup": {
+                "from": "buses",
+                "localField": "bus_id",
+                "foreignField": "_id",
+                "as": "bus_data"
+            }
+        },
+        # Lookup old/current route information
+        {
+            "$lookup": {
+                "from": "routes",
+                "localField": "current_route_id",
+                "foreignField": "_id",
+                "as": "old_route_data"
+            }
+        },
+        {
+            "$lookup": {
+                "from": "routes",
+                "localField": "old_route_id",
+                "foreignField": "_id",
+                "as": "old_route_data_direct"
+            }
+        },
+        # Lookup new/requested route information
+        {
+            "$lookup": {
+                "from": "routes",
+                "localField": "requested_route_id",
+                "foreignField": "_id",
+                "as": "new_route_data"
+            }
+        },
+        {
+            "$lookup": {
+                "from": "routes",
+                "localField": "new_route_id",
+                "foreignField": "_id",
+                "as": "new_route_data_direct"
+            }
+        },
+        # Lookup user information for requested_by
+        {
+            "$lookup": {
+                "from": "users",
+                "localField": "requested_by_user_id",
+                "foreignField": "_id",
+                "as": "requested_by_data"
+            }
+        },
+        # Lookup user information for reallocated_by
+        {
+            "$lookup": {
+                "from": "users",
+                "localField": "reallocated_by",
+                "foreignField": "_id",
+                "as": "reallocated_by_data"
+            }
+        },
+        # Lookup user information for reviewed_by
+        {
+            "$lookup": {
+                "from": "users",
+                "localField": "reviewed_by",
+                "foreignField": "_id",
+                "as": "reviewed_by_data"
+            }
+        },
+        # Add computed fields
+        {
+            "$addFields": {
+                "bus_number": {"$arrayElemAt": ["$bus_data.license_plate", 0]},
+                "old_route_name": {
+                    "$cond": {
+                        "if": {"$gt": [{"$size": "$old_route_data"}, 0]},
+                        "then": {"$arrayElemAt": ["$old_route_data.name", 0]},
+                        "else": {"$arrayElemAt": ["$old_route_data_direct.name", 0]}
+                    }
+                },
+                "new_route_name": {
+                    "$cond": {
+                        "if": {"$gt": [{"$size": "$new_route_data"}, 0]},
+                        "then": {"$arrayElemAt": ["$new_route_data.name", 0]},
+                        "else": {"$arrayElemAt": ["$new_route_data_direct.name", 0]}
+                    }
+                },
+                "requested_by_name": {
+                    "$cond": {
+                        "if": {"$gt": [{"$size": "$requested_by_data"}, 0]},
+                        "then": {
+                            "$concat": [
+                                {"$arrayElemAt": ["$requested_by_data.first_name", 0]},
+                                " ",
+                                {"$arrayElemAt": ["$requested_by_data.last_name", 0]}
+                            ]
+                        },
+                        "else": None
+                    }
+                },
+                "reallocated_by_name": {
+                    "$cond": {
+                        "if": {"$gt": [{"$size": "$reallocated_by_data"}, 0]},
+                        "then": {
+                            "$concat": [
+                                {"$arrayElemAt": ["$reallocated_by_data.first_name", 0]},
+                                " ",
+                                {"$arrayElemAt": ["$reallocated_by_data.last_name", 0]}
+                            ]
+                        },
+                        "else": None
+                    }
+                },
+                "reviewed_by_name": {
+                    "$cond": {
+                        "if": {"$gt": [{"$size": "$reviewed_by_data"}, 0]},
+                        "then": {
+                            "$concat": [
+                                {"$arrayElemAt": ["$reviewed_by_data.first_name", 0]},
+                                " ",
+                                {"$arrayElemAt": ["$reviewed_by_data.last_name", 0]}
+                            ]
+                        },
+                        "else": None
+                    }
+                },
+                "reallocation_type": {
+                    "$cond": {
+                        "if": {"$ifNull": ["$requested_by_user_id", False]},
+                        "then": "FORMAL_REQUEST",
+                        "else": "DIRECT_REALLOCATION"
+                    }
+                },
+                # Normalize route IDs for consistent response
+                "old_route_id": {
+                    "$cond": {
+                        "if": {"$ifNull": ["$old_route_id", False]},
+                        "then": "$old_route_id",
+                        "else": "$current_route_id"
+                    }
+                },
+                "new_route_id": {
+                    "$cond": {
+                        "if": {"$ifNull": ["$new_route_id", False]},
+                        "then": "$new_route_id",
+                        "else": "$requested_route_id"
+                    }
+                }
+            }
+        },
+        # Remove lookup arrays to clean up response
+        {
+            "$project": {
+                "bus_data": 0,
+                "old_route_data": 0,
+                "old_route_data_direct": 0,
+                "new_route_data": 0,
+                "new_route_data_direct": 0,
+                "requested_by_data": 0,
+                "reallocated_by_data": 0,
+                "reviewed_by_data": 0
+            }
+        },
+        # Sort by most recent first
+        {"$sort": {"created_at": -1}},
+        # Pagination
+        {"$skip": skip},
+        {"$limit": limit}
+    ])
+
+    # Execute aggregation
+    history_cursor = request.app.state.mongodb.reallocation_requests.aggregate(pipeline)
+    history_records = await history_cursor.to_list(length=limit)
+
+    # Transform to response format
+    history_responses = []
+    for record in history_records:
+        # Convert MongoDB document to ReallocationHistoryResponse
+        history_response = ReallocationHistoryResponse(
+            id=str(record["_id"]),
+            bus_id=record["bus_id"],
+            bus_number=record.get("bus_number"),
+            old_route_id=record.get("old_route_id"),
+            old_route_name=record.get("old_route_name"),
+            new_route_id=record.get("new_route_id"),
+            new_route_name=record.get("new_route_name"),
+            reason=record.get("reason"),
+            description=record.get("description"),
+            priority=record.get("priority"),
+            status=record.get("status", "PENDING"),
+            requested_by_user_id=record.get("requested_by_user_id"),
+            requested_by_name=record.get("requested_by_name"),
+            reallocated_by=record.get("reallocated_by"),
+            reallocated_by_name=record.get("reallocated_by_name"),
+            reviewed_by=record.get("reviewed_by"),
+            reviewed_by_name=record.get("reviewed_by_name"),
+            reviewed_at=record.get("reviewed_at"),
+            reallocated_at=record.get("reallocated_at").isoformat() if record.get("reallocated_at") else None,
+            review_notes=record.get("review_notes"),
+            reallocation_type=record.get("reallocation_type", "UNKNOWN"),
+            created_at=record.get("created_at", datetime.utcnow()),
+            updated_at=record.get("updated_at", datetime.utcnow())
+        )
+        history_responses.append(history_response)
+
+    return history_responses

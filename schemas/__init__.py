@@ -48,7 +48,8 @@ from .approval import (
 from .regulators import (
     ReallocationReason, ReallocationStatus, OvercrowdingSeverity,
     RequestReallocationRequest, ReallocationRequestResponse,
-    ReportOvercrowdingRequest, OvercrowdingReportResponse
+    ReportOvercrowdingRequest, OvercrowdingReportResponse,
+    ReallocationHistoryResponse
 )
 
 __all__ = [

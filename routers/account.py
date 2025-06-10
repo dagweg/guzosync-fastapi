@@ -28,12 +28,12 @@ async def update_user_info(
     if update_data:
         # Update user in MongoDB using built-in driver
         await request.app.state.mongodb.users.update_one(
-            {"_id": current_user.id},
+            {"id": current_user.id},
             {"$set": update_data}
         )
-    
+
     # Find the updated user
-    updated_user = await request.app.state.mongodb.users.find_one({"_id": current_user.id})
+    updated_user = await request.app.state.mongodb.users.find_one({"id": current_user.id})
     
     if not updated_user:
         raise HTTPException(
@@ -115,7 +115,7 @@ async def update_preferred_language(
     
     # Update user's language preference
     await request.app.state.mongodb.users.update_one(
-        {"_id": current_user.id},
+        {"id": current_user.id},
         {"$set": {"preferred_language": lang}}
     )
     

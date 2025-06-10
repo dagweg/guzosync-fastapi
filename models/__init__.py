@@ -1,5 +1,5 @@
 from .base import BaseDBModel
-from .user import User, UserRole
+from .user import User, UserRole, Gender
 from .transport import Bus, BusType, BusStatus, BusStop, Route, Location, Alert, AlertType, AlertSeverity
 from .operations import Trip, TripStatus, Schedule
 from .notifications import Notification, NotificationType, NotificationSettings, RelatedEntity
@@ -15,7 +15,7 @@ from .regulators import (
 
 __all__ = [
     "BaseDBModel",
-    "User", "UserRole",
+    "User", "UserRole", "Gender",
     "Bus", "BusType", "BusStatus", "BusStop", "Route", "Location", "Alert", "AlertType", "AlertSeverity",
     "Trip", "TripStatus", "Schedule",
     "Notification", "NotificationType", "NotificationSettings", "RelatedEntity",

@@ -361,40 +361,94 @@ async def create_users(db, count=25):
         elif i < count * 0.8:
             role = random.choice(["BUS_DRIVER", "QUEUE_REGULATOR"])
 
+        # Generate gender for profile image consistency
+        gender = random.choice(["MALE", "FEMALE"])
+        portrait_gender = "men" if gender == "MALE" else "women"
+
         user = {
             "id": generate_uuid(),
-            "first_name": fake.first_name(),
+            "first_name": fake.first_name_male() if gender == "MALE" else fake.first_name_female(),
             "last_name": fake.last_name(),
             "email": fake.email(),
             "password": default_password,
             "role": role,
             "phone_number": fake.phone_number(),
-            "profile_image": None if random.random() > 0.3 else f"https://randomuser.me/api/portraits/{random.choice(['men', 'women'])}/{random.randint(1, 99)}.jpg",
+
+            # Profile Information
+            "profile_image": None if random.random() > 0.3 else f"https://randomuser.me/api/portraits/{portrait_gender}/{random.randint(1, 99)}.jpg",
+            "date_of_birth": fake.date_of_birth(minimum_age=18, maximum_age=70) if random.random() > 0.2 else None,
+            "gender": gender if random.random() > 0.1 else None,
+            "nationality": "Ethiopian" if random.random() > 0.1 else fake.country(),
+            "national_id": fake.bothify(text='##########') if random.random() > 0.3 else None,
+
+            # Address Information
+            "street_address": fake.street_address() if random.random() > 0.4 else None,
+            "city": fake.city() if random.random() > 0.3 else None,
+            "state_region": fake.state() if random.random() > 0.4 else None,
+            "postal_code": fake.postcode() if random.random() > 0.5 else None,
+            "country": "Ethiopia",
+
+            # Contact Information
+            "emergency_contact_name": fake.name() if random.random() > 0.3 else None,
+            "emergency_contact_phone": fake.phone_number() if random.random() > 0.3 else None,
+            "emergency_contact_relationship": random.choice(["Parent", "Spouse", "Sibling", "Friend", "Other"]) if random.random() > 0.3 else None,
+            "secondary_phone": fake.phone_number() if random.random() > 0.7 else None,
+            "work_phone": fake.phone_number() if random.random() > 0.8 else None,
+
+            # Preferences and Settings
+            "preferred_language": random.choice(["en", "am"]),
+            "is_active": random.random() > 0.05,
+            "is_verified": random.random() > 0.3,
+
+            # Payment and Discounts
+            "preferred_payment_method": random.choice(["cash", "card", "mobile", None]) if random.random() > 0.4 else None,
+            "monthly_pass_active": random.random() > 0.7,
+            "student_discount_eligible": random.random() > 0.8,
+            "senior_discount_eligible": random.random() > 0.9,
+            "disability_discount_eligible": random.random() > 0.95,
+
+            # Analytics
+            "total_trips": random.randint(0, 500) if role == "PASSENGER" else 0,
+            "total_distance_traveled": round(random.uniform(0, 10000), 2) if role == "PASSENGER" else 0.0,
+
+            # Timestamps
             "created_at": random_datetime(-90, -1),
             "updated_at": random_datetime(-30, 0),
-            "is_active": random.random() > 0.05,
-            "preferred_language": random.choice(["en", "am", None]),
-            "pending_approval": None if role not in ["CONTROL_STAFF"] else random.choice([True, False, None])
         }
         users.append(model_to_mongo_doc(user))
 
     # Ensure at least one of each role exists
     for role in USER_ROLES:
         if not any(u['role'] == role for u in users):
+            gender = random.choice(["MALE", "FEMALE"])
             user = {
                 "id": generate_uuid(),
-                "first_name": fake.first_name(),
+                "first_name": fake.first_name_male() if gender == "MALE" else fake.first_name_female(),
                 "last_name": fake.last_name(),
                 "email": f"{role.lower()}@example.com",
                 "password": default_password,
                 "role": role,
                 "phone_number": fake.phone_number(),
                 "profile_image": None,
+
+                # Profile Information
+                "date_of_birth": fake.date_of_birth(minimum_age=25, maximum_age=60),
+                "gender": gender,
+                "nationality": "Ethiopian",
+                "country": "Ethiopia",
+
+                # Preferences and Settings
+                "preferred_language": "en",
+                "is_active": True,
+                "is_verified": True,
+
+                # Analytics
+                "total_trips": 0,
+                "total_distance_traveled": 0.0,
+
+                # Timestamps
                 "created_at": random_datetime(-90, -1),
                 "updated_at": random_datetime(-30, 0),
-                "is_active": True,
-                "preferred_language": "en",
-                "pending_approval": None if role not in ["CONTROL_STAFF"] else False
             }
             users.append(model_to_mongo_doc(user))
 
@@ -416,11 +470,25 @@ async def create_users(db, count=25):
             "role": role,
             "phone_number": "123456789",
             "profile_image": None,
+
+            # Profile Information
+            "date_of_birth": fake.date_of_birth(minimum_age=25, maximum_age=45),
+            "gender": "MALE",
+            "nationality": "Ethiopian",
+            "country": "Ethiopia",
+
+            # Preferences and Settings
+            "preferred_language": "en",
+            "is_active": True,
+            "is_verified": True,
+
+            # Analytics
+            "total_trips": 0,
+            "total_distance_traveled": 0.0,
+
+            # Timestamps
             "created_at": datetime.utcnow(),
             "updated_at": datetime.utcnow(),
-            "is_active": True,
-            "preferred_language": "en",
-            "pending_approval": None if role not in ["CONTROL_STAFF"] else False
         }
         test_users.append(model_to_mongo_doc(test_user))
 

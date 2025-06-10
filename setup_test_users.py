@@ -71,9 +71,20 @@ async def create_admin_user(db):
         "role": "CONTROL_ADMIN",
         "phone_number": "+1234567890",
         "profile_image": None,
-        "is_active": True,
+
+        # Profile Information
+        "gender": "MALE",
+        "nationality": "Ethiopian",
+        "country": "Ethiopia",
+
+        # Preferences and Settings
         "preferred_language": "en",
-        "pending_approval": None
+        "is_active": True,
+        "is_verified": True,
+
+        # Analytics
+        "total_trips": 0,
+        "total_distance_traveled": 0.0,
     }
 
     try:
@@ -114,9 +125,20 @@ async def create_staff_user(db):
         "role": "CONTROL_STAFF",
         "phone_number": "+1234567891",
         "profile_image": None,
-        "is_active": True,
+
+        # Profile Information
+        "gender": "FEMALE",
+        "nationality": "Ethiopian",
+        "country": "Ethiopia",
+
+        # Preferences and Settings
         "preferred_language": "en",
-        "pending_approval": False  # Approved for testing
+        "is_active": True,
+        "is_verified": True,
+
+        # Analytics
+        "total_trips": 0,
+        "total_distance_traveled": 0.0,
     }
 
     try:
@@ -157,9 +179,27 @@ async def create_passenger_user(db):
         "role": "PASSENGER",
         "phone_number": "+1234567892",
         "profile_image": None,
-        "is_active": True,
+
+        # Profile Information
+        "gender": "MALE",
+        "nationality": "Ethiopian",
+        "country": "Ethiopia",
+
+        # Preferences and Settings
         "preferred_language": "en",
-        "pending_approval": None
+        "is_active": True,
+        "is_verified": True,
+
+        # Payment and Discounts
+        "preferred_payment_method": "mobile",
+        "monthly_pass_active": False,
+        "student_discount_eligible": False,
+        "senior_discount_eligible": False,
+        "disability_discount_eligible": False,
+
+        # Analytics
+        "total_trips": 0,
+        "total_distance_traveled": 0.0,
     }
 
     try:
@@ -200,9 +240,20 @@ async def create_bus_driver_user(db):
         "role": "BUS_DRIVER",
         "phone_number": "+1234567893",
         "profile_image": None,
-        "is_active": True,
+
+        # Profile Information
+        "gender": "MALE",
+        "nationality": "Ethiopian",
+        "country": "Ethiopia",
+
+        # Preferences and Settings
         "preferred_language": "en",
-        "pending_approval": None
+        "is_active": True,
+        "is_verified": True,
+
+        # Analytics
+        "total_trips": 0,
+        "total_distance_traveled": 0.0,
     }
 
     try:
@@ -243,9 +294,20 @@ async def create_queue_regulator_user(db):
         "role": "QUEUE_REGULATOR",
         "phone_number": "+1234567894",
         "profile_image": None,
-        "is_active": True,
+
+        # Profile Information
+        "gender": "FEMALE",
+        "nationality": "Ethiopian",
+        "country": "Ethiopia",
+
+        # Preferences and Settings
         "preferred_language": "en",
-        "pending_approval": None
+        "is_active": True,
+        "is_verified": True,
+
+        # Analytics
+        "total_trips": 0,
+        "total_distance_traveled": 0.0,
     }
 
     try:
