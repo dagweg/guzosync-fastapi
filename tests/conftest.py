@@ -128,7 +128,9 @@ async def mock_mongodb():
     mock_db.payments = AsyncMock()
     mock_db.tickets = AsyncMock()
     mock_db.regulator_assignments = AsyncMock()
-    
+    mock_db.reallocation_requests = AsyncMock()
+    mock_db.overcrowding_reports = AsyncMock()
+
     return mock_db
 
 

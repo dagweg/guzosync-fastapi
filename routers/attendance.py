@@ -4,10 +4,11 @@ from typing import List
 from datetime import datetime, time
 
 from core.dependencies import get_current_user
-from models import User
+from models import User, AttendanceRecord, AttendanceType, Location
 from schemas.attendance import CreateAttendanceRecordRequest, AttendanceRecordResponse
 
 from core import transform_mongo_doc
+from core.mongo_utils import model_to_mongo_doc
 
 router = APIRouter(prefix="/api/attendance", tags=["attendance"])
 
@@ -16,16 +17,20 @@ async def create_attendance_record(
     request: Request,
     attendance_request: CreateAttendanceRecordRequest, 
     current_user: User = Depends(get_current_user)
-):
-    # Create attendance record
-    attendance_data = {
-        "user_id": current_user.id,
-        "timestamp": datetime.utcnow(),
-        "type": attendance_request.type,
-        "location": attendance_request.location.dict() if attendance_request.location else None
-    }
+):    # Create AttendanceRecord model instance
+    attendance_record = AttendanceRecord(
+        user_id=current_user.id,
+        timestamp=datetime.utcnow(),
+        type=AttendanceType(attendance_request.type.value),
+        location=Location(
+            latitude=attendance_request.location.latitude,
+            longitude=attendance_request.location.longitude
+        ) if attendance_request.location else None
+    )
     
-    result = await request.app.state.mongodb.attendance.insert_one(attendance_data)
+    # Convert model to MongoDB document
+    attendance_doc = model_to_mongo_doc(attendance_record)
+    result = await request.app.state.mongodb.attendance.insert_one(attendance_doc)
     created_attendance = await request.app.state.mongodb.attendance.find_one({"_id": result.inserted_id})
     
     return transform_mongo_doc(created_attendance, AttendanceRecordResponse)

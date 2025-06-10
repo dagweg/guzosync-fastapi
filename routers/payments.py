@@ -22,6 +22,7 @@ from schemas.payment import (
 
 
 from core import transform_mongo_doc
+from core.mongo_utils import model_to_mongo_doc
 from core.chapa_service import chapa_service
 from core.logger import get_logger
 
@@ -79,49 +80,51 @@ async def initiate_payment(
             current_user.first_name,
             current_user.last_name
         )
+          # Create payment record using Payment model
+        payment = Payment(
+            tx_ref=chapa_response["tx_ref"],
+            amount=payment_request.amount,
+            currency="ETB",
+            payment_method=ModelPaymentMethod(payment_request.payment_method.value),
+            mobile_number=payment_request.mobile_number,
+            customer_id=current_user.id,
+            customer_email=current_user.email,
+            customer_first_name=current_user.first_name,
+            customer_last_name=current_user.last_name,
+            status=ModelPaymentStatus.PENDING,
+            chapa_response=chapa_response.get("chapa_response"),
+            description=payment_request.description,
+            return_url=payment_request.return_url,
+            webhook_url=chapa_service.webhook_url,
+            created_at=datetime.utcnow()
+        )
         
-        # Create payment record
-        payment_data = {
-            "tx_ref": chapa_response["tx_ref"],
-            "amount": payment_request.amount,
-            "currency": "ETB",
-            "payment_method": payment_request.payment_method.value,
-            "mobile_number": payment_request.mobile_number,
-            "customer_id": current_user.id,
-            "customer_email": current_user.email,
-            "customer_first_name": current_user.first_name,
-            "customer_last_name": current_user.last_name,
-            "status": ModelPaymentStatus.PENDING.value,
-            "chapa_response": chapa_response.get("chapa_response"),
-            "description": payment_request.description,
-            "return_url": payment_request.return_url,
-            "webhook_url": chapa_service.webhook_url,
-            "created_at": datetime.utcnow()
-        }
-        
-        result = await request.app.state.mongodb.payments.insert_one(payment_data)
+        # Convert model to MongoDB document
+        payment_doc = model_to_mongo_doc(payment)
+        result = await request.app.state.mongodb.payments.insert_one(payment_doc)
         payment_id = str(result.inserted_id)
-        
-        # Create pending ticket
+          # Create pending ticket using Ticket model
         if chapa_response["status"] == "success" or chapa_response.get("requires_authorization"):
-            ticket_data = {
-                "ticket_number": f"TKT-{uuid4().hex[:8].upper()}",
-                "customer_id": current_user.id,
-                "payment_id": payment_id,
-                "ticket_type": payment_request.ticket_type.value,
-                "origin_stop_id": payment_request.origin_stop_id,
-                "destination_stop_id": payment_request.destination_stop_id,
-                "route_id": payment_request.route_id,
-                "trip_id": payment_request.trip_id,
-                "status": ModelTicketStatus.ACTIVE.value,
-                "price": payment_request.amount,
-                "currency": "ETB",
-                "valid_from": datetime.utcnow(),
-                "valid_until": datetime.utcnow() + timedelta(days=30),
-                "created_at": datetime.utcnow()
-            }
+            ticket = Ticket(
+                ticket_number=f"TKT-{uuid4().hex[:8].upper()}",
+                customer_id=current_user.id,
+                payment_id=payment_id,
+                ticket_type=ModelTicketType(payment_request.ticket_type.value),
+                origin_stop_id=payment_request.origin_stop_id,
+                destination_stop_id=payment_request.destination_stop_id,
+                route_id=payment_request.route_id,
+                trip_id=payment_request.trip_id,
+                status=ModelTicketStatus.ACTIVE,
+                price=payment_request.amount,
+                currency="ETB",
+                valid_from=datetime.utcnow(),
+                valid_until=datetime.utcnow() + timedelta(days=30),
+                created_at=datetime.utcnow()
+            )
             
-            await request.app.state.mongodb.tickets.insert_one(ticket_data)
+            # Convert model to MongoDB document
+            ticket_doc = model_to_mongo_doc(ticket)
+            await request.app.state.mongodb.tickets.insert_one(ticket_doc)
         
         return InitiatePaymentResponse(
             tx_ref=chapa_response["tx_ref"],
@@ -519,16 +522,23 @@ async def create_payment_method(
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail="Payment method already exists"
-        )
+        )    # Create PaymentMethodConfig model instance
+    payment_method_config = PaymentMethodConfig(
+        method=ModelPaymentMethod(method_request.method.value),
+        display_name=method_request.display_name,
+        is_active=method_request.is_active,
+        min_amount=method_request.min_amount,
+        max_amount=method_request.max_amount,
+        processing_fee=method_request.processing_fee,
+        description=method_request.description,
+        created_at=datetime.utcnow()
+    )
     
-    method_data = {
-        **method_request.dict(),
-        "method": method_request.method.value,
-        "created_at": datetime.utcnow(),
-        "created_by": current_user.id
-    }
-    
-    result = await request.app.state.mongodb.payment_method_configs.insert_one(method_data)
+    # Convert model to MongoDB document
+    method_doc = model_to_mongo_doc(payment_method_config)
+    # Add created_by separately since it's not part of the model
+    method_doc["created_by"] = current_user.id
+    result = await request.app.state.mongodb.payment_method_configs.insert_one(method_doc)
     created_method = await request.app.state.mongodb.payment_method_configs.find_one({"_id": result.inserted_id})
     
     return transform_mongo_doc(created_method, PaymentMethodResponse)

@@ -50,3 +50,27 @@ class Route(BaseDBModel):
     total_distance: Optional[float] = None
     estimated_duration: Optional[float] = None
     is_active: bool = True
+
+class AlertType(str, Enum):
+    TRAFFIC = "TRAFFIC"
+    WEATHER = "WEATHER"
+    MAINTENANCE = "MAINTENANCE"
+    EMERGENCY = "EMERGENCY"
+    ROUTE_CHANGE = "ROUTE_CHANGE"
+    SERVICE_UPDATE = "SERVICE_UPDATE"
+
+class AlertSeverity(str, Enum):
+    LOW = "LOW"
+    MEDIUM = "MEDIUM"
+    HIGH = "HIGH"
+    CRITICAL = "CRITICAL"
+
+class Alert(BaseDBModel):
+    title: str
+    message: str
+    alert_type: AlertType
+    severity: AlertSeverity
+    affected_routes: Optional[List[str]] = None
+    affected_bus_stops: Optional[List[str]] = None
+    is_active: bool = True
+    created_by: str

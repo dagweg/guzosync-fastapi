@@ -3,10 +3,11 @@ from typing import List
 
 
 from core.dependencies import get_current_user
-from models import User, Incident
+from models import User, Incident, Location, IncidentSeverity
 from schemas.feedback import ReportIncidentRequest, IncidentResponse
 
 from core import transform_mongo_doc
+from core.mongo_utils import model_to_mongo_doc
 
 router = APIRouter(prefix="/api/issues", tags=["issues"])
 
@@ -16,17 +17,22 @@ async def report_issue(
     incident_request: ReportIncidentRequest, 
     current_user: User = Depends(get_current_user)
 ):
-    # Create incident dict matching the model's schema
-    incident_data = {
-        "reported_by_user_id": current_user.id,
-        "description": incident_request.description,
-        "location": incident_request.location.dict() if incident_request.location else None,
-        "related_bus_id": incident_request.related_bus_id,
-        "related_route_id": incident_request.related_route_id,
-        "severity": incident_request.severity.value  # Convert enum to string value
-    }
+    """Report a new incident"""
+    # Create Incident model instance
+    incident = Incident(
+        reported_by_user_id=current_user.id,
+        description=incident_request.description,
+        location=Location(
+            latitude=incident_request.location.latitude,
+            longitude=incident_request.location.longitude
+        ) if incident_request.location else None,        related_bus_id=incident_request.related_bus_id,
+        related_route_id=incident_request.related_route_id,
+        severity=IncidentSeverity(incident_request.severity.value)
+    )
     
-    result = await request.app.state.mongodb.incidents.insert_one(incident_data)
+    # Convert model to MongoDB document
+    incident_doc = model_to_mongo_doc(incident)
+    result = await request.app.state.mongodb.incidents.insert_one(incident_doc)
     created_incident = await request.app.state.mongodb.incidents.find_one({"_id": result.inserted_id})
     
     return transform_mongo_doc(created_incident, IncidentResponse)
@@ -40,11 +46,10 @@ async def get_issues(
 ):
     # For regular users, only show their own reported incidents
     query = {"reported_by_user_id": current_user.id}
-    
-    # For admins, show all incidents
+      # For admins, show all incidents
     if current_user.role in ["CONTROL_CENTER_ADMIN", "REGULATOR"]:
         query = {}
     
     incidents = await request.app.state.mongodb.incidents.find(query).skip(skip).limit(limit).to_list(length=limit)
     
-    return [IncidentResponse(**incident) for incident in incidents]
+    return [transform_mongo_doc(incident, IncidentResponse) for incident in incidents]

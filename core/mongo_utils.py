@@ -46,7 +46,7 @@ def transform_mongo_doc(doc: Dict[str, Any], model_class: Type[ModelType], **def
 def model_to_mongo_doc(model: BaseModel, exclude_none: bool = True) -> Dict[str, Any]:
     """
     Convert a Pydantic model to a MongoDB document format. Ensures all UUIDs are strings.
-
+        
     Args:
         model: The Pydantic model instance
         exclude_none: Whether to exclude None values from the document

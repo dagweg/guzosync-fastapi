@@ -43,6 +43,11 @@ from .control_center import (
 from .approval import (
     ApprovalStatus, ApprovalRequestRequest, ApprovalActionRequest, ApprovalRequestResponse
 )
+from .regulators import (
+    ReallocationReason, ReallocationStatus, OvercrowdingSeverity,
+    RequestReallocationRequest, ReallocationRequestResponse,
+    ReportOvercrowdingRequest, OvercrowdingReportResponse
+)
 
 __all__ = [
     "Location", "RelatedEntity",
@@ -64,5 +69,8 @@ __all__ = [
     "CreateTicketRequest", "TicketResponse", "TicketQRResponse",
     "ValidateTicketRequest", "ValidateTicketResponse",    "CreatePaymentMethodRequest", "UpdatePaymentMethodRequest", "PaymentMethodResponse",
     "ChapaWebhookEvent", "PaymentCallbackResponse", "RegisterPersonnelRequest", "RegisterControlStaffRequest",
-    "ApprovalStatus", "ApprovalRequestRequest", "ApprovalActionRequest", "ApprovalRequestResponse"
+    "ApprovalStatus", "ApprovalRequestRequest", "ApprovalActionRequest", "ApprovalRequestResponse",
+    "ReallocationReason", "ReallocationStatus", "OvercrowdingSeverity",
+    "RequestReallocationRequest", "ReallocationRequestResponse",
+    "ReportOvercrowdingRequest", "OvercrowdingReportResponse"
 ]

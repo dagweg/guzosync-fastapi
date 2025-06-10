@@ -8,6 +8,7 @@ from models import User, Feedback
 from schemas.feedback import SubmitFeedbackRequest, FeedbackResponse
 
 from core import transform_mongo_doc
+from core.mongo_utils import model_to_mongo_doc
 
 router = APIRouter(prefix="/api/feedback", tags=["feedback"])
 
@@ -16,16 +17,18 @@ async def submit_feedback(
     request: Request,
     feedback_request: SubmitFeedbackRequest, 
     current_user: User = Depends(get_current_user)
-):
-    feedback_data = {
-        "submitted_by_user_id": current_user.id,
-        "content": feedback_request.content,
-        "rating": feedback_request.rating,
-        "related_trip_id": feedback_request.related_trip_id,
-        "related_bus_id": feedback_request.related_bus_id
-    }
+):    # Create Feedback model instance
+    feedback = Feedback(
+        submitted_by_user_id=current_user.id,
+        content=feedback_request.content,
+        rating=feedback_request.rating,
+        related_trip_id=feedback_request.related_trip_id,
+        related_bus_id=feedback_request.related_bus_id
+    )
     
-    result = await request.app.state.mongodb.feedback.insert_one(feedback_data)
+    # Convert model to MongoDB document
+    feedback_doc = model_to_mongo_doc(feedback)
+    result = await request.app.state.mongodb.feedback.insert_one(feedback_doc)
     created_feedback = await request.app.state.mongodb.feedback.find_one({"_id": result.inserted_id})
     
     return transform_mongo_doc(created_feedback, FeedbackResponse)

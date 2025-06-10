@@ -133,6 +133,7 @@ async def login(
             headers={"WWW-Authenticate": "Bearer"},
         )
     try:
+        print(user)
         user_id = user.get("id") or str(user.get("_id"))
         access_token = create_access_token(data={"sub": str(user_id),"role": user.get("role")})
         

@@ -5,10 +5,11 @@ from bson import ObjectId
 from datetime import datetime
 
 from core.dependencies import get_current_user, require_admin_or_regulator
-from models import User
+from models import User, Alert, AlertType, AlertSeverity
 from schemas.transport import CreateAlertRequest, UpdateAlertRequest, AlertResponse
 
 from core import transform_mongo_doc
+from core.mongo_utils import model_to_mongo_doc
 
 router = APIRouter(prefix="/api/alerts", tags=["alerts"])
 
@@ -34,19 +35,22 @@ async def create_alert(
     current_user: User = Depends(require_admin_or_regulator)
 ):
     """Create a new alert (admin/regulator only)"""
-    alert_data = {
-        "title": alert_request.title,
-        "message": alert_request.message,
-        "alert_type": alert_request.alert_type,
-        "severity": alert_request.severity,
-        "affected_routes": alert_request.affected_routes,
-        "affected_bus_stops": alert_request.affected_bus_stops,
-        "is_active": True,
-        "created_by": current_user.id,
-        "created_at": datetime.utcnow()
-    }
+    # Create Alert model instance
+    alert = Alert(
+        title=alert_request.title,
+        message=alert_request.message,
+        alert_type=AlertType(alert_request.alert_type.value),
+        severity=AlertSeverity(alert_request.severity.value),
+        affected_routes=alert_request.affected_routes,
+        affected_bus_stops=alert_request.affected_bus_stops,
+        is_active=True,
+        created_by=current_user.id,
+        created_at=datetime.utcnow()
+    )
     
-    result = await request.app.state.mongodb.alerts.insert_one(alert_data)
+    # Convert model to MongoDB document
+    alert_doc = model_to_mongo_doc(alert)
+    result = await request.app.state.mongodb.alerts.insert_one(alert_doc)
     created_alert = await request.app.state.mongodb.alerts.find_one({"_id": result.inserted_id})
     
     return transform_mongo_doc(created_alert, AlertResponse)

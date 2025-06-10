@@ -9,7 +9,7 @@ from core.mongo_utils import transform_mongo_doc, model_to_mongo_doc
 from core.email_service import email_service
 from core import get_logger
 from core.security import generate_secure_password, get_password_hash
-from models import User
+from models import User, BusStop, Route, Location
 from schemas.user import RegisterUserRequest, UserResponse
 from schemas.transport import (
     CreateBusStopRequest, UpdateBusStopRequest, BusStopResponse,
@@ -19,6 +19,7 @@ from schemas.route import CreateRouteRequest, UpdateRouteRequest, RouteResponse
 from models.user import UserRole
 from schemas.control_center import (RegisterPersonnelRequest, RegisterControlStaffRequest)
 from uuid import uuid4
+from core.ai_agent import route_optimization_agent
 
 
 logger = get_logger(__name__)
@@ -46,33 +47,37 @@ async def register_personnel(
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail="User with this email already exists"
-        )
-    user_dict = {
-        "first_name": user_data.first_name,
-        "last_name": user_data.last_name,
-        "email": user_data.email,
-        "password": get_password_hash(str(uuid4())),  # Hash the temporary password
-        "role": user_data.role.value,
-        "phone_number": user_data.phone_number,
-        "profile_image": user_data.profile_image,
-        "is_active": True,
-        "created_at": datetime.utcnow()
-    }
-    
-    # Store the temporary password for email (before hashing)
+        )    # Store the temporary password for email (before hashing)
     temp_password = str(uuid4())
-    user_dict["password"] = get_password_hash(temp_password)
     
-    result = await request.app.state.mongodb.users.insert_one(user_dict)
+    # Create User model instance
+    user = User(
+        first_name=user_data.first_name,
+        last_name=user_data.last_name,
+        email=user_data.email,
+        password=get_password_hash(temp_password),  # Hash the temporary password
+        role=UserRole(user_data.role.value),
+        phone_number=user_data.phone_number,
+        profile_image=user_data.profile_image,
+        is_active=True
+    )
+
+    # Convert model to MongoDB document
+    user_doc = model_to_mongo_doc(user)
+    result = await request.app.state.mongodb.users.insert_one(user_doc)
     created_user = await request.app.state.mongodb.users.find_one({"_id": result.inserted_id})
-    
+
+    # Log temporary password for debugging purposes
+    role_display = user_data.role.value.replace("_", " ").title()
+
+    print(f"🔑 DEBUG: {role_display} '{user_data.first_name} {user_data.last_name}' ({user_data.email}) - Temp Password: {temp_password}")
+
     # Send invitation email with credentials
     full_name = f"{user_data.first_name} {user_data.last_name}"
-    role_display = user_data.role.value.replace("_", " ").title()
     email_sent = await email_service.send_personnel_invitation_email(
-        user_data.email, 
-        full_name, 
-        role_display, 
+        user_data.email,
+        full_name,
+        role_display,
         temp_password
     )
     if not email_sent:
@@ -464,15 +469,20 @@ async def create_bus_stop(
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
             detail="Only control center admins can create bus stops"
-        )
+        )    # Create BusStop model instance
+    bus_stop = BusStop(
+        name=bus_stop_data.name,
+        location=Location(
+            latitude=bus_stop_data.location.latitude,
+            longitude=bus_stop_data.location.longitude
+        ),
+        capacity=bus_stop_data.capacity,
+        is_active=bus_stop_data.is_active if bus_stop_data.is_active is not None else True
+    )
     
-    bus_stop_dict = {
-        **bus_stop_data.dict(),
-        "created_at": datetime.utcnow(),
-        "created_by": current_user.id
-    }
-    
-    result = await request.app.state.mongodb.bus_stops.insert_one(bus_stop_dict)
+    # Convert model to MongoDB document
+    bus_stop_doc = model_to_mongo_doc(bus_stop)
+    result = await request.app.state.mongodb.bus_stops.insert_one(bus_stop_doc)
     created_bus_stop = await request.app.state.mongodb.bus_stops.find_one({"_id": result.inserted_id})
     
     return transform_mongo_doc(created_bus_stop, BusStopResponse)
@@ -769,14 +779,19 @@ async def create_control_center_route(
             status_code=status.HTTP_403_FORBIDDEN,
             detail="Only control center admins can create routes"
         )
+      # Create Route model instance
+    route = Route(
+        name=route_data.name,
+        description=route_data.description,
+        stop_ids=route_data.stop_ids,
+        total_distance=route_data.total_distance,
+        estimated_duration=route_data.estimated_duration,
+        is_active=route_data.is_active if route_data.is_active is not None else True
+    )
     
-    route_dict = {
-        **route_data.dict(),
-        "created_at": datetime.utcnow(),
-        "created_by": current_user.id
-    }
-    
-    result = await request.app.state.mongodb.routes.insert_one(route_dict)
+    # Convert model to MongoDB document
+    route_doc = model_to_mongo_doc(route)
+    result = await request.app.state.mongodb.routes.insert_one(route_doc)
     created_route = await request.app.state.mongodb.routes.find_one({"_id": result.inserted_id})
     
     return transform_mongo_doc(created_route, RouteResponse)
@@ -890,5 +905,128 @@ async def get_reallocation_requests(
         )
     
     requests = await request.app.state.mongodb.reallocation_requests.find({}).sort("reallocated_at", -1).skip(skip).limit(limit).to_list(length=limit)
+    
+    return requests
+
+@router.post("/reallocation-requests/{request_id}/process")
+async def process_reallocation_request(
+    request: Request,
+    request_id: str,
+    current_user: User = Depends(get_current_user)
+):
+    """Process a reallocation request using AI agent to determine optimal route"""
+    if current_user.role != "CONTROL_CENTER_ADMIN":
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Only control center admins can process reallocation requests"
+        )
+    
+    # Get the reallocation request
+    reallocation_request = await request.app.state.mongodb.reallocation_requests.find_one({"_id": request_id})
+    if not reallocation_request:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Reallocation request not found"
+        )
+    
+    if reallocation_request.get("status") != "PENDING":
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Request has already been processed"
+        )
+    
+    # Use AI agent to determine optimal route if not already set
+    optimal_route_id = reallocation_request.get("requested_route_id")
+    if not optimal_route_id:
+        optimal_route_id = await route_optimization_agent.determine_optimal_route(
+            bus_id=reallocation_request["bus_id"],
+            current_route_id=reallocation_request["current_route_id"],
+            reason=reallocation_request["reason"],
+            priority=reallocation_request.get("priority", "NORMAL"),
+            description=reallocation_request.get("description", ""),
+            mongodb_client=request.app.state.mongodb
+        )
+    
+    if not optimal_route_id:
+        # Update request as rejected if no suitable route found
+        await request.app.state.mongodb.reallocation_requests.update_one(
+            {"_id": request_id},
+            {
+                "$set": {
+                    "status": "REJECTED",
+                    "reviewed_by": current_user.id,
+                    "reviewed_at": datetime.utcnow().isoformat(),
+                    "review_notes": "AI agent could not find suitable alternative route"
+                }
+            }
+        )
+        
+        return {"message": "No suitable route found for reallocation", "status": "REJECTED"}
+    
+    # Verify the optimal route exists and is active
+    optimal_route = await request.app.state.mongodb.routes.find_one({"_id": optimal_route_id})
+    if not optimal_route or not optimal_route.get("is_active", True):
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Selected route is not available"
+        )
+    
+    # Update the bus assignment
+    bus_update_result = await request.app.state.mongodb.buses.update_one(
+        {"_id": reallocation_request["bus_id"]},
+        {"$set": {"assigned_route_id": optimal_route_id}}
+    )
+    
+    if bus_update_result.modified_count == 0:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Bus not found or could not be updated"
+        )
+    
+    # Update reallocation request as approved and completed
+    await request.app.state.mongodb.reallocation_requests.update_one(
+        {"_id": request_id},
+        {
+            "$set": {
+                "requested_route_id": optimal_route_id,
+                "status": "COMPLETED",
+                "reviewed_by": current_user.id,
+                "reviewed_at": datetime.utcnow().isoformat(),
+                "review_notes": f"AI agent selected optimal route: {optimal_route['name']}"
+            }
+        }
+    )
+    
+    return {
+        "message": "Reallocation request processed successfully",
+        "status": "COMPLETED",
+        "bus_id": reallocation_request["bus_id"],
+        "old_route_id": reallocation_request["current_route_id"],
+        "new_route_id": optimal_route_id,
+        "route_name": optimal_route["name"]
+    }
+
+@router.get("/reallocation-requests/pending")
+async def get_pending_reallocation_requests(
+    request: Request,
+    skip: int = Query(0, ge=0),
+    limit: int = Query(10, ge=1, le=100),
+    current_user: User = Depends(get_current_user)
+):
+    """Get pending reallocation requests that need AI processing"""
+    if current_user.role != "CONTROL_CENTER_ADMIN":
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Only control center admins can view reallocation requests"
+        )
+    
+    # Get pending requests (those without requested_route_id or with PENDING status)
+    requests = await request.app.state.mongodb.reallocation_requests.find({
+        "$or": [
+            {"status": "PENDING"},
+            {"requested_route_id": {"$in": [None, ""]}},
+            {"requested_route_id": {"$exists": False}}
+        ]
+    }).sort("created_at", -1).skip(skip).limit(limit).to_list(length=limit)
     
     return requests

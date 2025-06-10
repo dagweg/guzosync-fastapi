@@ -4,11 +4,12 @@ from typing import List
 from datetime import datetime
 
 from core.dependencies import get_current_user
-from models import User
+from models import User, Message, MessageType
 from schemas.conversation import MessageResponse, ConversationResponse, SendMessageRequest
 from core.realtime.chat import chat_service
 
 from core import transform_mongo_doc
+from core.mongo_utils import model_to_mongo_doc
 
 router = APIRouter(prefix="/api/conversations", tags=["conversations"])
 
@@ -72,15 +73,18 @@ async def send_message(
             status_code=status.HTTP_404_NOT_FOUND,
             detail="Conversation not found or access denied"
         )
+      # Create Message model instance
+    message = Message(
+        conversation_id=conversation_id,
+        sender_id=current_user.id,
+        content=message_request.content,
+        message_type=MessageType(message_request.message_type) if message_request.message_type else MessageType.TEXT,
+        sent_at=datetime.utcnow()
+    )
     
-    message_data = {
-        "conversation_id": conversation_id,
-        "sender_id": current_user.id,
-        "content": message_request.content,
-        "message_type": message_request.message_type,
-        "sent_at": datetime.utcnow()
-    }
-    result = await request.app.state.mongodb.messages.insert_one(message_data)
+    # Convert model to MongoDB document
+    message_doc = model_to_mongo_doc(message)
+    result = await request.app.state.mongodb.messages.insert_one(message_doc)
     
     # Update conversation's last message timestamp
     await request.app.state.mongodb.conversations.update_one(
