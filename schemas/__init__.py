@@ -13,7 +13,8 @@ from .transport import (
 )
 from .route import (
     CreateRouteRequest, UpdateRouteRequest, RouteResponse, ScheduleResponse,
-    RouteChangeRequestRequest, RouteChangeResponse
+    RouteChangeRequestRequest, RouteChangeResponse, ETAResponse,
+    RouteShapeResponse, BusETAResponse
 )
 from .trip import TripStatus, SimplifiedTripResponse, TripResponse
 from .notification import (
@@ -60,6 +61,7 @@ __all__ = [
     "CreateBusStopRequest", "UpdateBusStopRequest", "BusStopResponse",
     "BusDetailedResponse", "RouteInfo", "CurrentTripInfo", "DriverAssignmentResponse",
     "CreateRouteRequest", "UpdateRouteRequest", "RouteResponse", "ScheduleResponse",
+    "ETAResponse", "RouteShapeResponse", "BusETAResponse",
     "TripStatus", "SimplifiedTripResponse", "TripResponse",
     "NotificationType", "BroadcastNotificationRequest", "NotificationResponse",
     "UpdateNotificationSettingsRequest", "NotificationSettingsResponse",

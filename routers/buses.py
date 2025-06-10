@@ -9,7 +9,9 @@ from models.transport import BusType as ModelBusType, BusStatus as ModelBusStatu
 from schemas.transport import BusResponse, BusStopResponse, CreateBusRequest, UpdateBusRequest, CreateBusStopRequest, UpdateBusStopRequest, BusDetailedResponse, RouteInfo, CurrentTripInfo, DriverAssignmentResponse
 from schemas.trip import SimplifiedTripResponse
 from schemas.user import UserResponse
+from schemas.route import BusETAResponse, ETAResponse
 from core.realtime.bus_tracking import bus_tracking_service
+from core.services.route_service import route_service
 
 from core import transform_mongo_doc, generate_uuid
 from core.mongo_utils import model_to_mongo_doc
@@ -859,6 +861,122 @@ async def update_bus_location(
     )
     
     return {"message": "Bus location updated successfully"}
+
+@router.get("/{bus_id}/eta", response_model=BusETAResponse)
+async def get_bus_eta_to_stops(
+    request: Request,
+    bus_id: str,
+    current_user: User = Depends(get_current_user)
+):
+    """Get ETA from bus current location to all stops on its assigned route"""
+    try:
+        # Get bus from database
+        bus_doc = await request.app.state.mongodb.buses.find_one({"id": bus_id})
+        if not bus_doc:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail="Bus not found"
+            )
+
+        # Check if bus has current location
+        if not bus_doc.get("current_location"):
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Bus current location not available"
+            )
+
+        # Check if bus is assigned to a route
+        route_id = bus_doc.get("assigned_route_id")
+        if not route_id:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Bus is not assigned to any route"
+            )
+
+        # Get route information
+        route_doc = await request.app.state.mongodb.routes.find_one({"id": route_id})
+        if not route_doc:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail="Assigned route not found"
+            )
+
+        # Get bus stops for the route
+        stop_ids = route_doc.get("stop_ids", [])
+        if not stop_ids:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Route has no bus stops"
+            )
+
+        # Fetch bus stops from database
+        bus_stops_cursor = request.app.state.mongodb.bus_stops.find({"id": {"$in": stop_ids}})
+        bus_stops_docs = await bus_stops_cursor.to_list(length=None)
+
+        # Convert to BusStop objects and maintain route order
+        route_stops = []
+        for stop_id in stop_ids:
+            for stop_doc in bus_stops_docs:
+                if stop_doc["id"] == stop_id:
+                    bus_stop = BusStop(
+                        id=stop_doc["id"],
+                        name=stop_doc["name"],
+                        location=ModelLocation(
+                            latitude=stop_doc["location"]["latitude"],
+                            longitude=stop_doc["location"]["longitude"]
+                        ),
+                        capacity=stop_doc.get("capacity"),
+                        is_active=stop_doc.get("is_active", True)
+                    )
+                    route_stops.append((stop_id, bus_stop))
+                    break
+
+        if not route_stops:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Could not find bus stops for route"
+            )
+
+        # Create Bus object
+        bus = Bus(
+            id=bus_doc["id"],
+            license_plate=bus_doc["license_plate"],
+            bus_type=ModelBusType(bus_doc["bus_type"]),
+            capacity=bus_doc["capacity"],
+            current_location=ModelLocation(
+                latitude=bus_doc["current_location"]["latitude"],
+                longitude=bus_doc["current_location"]["longitude"]
+            ),
+            speed=bus_doc.get("speed"),
+            bus_status=ModelBusStatus(bus_doc["bus_status"]),
+            assigned_route_id=bus_doc.get("assigned_route_id"),
+            assigned_driver_id=bus_doc.get("assigned_driver_id")
+        )
+
+        # Calculate ETAs using route service
+        eta_responses = await route_service.calculate_bus_eta_to_stops(
+            bus, route_stops, request.app.state
+        )
+
+        return BusETAResponse(
+            bus_id=bus_id,
+            route_id=route_id,
+            current_location={
+                "latitude": bus.current_location.latitude if bus.current_location else 0.0,
+                "longitude": bus.current_location.longitude if bus.current_location else 0.0
+            },
+            current_speed_kmh=bus.speed,
+            stop_etas=eta_responses,
+            calculated_at=datetime.utcnow().isoformat()
+        )
+
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Error calculating bus ETA: {str(e)}"
+        )
 
 @router.post("/{bus_id}/track")
 async def subscribe_to_bus_tracking(

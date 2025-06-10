@@ -25,6 +25,8 @@ export default function Dashboard() {
   const [busStops, setBusStops] = useState<BusStop[]>([]);
   const [routes, setRoutes] = useState<Route[]>([]);
   const [selectedBus, setSelectedBus] = useState<string>("");
+  const [selectedRoute, setSelectedRoute] = useState<string>("");
+  const [busDetails, setBusDetails] = useState<any>(null);
   const [activePanel, setActivePanel] = useState<
     "map" | "chat" | "notifications"
   >("map");
@@ -76,9 +78,29 @@ export default function Dashboard() {
     }
   };
 
-  const handleBusClick = (bus: Bus) => {
+  const handleBusClick = async (bus: Bus) => {
     setSelectedBus(bus.id);
     toast.success(`Selected bus: ${bus.license_plate}`);
+
+    // Fetch detailed bus information
+    try {
+      const details = await apiClient.getBusDetails(bus.id);
+      setBusDetails(details);
+
+      // If bus has a route, set it as selected to show the route shape
+      if (details.current_route?.id) {
+        setSelectedRoute(details.current_route.id);
+        toast.info(`Showing route: ${details.current_route.name}`);
+      } else if (bus.assigned_route_id) {
+        setSelectedRoute(bus.assigned_route_id);
+        // Load route details
+        const route = await apiClient.getRoute(bus.assigned_route_id);
+        toast.info(`Showing route: ${route.name}`);
+      }
+    } catch (error) {
+      console.error("Error fetching bus details:", error);
+      toast.error("Failed to load bus details");
+    }
   };
 
   const handleLocationUpdate = async (busId: string, location: Location) => {
@@ -219,15 +241,228 @@ export default function Dashboard() {
         {/* Main Content */}
         <main className="flex-1 flex flex-col">
           {activePanel === "map" && (
-            <div className="flex-1">
-              <Map
-                buses={buses || []}
-                busStops={busStops || []}
-                routes={routes || []}
-                selectedBus={selectedBus || ""}
-                onBusClick={handleBusClick}
-                onLocationUpdate={handleLocationUpdate}
-              />
+            <div className="flex-1 flex">
+              <div className="flex-1">
+                <Map
+                  buses={buses || []}
+                  busStops={busStops || []}
+                  routes={routes || []}
+                  selectedBus={selectedBus || ""}
+                  selectedRoute={selectedRoute || ""}
+                  onBusClick={handleBusClick}
+                  onLocationUpdate={handleLocationUpdate}
+                />
+              </div>
+
+              {/* Bus Details Panel */}
+              {busDetails && (
+                <div className="w-80 bg-white border-l shadow-lg overflow-y-auto">
+                  <div className="p-4">
+                    <div className="flex items-center justify-between mb-4">
+                      <h3 className="text-lg font-bold text-gray-900">
+                        Bus Details
+                      </h3>
+                      <button
+                        onClick={() => {
+                          setBusDetails(null);
+                          setSelectedBus("");
+                          setSelectedRoute("");
+                        }}
+                        className="text-gray-400 hover:text-gray-600"
+                      >
+                        ✕
+                      </button>
+                    </div>
+
+                    {/* Basic Bus Info */}
+                    <div className="space-y-3 mb-6">
+                      <div>
+                        <h4 className="font-semibold text-gray-700">
+                          License Plate
+                        </h4>
+                        <p className="text-lg font-mono">
+                          {busDetails.license_plate}
+                        </p>
+                      </div>
+
+                      <div className="grid grid-cols-2 gap-4">
+                        <div>
+                          <h4 className="font-semibold text-gray-700">Type</h4>
+                          <p>{busDetails.bus_type}</p>
+                        </div>
+                        <div>
+                          <h4 className="font-semibold text-gray-700">
+                            Capacity
+                          </h4>
+                          <p>{busDetails.capacity} passengers</p>
+                        </div>
+                      </div>
+
+                      <div>
+                        <h4 className="font-semibold text-gray-700">Status</h4>
+                        <span
+                          className={`inline-block px-2 py-1 rounded-full text-xs font-medium ${
+                            busDetails.bus_status === "OPERATIONAL"
+                              ? "bg-green-100 text-green-800"
+                              : busDetails.bus_status === "IDLE"
+                              ? "bg-yellow-100 text-yellow-800"
+                              : "bg-red-100 text-red-800"
+                          }`}
+                        >
+                          {busDetails.bus_status}
+                        </span>
+                      </div>
+                    </div>
+
+                    {/* Driver Info */}
+                    {busDetails.assigned_driver && (
+                      <div className="mb-6">
+                        <h4 className="font-semibold text-gray-700 mb-2">
+                          Driver
+                        </h4>
+                        <div className="bg-gray-50 p-3 rounded">
+                          <p className="font-medium">
+                            {busDetails.assigned_driver.first_name}{" "}
+                            {busDetails.assigned_driver.last_name}
+                          </p>
+                          <p className="text-sm text-gray-600">
+                            {busDetails.assigned_driver.email}
+                          </p>
+                          <p className="text-sm text-gray-600">
+                            {busDetails.assigned_driver.phone_number}
+                          </p>
+                        </div>
+                      </div>
+                    )}
+
+                    {/* Current Route Info */}
+                    {busDetails.current_route && (
+                      <div className="mb-6">
+                        <h4 className="font-semibold text-gray-700 mb-2">
+                          Current Route
+                        </h4>
+                        <div className="bg-blue-50 p-3 rounded">
+                          <p className="font-medium text-blue-900">
+                            {busDetails.current_route.name}
+                          </p>
+                          {busDetails.current_route.description && (
+                            <p className="text-sm text-blue-700">
+                              {busDetails.current_route.description}
+                            </p>
+                          )}
+
+                          {/* Start and End Destinations */}
+                          {busDetails.current_route.start_destination && (
+                            <div className="mt-2 space-y-1">
+                              <div className="flex items-center gap-2 text-sm">
+                                <span className="w-2 h-2 bg-green-500 rounded-full"></span>
+                                <span className="text-gray-600">From:</span>
+                                <span className="font-medium">
+                                  {
+                                    busDetails.current_route.start_destination
+                                      .name
+                                  }
+                                </span>
+                              </div>
+                              {busDetails.current_route.end_destination && (
+                                <div className="flex items-center gap-2 text-sm">
+                                  <span className="w-2 h-2 bg-red-500 rounded-full"></span>
+                                  <span className="text-gray-600">To:</span>
+                                  <span className="font-medium">
+                                    {
+                                      busDetails.current_route.end_destination
+                                        .name
+                                    }
+                                  </span>
+                                </div>
+                              )}
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                    )}
+
+                    {/* Current Trip Info */}
+                    {busDetails.current_trip && (
+                      <div className="mb-6">
+                        <h4 className="font-semibold text-gray-700 mb-2">
+                          Current Trip
+                        </h4>
+                        <div className="bg-green-50 p-3 rounded">
+                          <div className="flex justify-between items-center mb-2">
+                            <span className="font-medium text-green-900">
+                              Trip Status
+                            </span>
+                            <span
+                              className={`px-2 py-1 rounded-full text-xs font-medium ${
+                                busDetails.current_trip.status === "IN_PROGRESS"
+                                  ? "bg-green-100 text-green-800"
+                                  : busDetails.current_trip.status ===
+                                    "SCHEDULED"
+                                  ? "bg-blue-100 text-blue-800"
+                                  : "bg-gray-100 text-gray-800"
+                              }`}
+                            >
+                              {busDetails.current_trip.status}
+                            </span>
+                          </div>
+
+                          {busDetails.current_trip.scheduled_departure && (
+                            <p className="text-sm text-green-700">
+                              Departure:{" "}
+                              {new Date(
+                                busDetails.current_trip.scheduled_departure
+                              ).toLocaleTimeString()}
+                            </p>
+                          )}
+
+                          {busDetails.current_trip.estimated_arrival && (
+                            <p className="text-sm text-green-700">
+                              Est. Arrival:{" "}
+                              {new Date(
+                                busDetails.current_trip.estimated_arrival
+                              ).toLocaleTimeString()}
+                            </p>
+                          )}
+                        </div>
+                      </div>
+                    )}
+
+                    {/* Location Info */}
+                    {busDetails.current_location && (
+                      <div className="mb-6">
+                        <h4 className="font-semibold text-gray-700 mb-2">
+                          Location
+                        </h4>
+                        <div className="bg-gray-50 p-3 rounded text-sm">
+                          <p>
+                            Lat:{" "}
+                            {busDetails.current_location.latitude.toFixed(6)}
+                          </p>
+                          <p>
+                            Lng:{" "}
+                            {busDetails.current_location.longitude.toFixed(6)}
+                          </p>
+                          {busDetails.speed && (
+                            <p>Speed: {busDetails.speed} km/h</p>
+                          )}
+                          {busDetails.heading && (
+                            <p>Heading: {busDetails.heading}°</p>
+                          )}
+                          {busDetails.last_location_update && (
+                            <p className="text-gray-600 mt-1">
+                              Updated:{" "}
+                              {new Date(
+                                busDetails.last_location_update
+                              ).toLocaleString()}
+                            </p>
+                          )}
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              )}
             </div>
           )}
 

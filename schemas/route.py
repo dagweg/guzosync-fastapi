@@ -1,4 +1,4 @@
-from typing import Optional, List
+from typing import Optional, List, Dict, Any
 from pydantic import BaseModel
 
 from datetime import datetime
@@ -33,6 +33,11 @@ class RouteResponse(DateTimeModelMixin):
     estimated_duration: Optional[float] = None
     is_active: bool
 
+    # Mapbox integration fields
+    route_geometry: Optional[Dict[str, Any]] = None  # GeoJSON LineString
+    route_shape_data: Optional[Dict[str, Any]] = None  # Full Mapbox route response
+    last_shape_update: Optional[datetime] = None
+
 class ScheduleResponse(DateTimeModelMixin):
     id: str
     route_id: str
@@ -63,3 +68,36 @@ class RouteChangeResponse(DateTimeModelMixin):
     reviewed_by: Optional[str] = None
     reviewed_at: Optional[datetime] = None
     review_notes: Optional[str] = None
+
+# ETA and route shape schemas
+class ETAResponse(BaseModel):
+    """ETA calculation response"""
+    stop_id: str
+    stop_name: Optional[str] = None
+    duration_seconds: float
+    duration_minutes: float
+    distance_meters: float
+    distance_km: float
+    estimated_arrival: str  # ISO datetime string
+    traffic_aware: bool = True
+    current_speed_kmh: Optional[float] = None
+    calculated_at: str  # ISO datetime string
+    fallback_calculation: bool = False
+
+class RouteShapeResponse(BaseModel):
+    """Route shape data response"""
+    route_id: str
+    geometry: Dict[str, Any]  # GeoJSON LineString
+    distance_meters: float
+    duration_seconds: float
+    profile: str  # driving, walking, cycling
+    created_at: str  # ISO datetime string
+
+class BusETAResponse(BaseModel):
+    """Bus ETA to all stops on route"""
+    bus_id: str
+    route_id: str
+    current_location: Dict[str, float]  # lat, lng
+    current_speed_kmh: Optional[float] = None
+    stop_etas: List[ETAResponse]
+    calculated_at: str  # ISO datetime string

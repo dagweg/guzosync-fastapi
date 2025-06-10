@@ -1,5 +1,5 @@
 from datetime import datetime
-from typing import Optional, List
+from typing import Optional, List, Dict, Any
 from pydantic import BaseModel, Field
 from enum import Enum
 
@@ -50,6 +50,15 @@ class Route(BaseDBModel):
     total_distance: Optional[float] = None
     estimated_duration: Optional[float] = None
     is_active: bool = True
+
+    # Mapbox integration fields
+    route_geometry: Optional[Dict[str, Any]] = None  # GeoJSON LineString
+    route_shape_data: Optional[Dict[str, Any]] = None  # Full Mapbox route response
+    last_shape_update: Optional[datetime] = None
+
+    # Performance optimization fields
+    shape_cache_key: Optional[str] = None
+    geometry_simplified: Optional[Dict[str, Any]] = None  # Simplified geometry for performance
 
 class AlertType(str, Enum):
     TRAFFIC = "TRAFFIC"

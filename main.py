@@ -78,6 +78,13 @@ async def lifespan(app: FastAPI):
         # Store app state in Socket.IO manager for authentication
         socketio_manager.set_app_state(app.state)
 
+        # Initialize background tasks for Mapbox integration
+        logger.info("Starting background tasks...")
+        from core.services.background_tasks import background_task_service
+        background_task_service.set_app_state(app.state)
+        await background_task_service.start_background_tasks()
+        logger.info("Background tasks started successfully")
+
         # Initialize real-time analytics service with Socket.IO
         try:
             app.state.realtime_analytics = RealTimeAnalyticsService(
@@ -130,11 +137,26 @@ async def lifespan(app: FastAPI):
 
     # Shutdown
     try:
+        # Stop background tasks
+        logger.info("Stopping background tasks...")
+        from core.services.background_tasks import background_task_service
+        await background_task_service.stop_background_tasks()
+        logger.info("Background tasks stopped")
+
+        # Stop analytics services
+        if hasattr(app.state, 'realtime_analytics'):
+            await app.state.realtime_analytics.stop()
+            logger.info("Real-time analytics service stopped")
+
+        if hasattr(app.state, 'scheduled_analytics'):
+            await app.state.scheduled_analytics.stop()
+            logger.info("Scheduled analytics service stopped")
+
         logger.info("Closing MongoDB connection...")
         app.state.mongodb_client.close()
         logger.info("MongoDB connection closed successfully")
     except Exception as e:
-        logger.error("Error closing MongoDB connection", exc_info=True)
+        logger.error("Error during shutdown", exc_info=True)
 
 app = FastAPI(
     title="GuzoSync API",

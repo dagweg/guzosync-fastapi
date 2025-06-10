@@ -3,13 +3,19 @@ from typing import List, Optional
 from datetime import datetime
 
 from core.dependencies import get_current_user
-from models import User, Route
+from models import User, Route, Bus, BusStop
 from models.user import UserRole
-from schemas.route import RouteResponse, CreateRouteRequest, UpdateRouteRequest
+from models.transport import Location
+from schemas.route import (
+    RouteResponse, CreateRouteRequest, UpdateRouteRequest,
+    ETAResponse, RouteShapeResponse, BusETAResponse
+)
 from core.realtime.bus_tracking import bus_tracking_service
 
 from core import transform_mongo_doc, generate_uuid
 from core.mongo_utils import model_to_mongo_doc
+from core.services.route_service import route_service
+from core.services.mapbox_service import mapbox_service
 
 router = APIRouter(prefix="/api/routes", tags=["routes"])
 
@@ -166,3 +172,118 @@ async def unsubscribe_from_route_tracking(
     """Unsubscribe from real-time route tracking"""
     await bus_tracking_service.unsubscribe_from_route(str(current_user.id), route_id)
     return {"message": f"Unsubscribed from route {route_id} tracking"}
+
+@router.get("/{route_id}/shape", response_model=RouteShapeResponse)
+async def get_route_shape(
+    request: Request,
+    route_id: str,
+    current_user: User = Depends(get_current_user)
+):
+    """Get route shape (GeoJSON LineString) for map visualization"""
+    try:
+        # Get route shape from service (cached or generated)
+        shape_data = await route_service.get_route_shape_cached(route_id, request.app.state)
+
+        if not shape_data:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail="Route shape not available"
+            )
+
+        return RouteShapeResponse(
+            route_id=route_id,
+            geometry=shape_data["geometry"],
+            distance_meters=shape_data["distance"],
+            duration_seconds=shape_data["duration"],
+            profile=shape_data.get("profile", "driving"),
+            created_at=shape_data.get("created_at", datetime.utcnow().isoformat())
+        )
+
+    except Exception as e:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Error getting route shape: {str(e)}"
+        )
+
+@router.post("/{route_id}/generate-shape")
+async def generate_route_shape(
+    request: Request,
+    route_id: str,
+    current_user: User = Depends(get_current_user)
+):
+    """Generate/regenerate route shape from bus stops (admin only)"""
+    if current_user.role != UserRole.CONTROL_ADMIN:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Only control center admins can generate route shapes"
+        )
+
+    try:
+        # Get route from database
+        route_doc = await request.app.state.mongodb.routes.find_one({"id": route_id})
+        if not route_doc:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail="Route not found"
+            )
+
+        # Get bus stops for this route
+        stop_ids = route_doc.get("stop_ids", [])
+        if len(stop_ids) < 2:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Route must have at least 2 stops for shape generation"
+            )
+
+        # Fetch bus stops from database
+        bus_stops_cursor = request.app.state.mongodb.bus_stops.find({"id": {"$in": stop_ids}})
+        bus_stops_docs = await bus_stops_cursor.to_list(length=None)
+
+        # Convert to BusStop objects and maintain order
+        bus_stops = []
+        for stop_id in stop_ids:
+            for stop_doc in bus_stops_docs:
+                if stop_doc["id"] == stop_id:
+                    bus_stop = BusStop(
+                        id=stop_doc["id"],
+                        name=stop_doc["name"],
+                        location=Location(
+                            latitude=stop_doc["location"]["latitude"],
+                            longitude=stop_doc["location"]["longitude"]
+                        ),
+                        capacity=stop_doc.get("capacity"),
+                        is_active=stop_doc.get("is_active", True)
+                    )
+                    bus_stops.append(bus_stop)
+                    break
+
+        if len(bus_stops) < 2:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Could not find enough bus stops for route shape generation"
+            )
+
+        # Generate route shape
+        shape_data = await route_service.generate_route_shape(route_id, bus_stops, request.app.state)
+
+        if not shape_data:
+            raise HTTPException(
+                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                detail="Failed to generate route shape"
+            )
+
+        return {
+            "message": "Route shape generated successfully",
+            "route_id": route_id,
+            "distance_km": round(shape_data["distance"] / 1000, 2),
+            "duration_minutes": round(shape_data["duration"] / 60, 2),
+            "generated_at": datetime.utcnow().isoformat()
+        }
+
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Error generating route shape: {str(e)}"
+        )

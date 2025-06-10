@@ -18,7 +18,7 @@ export enum UserRole {
   BUS_DRIVER = "BUS_DRIVER",
   QUEUE_REGULATOR = "QUEUE_REGULATOR",
   CONTROL_STAFF = "CONTROL_STAFF",
-  CONTROL_ADMIN = "CONTROL_ADMIN"
+  CONTROL_ADMIN = "CONTROL_ADMIN",
 }
 
 // Location types
@@ -51,14 +51,14 @@ export interface Bus {
 export enum BusType {
   STANDARD = "STANDARD",
   ARTICULATED = "ARTICULATED",
-  MINIBUS = "MINIBUS"
+  MINIBUS = "MINIBUS",
 }
 
 export enum BusStatus {
   OPERATIONAL = "OPERATIONAL",
   MAINTENANCE = "MAINTENANCE",
   BREAKDOWN = "BREAKDOWN",
-  IDLE = "IDLE"
+  IDLE = "IDLE",
 }
 
 // Route types
@@ -72,6 +72,46 @@ export interface Route {
   is_active: boolean;
   created_at: string;
   updated_at: string;
+  // Mapbox integration fields
+  route_geometry?: any; // GeoJSON LineString
+  route_shape_data?: any; // Full Mapbox route response
+  last_shape_update?: string;
+}
+
+// ETA types
+export interface ETAInfo {
+  stop_id: string;
+  stop_name?: string;
+  duration_seconds: number;
+  duration_minutes: number;
+  distance_meters: number;
+  distance_km: number;
+  estimated_arrival: string;
+  traffic_aware: boolean;
+  current_speed_kmh?: number;
+  calculated_at: string;
+  fallback_calculation?: boolean;
+}
+
+export interface BusETAResponse {
+  bus_id: string;
+  route_id: string;
+  current_location: {
+    latitude: number;
+    longitude: number;
+  };
+  current_speed_kmh?: number;
+  stop_etas: ETAInfo[];
+  calculated_at: string;
+}
+
+export interface RouteShapeResponse {
+  route_id: string;
+  geometry: any; // GeoJSON LineString
+  distance_meters: number;
+  duration_seconds: number;
+  profile: string;
+  created_at: string;
 }
 
 // Bus Stop types
@@ -102,6 +142,14 @@ export interface BusLocationUpdate {
   speed?: number;
   heading?: number;
   status?: string;
+}
+
+export interface BusETAUpdate {
+  type: "bus_eta_update";
+  bus_id: string;
+  route_id: string;
+  stop_etas: ETAInfo[];
+  calculated_at: string;
 }
 
 export interface ChatMessage {
