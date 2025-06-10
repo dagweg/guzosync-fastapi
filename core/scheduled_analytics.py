@@ -4,7 +4,7 @@ Scheduled analytics tasks for automated reporting.
 
 import asyncio
 import logging
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from typing import Dict, Any
 
 from core.analytics_service import AnalyticsService
@@ -54,7 +54,7 @@ class ScheduledAnalyticsService:
         """Generate daily reports at 6 AM."""
         while self.is_running:
             try:
-                now = datetime.utcnow()
+                now = datetime.now(timezone.utc)
                 # Schedule for 6 AM UTC
                 next_run = now.replace(hour=6, minute=0, second=0, microsecond=0)
                 if next_run <= now:
@@ -75,7 +75,7 @@ class ScheduledAnalyticsService:
         """Generate weekly reports on Mondays at 7 AM."""
         while self.is_running:
             try:
-                now = datetime.utcnow()
+                now = datetime.now(timezone.utc)
                 
                 # Find next Monday at 7 AM
                 days_until_monday = (7 - now.weekday()) % 7
@@ -99,7 +99,7 @@ class ScheduledAnalyticsService:
         """Generate monthly reports on the 1st at 8 AM."""
         while self.is_running:
             try:
-                now = datetime.utcnow()
+                now = datetime.now(timezone.utc)
                 
                 # Find next 1st of month at 8 AM
                 if now.day == 1 and now.hour < 8:
@@ -137,7 +137,7 @@ class ScheduledAnalyticsService:
     async def _generate_daily_report(self):
         """Generate and save daily report."""
         try:
-            yesterday = datetime.utcnow().date() - timedelta(days=1)
+            yesterday = datetime.now(timezone.utc).date() - timedelta(days=1)
             start_date = datetime.combine(yesterday, datetime.min.time())
             end_date = datetime.combine(yesterday, datetime.max.time())
             
@@ -166,8 +166,8 @@ class ScheduledAnalyticsService:
                 "generated_by": "system",
                 "data": report_data,
                 "status": "COMPLETED",
-                "created_at": datetime.utcnow(),
-                "updated_at": datetime.utcnow()
+                "created_at": datetime.now(timezone.utc),
+                "updated_at": datetime.now(timezone.utc)
             }
             
             result = await self.db.analytics_reports.insert_one(report_doc)
@@ -183,7 +183,7 @@ class ScheduledAnalyticsService:
         """Generate and save weekly report."""
         try:
             # Last week (Monday to Sunday)
-            today = datetime.utcnow().date()
+            today = datetime.now(timezone.utc).date()
             days_since_monday = today.weekday()
             last_monday = today - timedelta(days=days_since_monday + 7)
             last_sunday = last_monday + timedelta(days=6)
@@ -217,8 +217,8 @@ class ScheduledAnalyticsService:
                 "generated_by": "system",
                 "data": report_data,
                 "status": "COMPLETED",
-                "created_at": datetime.utcnow(),
-                "updated_at": datetime.utcnow()
+                "created_at": datetime.now(timezone.utc),
+                "updated_at": datetime.now(timezone.utc)
             }
             
             result = await self.db.analytics_reports.insert_one(report_doc)
@@ -233,7 +233,7 @@ class ScheduledAnalyticsService:
         """Generate and save monthly report."""
         try:
             # Last month
-            today = datetime.utcnow().date()
+            today = datetime.now(timezone.utc).date()
             if today.month == 1:
                 last_month = today.replace(year=today.year - 1, month=12, day=1)
             else:
@@ -288,8 +288,8 @@ class ScheduledAnalyticsService:
                 "generated_by": "system",
                 "data": report_data,
                 "status": "COMPLETED",
-                "created_at": datetime.utcnow(),
-                "updated_at": datetime.utcnow()
+                "created_at": datetime.now(timezone.utc),
+                "updated_at": datetime.now(timezone.utc)
             }
             
             result = await self.db.analytics_reports.insert_one(report_doc)
@@ -303,7 +303,7 @@ class ScheduledAnalyticsService:
     async def _generate_alert_digest(self):
         """Generate alert digest for the last 4 hours."""
         try:
-            four_hours_ago = datetime.utcnow() - timedelta(hours=4)
+            four_hours_ago = datetime.now(timezone.utc) - timedelta(hours=4)
             
             # Get recent alerts
             recent_alerts = await self.db.alerts.find({
@@ -327,7 +327,7 @@ class ScheduledAnalyticsService:
                     "incidents": recent_incidents,
                     "reallocation_requests": new_requests,
                     "period": "Last 4 hours",
-                    "generated_at": datetime.utcnow().isoformat()
+                    "generated_at": datetime.now(timezone.utc).isoformat()
                 }
                 
                 await self._send_alert_digest(digest_data)
@@ -349,7 +349,7 @@ class ScheduledAnalyticsService:
                 return
             
             # Prepare email content
-            subject = f"GuzoSync {report_type.title()} Report - {datetime.utcnow().strftime('%Y-%m-%d')}"
+            subject = f"GuzoSync {report_type.title()} Report - {datetime.now(timezone.utc).strftime('%Y-%m-%d')}"
             
             # Format key metrics
             if "operational" in data:

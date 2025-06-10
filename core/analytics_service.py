@@ -4,7 +4,7 @@ Analytics service for generating reports and metrics.
 
 import logging
 from typing import Dict, List, Any, Optional
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from collections import defaultdict
 
 logger = logging.getLogger(__name__)
@@ -18,7 +18,7 @@ class AnalyticsService:
     async def generate_summary_analytics(self) -> Dict[str, Any]:
         """Generate summary analytics for the dashboard."""
         try:
-            today = datetime.utcnow().replace(hour=0, minute=0, second=0, microsecond=0)
+            today = datetime.now(timezone.utc).replace(hour=0, minute=0, second=0, microsecond=0)
             
             # Get basic counts
             total_buses = await self.db.buses.count_documents({})

@@ -5,7 +5,7 @@ Tests all analytics endpoints, services, and functionality.
 
 import pytest
 import asyncio
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from unittest.mock import AsyncMock, MagicMock, patch
 from fastapi.testclient import TestClient
 from fastapi import FastAPI
@@ -29,21 +29,32 @@ class TestAnalyticsService:
     def mock_db(self):
         """Mock MongoDB database."""
         db = MagicMock()
-        
-        # Mock collections
-        db.buses = AsyncMock()
-        db.routes = AsyncMock()
-        db.trips = AsyncMock()
-        db.feedback = AsyncMock()
-        db.alerts = AsyncMock()
-        db.incidents = AsyncMock()
-        db.payments = AsyncMock()
-        db.users = AsyncMock()
-        db.reallocation_requests = AsyncMock()
-        db.overcrowding_reports = AsyncMock()
-        db.analytics_reports = AsyncMock()
-        db.kpi_metrics = AsyncMock()
-        
+
+        # Mock collections with proper async behavior
+        for collection_name in ['buses', 'routes', 'trips', 'feedback', 'alerts',
+                               'incidents', 'payments', 'users', 'reallocation_requests',
+                               'overcrowding_reports', 'analytics_reports', 'kpi_metrics']:
+
+            collection_mock = AsyncMock()
+
+            # Mock the find method to return a mock with to_list
+            find_mock = MagicMock()
+            find_mock.to_list = AsyncMock(return_value=[])
+            find_mock.sort = MagicMock(return_value=find_mock)
+            find_mock.skip = MagicMock(return_value=find_mock)
+            find_mock.limit = MagicMock(return_value=find_mock)
+            collection_mock.find = MagicMock(return_value=find_mock)
+
+            # Mock count_documents
+            collection_mock.count_documents = AsyncMock(return_value=0)
+
+            # Mock insert_one
+            insert_result = MagicMock()
+            insert_result.inserted_id = "mock_id"
+            collection_mock.insert_one = AsyncMock(return_value=insert_result)
+
+            setattr(db, collection_name, collection_mock)
+
         return db
     
     @pytest.fixture
@@ -55,40 +66,40 @@ class TestAnalyticsService:
     async def test_generate_summary_analytics(self, analytics_service, mock_db):
         """Test summary analytics generation."""
         # Mock database responses
-        mock_db.buses.count_documents.side_effect = [50, 45]  # total, active
-        mock_db.routes.count_documents.side_effect = [20, 18]  # total, active
-        
+        mock_db.buses.count_documents = AsyncMock(side_effect=[50, 45])  # total, active
+        mock_db.routes.count_documents = AsyncMock(side_effect=[20, 18])  # total, active
+
         # Mock trips data
         mock_trips = [
             {"status": "COMPLETED", "delay_minutes": 3},
             {"status": "COMPLETED", "delay_minutes": 8},
             {"status": "IN_PROGRESS", "delay_minutes": 2}
         ]
-        mock_db.trips.find.return_value.to_list.return_value = mock_trips
-        
+        mock_db.trips.find.return_value.to_list = AsyncMock(return_value=mock_trips)
+
         # Mock feedback data
         mock_feedback = [
             {"rating": 4.5},
             {"rating": 3.8},
             {"rating": 4.2}
         ]
-        mock_db.feedback.find.return_value.to_list.return_value = mock_feedback
-        
+        mock_db.feedback.find.return_value.to_list = AsyncMock(return_value=mock_feedback)
+
         # Mock other counts
-        mock_db.alerts.count_documents.return_value = 3
-        mock_db.incidents.count_documents.return_value = 1
-        
+        mock_db.alerts.count_documents = AsyncMock(return_value=3)
+        mock_db.incidents.count_documents = AsyncMock(return_value=1)
+
         # Mock payments
         mock_payments = [
             {"amount": 25.50},
             {"amount": 18.75},
             {"amount": 32.00}
         ]
-        mock_db.payments.find.return_value.to_list.return_value = mock_payments
-        
+        mock_db.payments.find.return_value.to_list = AsyncMock(return_value=mock_payments)
+
         # Execute test
         result = await analytics_service.generate_summary_analytics()
-        
+
         # Verify results
         assert result["total_buses"] == 50
         assert result["active_buses"] == 45
@@ -105,8 +116,8 @@ class TestAnalyticsService:
     @pytest.mark.asyncio
     async def test_generate_operational_metrics(self, analytics_service, mock_db):
         """Test operational metrics generation."""
-        start_date = datetime.utcnow() - timedelta(days=7)
-        end_date = datetime.utcnow()
+        start_date = datetime.now(timezone.utc) - timedelta(days=7)
+        end_date = datetime.now(timezone.utc)
         
         # Mock trips data
         mock_trips = [
@@ -115,13 +126,13 @@ class TestAnalyticsService:
             {"delay_minutes": 2, "duration_minutes": 38},
             {"delay_minutes": 8, "duration_minutes": 41}
         ]
-        mock_db.trips.find.return_value.to_list.return_value = mock_trips
-        
+        mock_db.trips.find.return_value.to_list = AsyncMock(return_value=mock_trips)
+
         # Mock bus count
-        mock_db.buses.count_documents.return_value = 10
-        
+        mock_db.buses.count_documents = AsyncMock(return_value=10)
+
         # Mock incidents
-        mock_db.incidents.count_documents.return_value = 2
+        mock_db.incidents.count_documents = AsyncMock(return_value=2)
         
         result = await analytics_service.generate_operational_metrics(start_date, end_date)
         
@@ -136,8 +147,8 @@ class TestAnalyticsService:
     @pytest.mark.asyncio
     async def test_generate_financial_metrics(self, analytics_service, mock_db):
         """Test financial metrics generation."""
-        start_date = datetime.utcnow() - timedelta(days=30)
-        end_date = datetime.utcnow()
+        start_date = datetime.now(timezone.utc) - timedelta(days=30)
+        end_date = datetime.now(timezone.utc)
         
         # Mock payments data
         mock_payments = [
@@ -145,7 +156,7 @@ class TestAnalyticsService:
             {"amount": 150.0},
             {"amount": 75.0}
         ]
-        mock_db.payments.find.return_value.to_list.return_value = mock_payments
+        mock_db.payments.find.return_value.to_list = AsyncMock(return_value=mock_payments)
         
         result = await analytics_service.generate_financial_metrics(start_date, end_date)
         
@@ -162,8 +173,8 @@ class TestAnalyticsService:
     @pytest.mark.asyncio
     async def test_generate_performance_metrics(self, analytics_service, mock_db):
         """Test performance metrics generation."""
-        start_date = datetime.utcnow() - timedelta(days=30)
-        end_date = datetime.utcnow()
+        start_date = datetime.now(timezone.utc) - timedelta(days=30)
+        end_date = datetime.now(timezone.utc)
         
         # Mock drivers data
         mock_drivers = [
@@ -171,8 +182,8 @@ class TestAnalyticsService:
             {"performance_score": 78},
             {"performance_score": 92}
         ]
-        mock_db.users.find.return_value.to_list.return_value = mock_drivers
-        
+        mock_db.users.find.return_value.to_list = AsyncMock(return_value=mock_drivers)
+
         # Mock reallocation requests
         mock_requests = [
             {
@@ -180,22 +191,22 @@ class TestAnalyticsService:
                 "reviewed_at": "2024-01-01T10:15:00Z"
             },
             {
-                "created_at": "2024-01-01T11:00:00Z", 
+                "created_at": "2024-01-01T11:00:00Z",
                 "reviewed_at": "2024-01-01T11:30:00Z"
             }
         ]
-        mock_db.reallocation_requests.find.return_value.to_list.return_value = mock_requests
-        
+        mock_db.reallocation_requests.find.return_value.to_list = AsyncMock(return_value=mock_requests)
+
         # Mock feedback data
         mock_feedback = [
             {"rating": 1, "resolved": True},
             {"rating": 2, "resolved": False}
         ]
-        mock_db.feedback.find.return_value.to_list.return_value = mock_feedback
-        
+        mock_db.feedback.find.return_value.to_list = AsyncMock(return_value=mock_feedback)
+
         # Mock incidents and trips
-        mock_db.incidents.count_documents.return_value = 2
-        mock_db.trips.count_documents.return_value = 100
+        mock_db.incidents.count_documents = AsyncMock(return_value=2)
+        mock_db.trips.count_documents = AsyncMock(return_value=100)
         
         result = await analytics_service.generate_performance_metrics(start_date, end_date)
         
@@ -257,8 +268,8 @@ class TestAnalyticsService:
     @pytest.mark.asyncio
     async def test_empty_operational_metrics(self, analytics_service, mock_db):
         """Test operational metrics with no data."""
-        start_date = datetime.utcnow() - timedelta(days=7)
-        end_date = datetime.utcnow()
+        start_date = datetime.now(timezone.utc) - timedelta(days=7)
+        end_date = datetime.now(timezone.utc)
         
         # Mock empty trips data
         mock_db.trips.find.return_value.to_list.return_value = []
@@ -711,8 +722,8 @@ class TestAnalyticsIntegration:
         assert summary["revenue_today"] == 81.5  # Sum of payments
 
         # Test operational metrics
-        start_date = datetime.utcnow() - timedelta(days=7)
-        end_date = datetime.utcnow()
+        start_date = datetime.now(timezone.utc) - timedelta(days=7)
+        end_date = datetime.now(timezone.utc)
 
         # Mock additional data for operational metrics
         mock_db.buses.count_documents.return_value = 23  # Active buses

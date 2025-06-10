@@ -5,7 +5,7 @@ Tests the actual HTTP endpoints with a running server.
 
 import requests
 import json
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 
 class AnalyticsAPITester:
     """Test analytics API endpoints."""
@@ -79,8 +79,8 @@ class AnalyticsAPITester:
         try:
             params = {
                 "metric": "trip_count",
-                "start_date": (datetime.now() - timedelta(days=7)).isoformat(),
-                "end_date": datetime.now().isoformat(),
+                "start_date": (datetime.now(timezone.utc) - timedelta(days=7)).isoformat(),
+                "end_date": datetime.now(timezone.utc).isoformat(),
                 "granularity": "daily"
             }
             response = requests.get(f"{self.base_url}/api/analytics/time-series", 

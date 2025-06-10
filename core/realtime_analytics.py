@@ -5,7 +5,7 @@ Real-time analytics service for live dashboard updates.
 import asyncio
 import logging
 from typing import Dict, Any, List
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 
 from core.websocket_manager import WebSocketManager
 
@@ -60,7 +60,7 @@ class RealTimeAnalyticsService:
                     message={
                         "type": "live_metrics_update",
                         "data": metrics,
-                        "timestamp": datetime.utcnow().isoformat()
+                        "timestamp": datetime.now(timezone.utc).isoformat()
                     }
                 )
                 
@@ -82,7 +82,7 @@ class RealTimeAnalyticsService:
                         message={
                             "type": "critical_alert",
                             "data": alert,
-                            "timestamp": datetime.utcnow().isoformat()
+                            "timestamp": datetime.now(timezone.utc).isoformat()
                         }
                     )
                   # Check KPI thresholds
@@ -94,7 +94,7 @@ class RealTimeAnalyticsService:
                         message={
                             "type": "kpi_threshold_breach",
                             "data": breach,
-                            "timestamp": datetime.utcnow().isoformat()
+                            "timestamp": datetime.now(timezone.utc).isoformat()
                         }
                     )
                 
@@ -119,7 +119,7 @@ class RealTimeAnalyticsService:
                         message={
                             "type": "performance_anomaly",
                             "data": anomalies,
-                            "timestamp": datetime.utcnow().isoformat()
+                            "timestamp": datetime.now(timezone.utc).isoformat()
                         }
                     )
                 
@@ -131,7 +131,7 @@ class RealTimeAnalyticsService:
     
     async def _get_live_metrics(self) -> Dict[str, Any]:
         """Get current live metrics."""
-        now = datetime.utcnow()
+        now = datetime.now(timezone.utc)
         today = now.replace(hour=0, minute=0, second=0, microsecond=0)
         
         # Active buses
@@ -175,7 +175,7 @@ class RealTimeAnalyticsService:
     
     async def _check_critical_alerts(self) -> List[Dict[str, Any]]:
         """Check for new critical alerts."""        # Get alerts created in the last minute
-        one_minute_ago = datetime.utcnow() - timedelta(minutes=1)
+        one_minute_ago = datetime.now(timezone.utc) - timedelta(minutes=1)
         
         critical_alerts = await self.db.alerts.find({
             "severity": {"$in": ["HIGH", "CRITICAL"]},
@@ -190,7 +190,7 @@ class RealTimeAnalyticsService:
         breaches = []
         
         # Example: Check if delay percentage is too high
-        today = datetime.utcnow().replace(hour=0, minute=0, second=0, microsecond=0)
+        today = datetime.now(timezone.utc).replace(hour=0, minute=0, second=0, microsecond=0)
         trips_today = await self.db.trips.find({
             "created_at": {"$gte": today}
         }).to_list(length=None)
@@ -226,7 +226,7 @@ class RealTimeAnalyticsService:
     async def _get_performance_trends(self) -> Dict[str, Any]:
         """Get performance trends for anomaly detection."""
         # Get data for the last 7 days
-        week_ago = datetime.utcnow() - timedelta(days=7)
+        week_ago = datetime.now(timezone.utc) - timedelta(days=7)
         
         # Daily trip counts
         daily_trips = []
