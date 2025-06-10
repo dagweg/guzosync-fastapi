@@ -36,17 +36,23 @@ async def get_current_user(request: Request, token = Depends(security)):
         logger.info("Token decoded successfully", extra={"payload": payload})
     except jwt.PyJWTError as e:
         logger.warning("JWT validation failed", exc_info=True)
-        raise credentials_exception    # Try to find user by different ID formats
+        raise credentials_exception    # Find user by UUID string in id field
     user = None
     logger.info("Fetching user from database", extra={"user_id": user_id})
 
-    
     try:
-        user = await request.app.state.mongodb.users.find_one({"_id": user_id})
-        logger.debug("Found user by id field")
+        # Primary query: look for user by id field (UUID string)
+        user = await request.app.state.mongodb.users.find_one({"id": user_id})
+        if user:
+            logger.debug("Found user by id field")
+        else:
+            # Fallback: try _id field for backwards compatibility with existing data
+            user = await request.app.state.mongodb.users.find_one({"_id": user_id})
+            if user:
+                logger.debug("Found user by _id field (legacy)")
     except Exception as e:
-        logger.debug(f"Query by id field failed: {e}")
-    
+        logger.debug(f"User query failed: {e}")
+
     if user is None:
         logger.warning("User not found in database", extra={"user_id": user_id})
         raise credentials_exception
@@ -74,13 +80,17 @@ async def get_current_user_websocket(token: str, app_state):
        
         
         # Get user from database
-        user_data = await app_state.mongodb.users.find_one({"_id": user_id})
+        user_data = await app_state.mongodb.users.find_one({"id": user_id})
         if not user_data:
-            logger.error(f"User not found: {user_id}")
-            return None
-        
-        # Convert to User model
-        user = User(**{k: v for k, v in user_data.items() if k != "_id"})
+            # Fallback to _id for backwards compatibility
+            user_data = await app_state.mongodb.users.find_one({"_id": user_id})
+            if not user_data:
+                logger.error(f"User not found: {user_id}")
+                return None
+
+        # Convert to User model using transform_mongo_doc
+        from core.mongo_utils import transform_mongo_doc
+        user = transform_mongo_doc(user_data, User)
         logger.debug(f"WebSocket authentication successful for user: {user.email}")
         return user
         

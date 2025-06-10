@@ -7,9 +7,12 @@ from .base import BaseDBModel
 
 class MessageType(str, Enum):
     TEXT = "TEXT"
-    IMAGE = "IMAGE"
-    FILE = "FILE"
     SYSTEM = "SYSTEM"
+
+
+class ConversationStatus(str, Enum):
+    ACTIVE = "ACTIVE"
+    CLOSED = "CLOSED"
 
 
 class Message(BaseDBModel):
@@ -21,5 +24,8 @@ class Message(BaseDBModel):
 
 
 class Conversation(BaseDBModel):
-    participants: List[str]
+    participants: List[str]  # List of user IDs
+    title: str  # Brief description of the conversation
+    status: ConversationStatus = ConversationStatus.ACTIVE
+    created_by: str  # User ID who initiated the conversation
     last_message_at: Optional[datetime] = None

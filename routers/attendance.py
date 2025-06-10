@@ -4,11 +4,10 @@ from typing import List, Optional, Dict, Any
 from datetime import datetime, time, date, timedelta
 
 from core.dependencies import get_current_user
-from models import User, AttendanceRecord, AttendanceType, AttendanceStatus, DailyAttendance, Location
+from models import User, Attendance, AttendanceStatus, Location
 from schemas.attendance import (
-    CreateAttendanceRecordRequest, AttendanceRecordResponse,
-    MarkDailyAttendanceRequest, BulkAttendanceRequest, DailyAttendanceResponse,
-    AttendanceSummaryResponse, UpdateAttendanceStatusRequest
+    MarkAttendanceRequest, BulkAttendanceRequest, AttendanceResponse,
+    AttendanceSummaryResponse, UpdateAttendanceStatusRequest, AttendanceHeatmapResponse
 )
 
 from core import transform_mongo_doc
@@ -16,57 +15,13 @@ from core.mongo_utils import model_to_mongo_doc
 
 router = APIRouter(prefix="/api/attendance", tags=["attendance"])
 
-@router.post("", response_model=AttendanceRecordResponse, status_code=status.HTTP_201_CREATED)
-async def create_attendance_record(
+@router.post("", response_model=AttendanceResponse, status_code=status.HTTP_201_CREATED)
+async def mark_attendance(
     request: Request,
-    attendance_request: CreateAttendanceRecordRequest, 
-    current_user: User = Depends(get_current_user)
-):    # Create AttendanceRecord model instance
-    attendance_record = AttendanceRecord(
-        user_id=current_user.id,
-        timestamp=datetime.utcnow(),
-        type=AttendanceType(attendance_request.type.value),
-        location=Location(
-            latitude=attendance_request.location.latitude,
-            longitude=attendance_request.location.longitude
-        ) if attendance_request.location else None
-    )
-    
-    # Convert model to MongoDB document
-    attendance_doc = model_to_mongo_doc(attendance_record)
-    result = await request.app.state.mongodb.attendance.insert_one(attendance_doc)
-    created_attendance = await request.app.state.mongodb.attendance.find_one({"_id": result.inserted_id})
-    
-    return transform_mongo_doc(created_attendance, AttendanceRecordResponse)
-
-@router.get("/today", response_model=List[AttendanceRecordResponse])
-async def get_today_attendance(
-    request: Request,
+    attendance_request: MarkAttendanceRequest,
     current_user: User = Depends(get_current_user)
 ):
-    # Get today's date range
-    today = datetime.utcnow().date()
-    start_of_day = datetime.combine(today, time.min)
-    end_of_day = datetime.combine(today, time.max)
-    
-    # Query attendance records for today
-    attendance_records = await request.app.state.mongodb.attendance.find({
-        "user_id": current_user.id,
-        "timestamp": {"$gte": start_of_day, "$lte": end_of_day}
-    }).to_list(length=None)
-    
-    return [transform_mongo_doc(record, AttendanceRecordResponse) for record in attendance_records]
-
-
-# ===== NEW STATUS-BASED ATTENDANCE ENDPOINTS =====
-
-@router.post("/daily", response_model=DailyAttendanceResponse, status_code=status.HTTP_201_CREATED)
-async def mark_daily_attendance(
-    request: Request,
-    attendance_request: MarkDailyAttendanceRequest,
-    current_user: User = Depends(get_current_user)
-):
-    """Mark daily attendance status for a user"""
+    """Mark attendance status for a user"""
 
     # Check if user has permission to mark attendance for others
     if attendance_request.user_id != str(current_user.id):
@@ -77,7 +32,7 @@ async def mark_daily_attendance(
             )
 
     # Check if attendance already exists for this date
-    existing_attendance = await request.app.state.mongodb.daily_attendance.find_one({
+    existing_attendance = await request.app.state.mongodb.attendance.find_one({
         "user_id": attendance_request.user_id,
         "date": attendance_request.date
     })
@@ -88,8 +43,8 @@ async def mark_daily_attendance(
             detail=f"Attendance already marked for {attendance_request.date}"
         )
 
-    # Create daily attendance record
-    daily_attendance = DailyAttendance(
+    # Create attendance record
+    attendance = Attendance(
         user_id=attendance_request.user_id,
         date=attendance_request.date,
         status=AttendanceStatus(attendance_request.status.value),
@@ -105,15 +60,15 @@ async def mark_daily_attendance(
     )
 
     # Convert model to MongoDB document
-    attendance_doc = model_to_mongo_doc(daily_attendance)
-    result = await request.app.state.mongodb.daily_attendance.insert_one(attendance_doc)
-    created_attendance = await request.app.state.mongodb.daily_attendance.find_one({"_id": result.inserted_id})
+    attendance_doc = model_to_mongo_doc(attendance)
+    result = await request.app.state.mongodb.attendance.insert_one(attendance_doc)
+    created_attendance = await request.app.state.mongodb.attendance.find_one({"_id": result.inserted_id})
 
-    return transform_mongo_doc(created_attendance, DailyAttendanceResponse)
+    return transform_mongo_doc(created_attendance, AttendanceResponse)
 
 
-@router.get("/daily", response_model=List[DailyAttendanceResponse])
-async def get_daily_attendance(
+@router.get("", response_model=List[AttendanceResponse])
+async def get_attendance(
     request: Request,
     user_id: Optional[str] = Query(None, description="User ID (admin only)"),
     date_from: Optional[date] = Query(None, description="Start date"),
@@ -121,7 +76,7 @@ async def get_daily_attendance(
     attendance_status: Optional[AttendanceStatus] = Query(None, description="Filter by status"),
     current_user: User = Depends(get_current_user)
 ):
-    """Get daily attendance records"""
+    """Get attendance records"""
 
     # Build query
     query: Dict[str, Any] = {}
@@ -151,22 +106,95 @@ async def get_daily_attendance(
         query["status"] = attendance_status
 
     # Get records
-    attendance_records = await request.app.state.mongodb.daily_attendance.find(query).sort("date", -1).to_list(length=None)
+    attendance_records = await request.app.state.mongodb.attendance.find(query).sort("date", -1).to_list(length=None)
 
-    return [transform_mongo_doc(record, DailyAttendanceResponse) for record in attendance_records]
+    return [transform_mongo_doc(record, AttendanceResponse) for record in attendance_records]
 
 
-@router.put("/daily/{attendance_id}", response_model=DailyAttendanceResponse)
-async def update_daily_attendance(
+@router.get("/heatmap", response_model=AttendanceHeatmapResponse)
+async def get_attendance_heatmap(
+    request: Request,
+    user_id: Optional[str] = Query(None, description="User ID (admin only)"),
+    date_from: Optional[date] = Query(None, description="Start date"),
+    date_to: Optional[date] = Query(None, description="End date"),
+    current_user: User = Depends(get_current_user)
+):
+    """Get attendance heatmap data for visualization"""
+
+    try:
+        # Determine target user
+        target_user_id = user_id if user_id else str(current_user.id)
+
+        # Check permissions
+        if user_id and user_id != str(current_user.id):
+            if current_user.role not in ["CONTROL_ADMIN", "QUEUE_REGULATOR"]:
+                raise HTTPException(
+                    status_code=status.HTTP_403_FORBIDDEN,
+                    detail="You can only view your own attendance heatmap"
+                )
+
+        # Set default date range (last 365 days if not specified)
+        if not date_from:
+            date_from = date.today() - timedelta(days=365)
+        if not date_to:
+            date_to = date.today()
+
+        # Build query - MongoDB stores dates as datetime objects, so we need to convert
+        # date objects to datetime for proper comparison
+        from datetime import datetime as dt
+        query = {
+            "user_id": target_user_id,
+            "date": {
+                "$gte": dt.combine(date_from, time.min),
+                "$lte": dt.combine(date_to, time.max)
+            }
+        }
+
+        # Get attendance records
+        attendance_records = await request.app.state.mongodb.attendance.find(query).to_list(length=None)
+
+        # Create date-to-status mapping
+        attendance_data: Dict[str, str] = {}
+        for record in attendance_records:
+            # Handle different date formats that might be stored
+            record_date = record["date"]
+            if hasattr(record_date, 'isoformat'):
+                date_str = record_date.isoformat()
+            elif isinstance(record_date, str):
+                date_str = record_date
+            else:
+                # Convert to string if it's some other format
+                date_str = str(record_date)
+            attendance_data[date_str] = record["status"]
+
+        return AttendanceHeatmapResponse(
+            user_id=target_user_id,
+            date_from=date_from,
+            date_to=date_to,
+            attendance_data=attendance_data
+        )
+    except Exception as e:
+        # Log the error for debugging
+        print(f"Error in attendance heatmap: {e}")
+        import traceback
+        traceback.print_exc()
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Internal server error: {str(e)}"
+        )
+
+
+@router.put("/{attendance_id}", response_model=AttendanceResponse)
+async def update_attendance(
     request: Request,
     attendance_id: str,
     update_request: UpdateAttendanceStatusRequest,
     current_user: User = Depends(get_current_user)
 ):
-    """Update daily attendance status"""
+    """Update attendance status"""
 
     # Find existing attendance record
-    existing_attendance = await request.app.state.mongodb.daily_attendance.find_one({"_id": attendance_id})
+    existing_attendance = await request.app.state.mongodb.attendance.find_one({"_id": attendance_id})
     if not existing_attendance:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
@@ -191,17 +219,17 @@ async def update_daily_attendance(
     if update_request.notes:
         update_data["notes"] = update_request.notes
 
-    await request.app.state.mongodb.daily_attendance.update_one(
+    await request.app.state.mongodb.attendance.update_one(
         {"_id": attendance_id},
         {"$set": update_data}
     )
 
     # Return updated record
-    updated_attendance = await request.app.state.mongodb.daily_attendance.find_one({"_id": attendance_id})
-    return transform_mongo_doc(updated_attendance, DailyAttendanceResponse)
+    updated_attendance = await request.app.state.mongodb.attendance.find_one({"_id": attendance_id})
+    return transform_mongo_doc(updated_attendance, AttendanceResponse)
 
 
-@router.post("/bulk", response_model=List[DailyAttendanceResponse])
+@router.post("/bulk", response_model=List[AttendanceResponse])
 async def mark_bulk_attendance(
     request: Request,
     bulk_request: BulkAttendanceRequest,
@@ -222,7 +250,7 @@ async def mark_bulk_attendance(
     for attendance_req in bulk_request.attendance_records:
         try:
             # Check if attendance already exists
-            existing = await request.app.state.mongodb.daily_attendance.find_one({
+            existing = await request.app.state.mongodb.attendance.find_one({
                 "user_id": attendance_req.user_id,
                 "date": bulk_request.date
             })
@@ -232,7 +260,7 @@ async def mark_bulk_attendance(
                 continue
 
             # Create attendance record
-            daily_attendance = DailyAttendance(
+            attendance = Attendance(
                 user_id=attendance_req.user_id,
                 date=bulk_request.date,
                 status=AttendanceStatus(attendance_req.status.value),
@@ -248,10 +276,10 @@ async def mark_bulk_attendance(
             )
 
             # Insert record
-            attendance_doc = model_to_mongo_doc(daily_attendance)
-            result = await request.app.state.mongodb.daily_attendance.insert_one(attendance_doc)
-            created_attendance = await request.app.state.mongodb.daily_attendance.find_one({"_id": result.inserted_id})
-            created_records.append(transform_mongo_doc(created_attendance, DailyAttendanceResponse))
+            attendance_doc = model_to_mongo_doc(attendance)
+            result = await request.app.state.mongodb.attendance.insert_one(attendance_doc)
+            created_attendance = await request.app.state.mongodb.attendance.find_one({"_id": result.inserted_id})
+            created_records.append(transform_mongo_doc(created_attendance, AttendanceResponse))
 
         except Exception as e:
             errors.append(f"Error creating attendance for user {attendance_req.user_id}: {str(e)}")
@@ -299,7 +327,7 @@ async def get_attendance_summary(
     }
 
     # Get attendance records
-    attendance_records = await request.app.state.mongodb.daily_attendance.find(query).sort("date", -1).to_list(length=None)
+    attendance_records = await request.app.state.mongodb.attendance.find(query).sort("date", -1).to_list(length=None)
 
     # Calculate summary statistics
     total_days = len(attendance_records)
@@ -310,7 +338,7 @@ async def get_attendance_summary(
     attendance_percentage = (present_days + late_days) / total_days * 100 if total_days > 0 else 0
 
     # Transform records
-    transformed_records = [transform_mongo_doc(record, DailyAttendanceResponse) for record in attendance_records]
+    transformed_records = [transform_mongo_doc(record, AttendanceResponse) for record in attendance_records]
 
     return AttendanceSummaryResponse(
         user_id=target_user_id,
@@ -323,13 +351,13 @@ async def get_attendance_summary(
     )
 
 
-@router.delete("/daily/{attendance_id}")
-async def delete_daily_attendance(
+@router.delete("/{attendance_id}")
+async def delete_attendance(
     request: Request,
     attendance_id: str,
     current_user: User = Depends(get_current_user)
 ):
-    """Delete daily attendance record (admin only)"""
+    """Delete attendance record (admin only)"""
 
     # Check admin permissions
     if current_user.role not in ["CONTROL_ADMIN"]:
@@ -339,7 +367,7 @@ async def delete_daily_attendance(
         )
 
     # Find and delete the record
-    result = await request.app.state.mongodb.daily_attendance.delete_one({"_id": attendance_id})
+    result = await request.app.state.mongodb.attendance.delete_one({"_id": attendance_id})
 
     if result.deleted_count == 0:
         raise HTTPException(
@@ -349,91 +377,3 @@ async def delete_daily_attendance(
 
     return {"message": "Attendance record deleted successfully"}
 
-
-# ===== UTILITY ENDPOINTS =====
-
-@router.post("/auto-mark")
-async def auto_mark_attendance_from_checkin(
-    request: Request,
-    target_date: Optional[date] = Query(None, description="Date to process (default: today)"),
-    current_user: User = Depends(get_current_user)
-):
-    """Automatically mark attendance based on check-in/check-out records"""
-
-    # Check admin permissions
-    if current_user.role not in ["CONTROL_ADMIN", "QUEUE_REGULATOR"]:
-        raise HTTPException(
-            status_code=status.HTTP_403_FORBIDDEN,
-            detail="Only administrators can auto-mark attendance"
-        )
-
-    process_date = target_date if target_date else date.today()
-
-    # Get all check-in records for the date
-    start_of_day = datetime.combine(process_date, time.min)
-    end_of_day = datetime.combine(process_date, time.max)
-
-    checkin_records = await request.app.state.mongodb.attendance.find({
-        "type": "CHECK_IN",
-        "timestamp": {"$gte": start_of_day, "$lte": end_of_day}
-    }).to_list(length=None)
-
-    # Define late threshold (e.g., 9:00 AM)
-    late_threshold = datetime.combine(process_date, time(9, 0))
-
-    processed_users = []
-    errors = []
-
-    for checkin in checkin_records:
-        try:
-            user_id = checkin["user_id"]
-            checkin_time = checkin["timestamp"]
-
-            # Check if daily attendance already exists
-            existing = await request.app.state.mongodb.daily_attendance.find_one({
-                "user_id": user_id,
-                "date": process_date
-            })
-
-            if existing:
-                continue  # Skip if already marked
-
-            # Determine status based on check-in time
-            attendance_status = AttendanceStatus.LATE if checkin_time > late_threshold else AttendanceStatus.PRESENT
-
-            # Look for corresponding check-out
-            checkout_record = await request.app.state.mongodb.attendance.find_one({
-                "user_id": user_id,
-                "type": "CHECK_OUT",
-                "timestamp": {"$gte": checkin_time, "$lte": end_of_day}
-            })
-
-            # Create daily attendance record
-            daily_attendance = DailyAttendance(
-                user_id=user_id,
-                date=process_date,
-                status=attendance_status,
-                check_in_time=checkin_time,
-                check_out_time=checkout_record["timestamp"] if checkout_record else None,
-                location=Location(
-                    latitude=checkin["location"]["latitude"],
-                    longitude=checkin["location"]["longitude"]
-                ) if checkin.get("location") else None,
-                notes=f"Auto-marked from check-in record",
-                marked_by=str(current_user.id),
-                marked_at=datetime.utcnow()
-            )
-
-            # Insert record
-            attendance_doc = model_to_mongo_doc(daily_attendance)
-            await request.app.state.mongodb.daily_attendance.insert_one(attendance_doc)
-            processed_users.append(user_id)
-
-        except Exception as e:
-            errors.append(f"Error processing user {checkin.get('user_id', 'unknown')}: {str(e)}")
-
-    return {
-        "message": f"Auto-marked attendance for {len(processed_users)} users on {process_date}",
-        "processed_users": processed_users,
-        "errors": errors if errors else None
-    }

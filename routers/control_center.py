@@ -28,6 +28,58 @@ logger = get_logger(__name__)
 
 router = APIRouter(prefix="/api/control-center", tags=["control-center"])
 
+# Helper functions for populating driver information
+def build_bus_aggregation_pipeline(match_query: Optional[dict] = None) -> List[dict]:
+    """Build aggregation pipeline to populate driver information"""
+    pipeline = []
+    
+    # Match stage
+    if match_query:
+        pipeline.append({"$match": match_query})
+    
+    # Lookup stage for driver information
+    pipeline.extend([
+        {
+            "$lookup": {
+                "from": "users",
+                "localField": "assigned_driver_id",
+                "foreignField": "_id",
+                "as": "assigned_driver_data"
+            }
+        },
+        {
+            "$addFields": {
+                "assigned_driver": {
+                    "$cond": {
+                        "if": {"$gt": [{"$size": "$assigned_driver_data"}, 0]},
+                        "then": {"$arrayElemAt": ["$assigned_driver_data", 0]},
+                        "else": None
+                    }
+                }
+            }
+        },
+        {
+            "$project": {
+                "assigned_driver_data": 0  # Remove the temporary field
+            }
+        }
+    ])    
+    return pipeline
+
+def transform_bus_with_driver(bus_doc: dict) -> BusResponse:
+    """Transform bus document with populated driver into BusResponse format"""
+    # Transform the main bus document
+    bus_response = transform_mongo_doc(bus_doc, BusResponse)
+    
+    # Handle the populated driver
+    if bus_doc.get("assigned_driver"):
+        driver_doc = bus_doc["assigned_driver"]
+        bus_response.assigned_driver = transform_mongo_doc(driver_doc, UserResponse)
+    else:
+        bus_response.assigned_driver = None
+    
+    return bus_response
+
 # Personnel Management
 @router.post("/personnel/register", response_model=UserResponse, status_code=status.HTTP_201_CREATED)
 async def register_personnel(
@@ -596,9 +648,19 @@ async def get_control_center_buses(
             detail="Only control center admins can view all buses"
         )
     
-    buses = await request.app.state.mongodb.buses.find({}).skip(skip).limit(limit).to_list(length=limit)
+    # Build aggregation pipeline with populated driver information
+    pipeline = build_bus_aggregation_pipeline()
     
-    return [transform_mongo_doc(bus, BusResponse) for bus in buses]
+    # Add pagination stages
+    pipeline.extend([
+        {"$skip": skip},
+        {"$limit": limit}
+    ])
+    
+    # Execute aggregation
+    buses = await request.app.state.mongodb.buses.aggregate(pipeline).to_list(length=None)
+    
+    return [transform_bus_with_driver(bus) for bus in buses]
 
 @router.get("/buses/{bus_id}", response_model=BusResponse)
 async def get_control_center_bus(
@@ -613,14 +675,19 @@ async def get_control_center_bus(
             detail="Only control center admins can view bus details"
         )
     
-    bus = await request.app.state.mongodb.buses.find_one({"_id": bus_id})
-    if not bus:
+    # Build aggregation pipeline for single bus
+    pipeline = build_bus_aggregation_pipeline({"_id": bus_id})
+    
+    # Execute aggregation
+    buses = await request.app.state.mongodb.buses.aggregate(pipeline).to_list(length=1)
+    
+    if not buses:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
             detail="Bus not found"
         )
     
-    return transform_mongo_doc(bus, BusResponse)
+    return transform_bus_with_driver(buses[0])
 
 @router.put("/buses/{bus_id}", response_model=BusResponse)
 async def update_control_center_bus(
@@ -650,8 +717,17 @@ async def update_control_center_bus(
             detail="Bus not found"
         )
     
-    updated_bus = await request.app.state.mongodb.buses.find_one({"_id": bus_id})
-    return transform_mongo_doc(updated_bus, BusResponse)
+    # Get updated bus with populated driver information
+    pipeline = build_bus_aggregation_pipeline({"_id": bus_id})
+    buses = await request.app.state.mongodb.buses.aggregate(pipeline).to_list(length=1)
+    
+    if not buses:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Bus not found"
+        )
+    
+    return transform_bus_with_driver(buses[0])
 
 @router.put("/buses/{bus_id}/assign-route/{route_id}")
 async def assign_bus_to_route(

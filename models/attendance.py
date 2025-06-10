@@ -6,26 +6,14 @@ from .base import BaseDBModel
 from .transport import Location
 
 
-class AttendanceType(str, Enum):
-    CHECK_IN = "CHECK_IN"
-    CHECK_OUT = "CHECK_OUT"
-
-
 class AttendanceStatus(str, Enum):
     PRESENT = "PRESENT"
     ABSENT = "ABSENT"
     LATE = "LATE"
 
 
-class AttendanceRecord(BaseDBModel):
-    user_id: str
-    timestamp: datetime
-    type: AttendanceType
-    location: Optional[Location] = None
-
-
-class DailyAttendance(BaseDBModel):
-    """Daily attendance record with status-based tracking"""
+class Attendance(BaseDBModel):
+    """Unified attendance model for daily status tracking"""
     user_id: str
     date: date
     status: AttendanceStatus

@@ -486,7 +486,7 @@ class TestAnalyticsAPI:
     def mock_user(self):
         """Mock authenticated user."""
         user = User(
-            _id="user123",
+            id="user123",
             first_name="Admin",
             last_name="User",
             email="admin@test.com",
@@ -638,7 +638,7 @@ class TestAnalyticsAPI:
         """Test that only control center staff can access analytics."""
         # Mock a regular user (not control center staff)
         regular_user = User(
-            _id="user456",
+            id="user456",
             first_name="Regular",
             last_name="User",
             email="user@test.com",

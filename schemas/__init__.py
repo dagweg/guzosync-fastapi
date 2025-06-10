@@ -24,9 +24,8 @@ from .feedback import (
     ReportIncidentRequest, UpdateIncidentRequest, IncidentResponse
 )
 from .attendance import (
-    AttendanceType, AttendanceStatus, CreateAttendanceRecordRequest, AttendanceRecordResponse,
-    MarkDailyAttendanceRequest, BulkAttendanceRequest, DailyAttendanceResponse,
-    AttendanceSummaryResponse, UpdateAttendanceStatusRequest
+    AttendanceStatus, MarkAttendanceRequest, BulkAttendanceRequest, AttendanceResponse,
+    AttendanceSummaryResponse, UpdateAttendanceStatusRequest, AttendanceHeatmapResponse
 )
 from .conversation import MessageResponse, ConversationResponse
 from .payment import (

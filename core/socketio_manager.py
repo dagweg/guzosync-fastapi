@@ -1,12 +1,13 @@
 """
 Socket.IO connection manager for real-time features
 """
-from typing import Dict, List, Set, Optional
+from typing import Dict, List, Set, Optional, Any, Union
 import socketio
 from core.logger import get_logger
 import json
 from uuid import UUID
 from datetime import datetime
+import asyncio
 
 logger = get_logger(__name__)
 
@@ -14,9 +15,9 @@ logger = get_logger(__name__)
 class SocketIOManager:
     """Manages Socket.IO connections for real-time features"""
     
-    def __init__(self):
+    def __init__(self) -> None:
         # Create Socket.IO server instance
-        self.sio = socketio.AsyncServer(
+        self.sio: socketio.AsyncServer = socketio.AsyncServer(
             cors_allowed_origins="*",
             logger=False,
             engineio_logger=False
@@ -29,14 +30,21 @@ class SocketIOManager:
         # Store room subscriptions
         self.rooms: Dict[str, Set[str]] = {}  # room_id -> set of user_ids
         
+        # Store app state for authentication
+        self.app_state: Optional[Any] = None
+        
         # Register event handlers
         self._register_handlers()
         
-    def _register_handlers(self):
+    def set_app_state(self, app_state: Any) -> None:
+        """Set the FastAPI app state for authentication"""
+        self.app_state = app_state
+        
+    def _register_handlers(self) -> None:
         """Register Socket.IO event handlers"""
         
         @self.sio.event
-        async def connect(sid, environ, auth):
+        async def connect(sid: str, environ: Dict[str, Any], auth: Optional[Dict[str, Any]] = None) -> bool:
             """Handle client connection"""
             logger.info(f"Socket.IO client {sid} attempting to connect")
             
@@ -45,7 +53,7 @@ class SocketIOManager:
             return True
             
         @self.sio.event
-        async def disconnect(sid):
+        async def disconnect(sid: str) -> None:
             """Handle client disconnection"""
             if sid in self.user_sessions:
                 user_id = self.user_sessions[sid]
@@ -55,7 +63,7 @@ class SocketIOManager:
                 logger.info(f"Unknown client {sid} disconnected")
                 
         @self.sio.event
-        async def authenticate(sid, data):
+        async def authenticate(sid: str, data: Dict[str, Any]) -> None:
             """Handle user authentication"""
             try:
                 token = data.get('token')
@@ -66,14 +74,13 @@ class SocketIOManager:
                 # Import here to avoid circular imports
                 from core.dependencies import get_current_user_websocket
 
-                # We need app_state for authentication, get it from the Socket.IO server
-                app_state = getattr(self.sio, 'app_state', None)
-                if not app_state:
+                # Check if app state is available
+                if not self.app_state:
                     await self.sio.emit('auth_error', {'message': 'Server not ready'}, room=sid)
                     return
 
                 # Verify token and get user
-                user = await get_current_user_websocket(token, app_state)
+                user = await get_current_user_websocket(token, self.app_state)
                 if not user:
                     await self.sio.emit('auth_error', {'message': 'Invalid token'}, room=sid)
                     return
@@ -94,7 +101,7 @@ class SocketIOManager:
                 await self.sio.emit('auth_error', {'message': 'Authentication failed'}, room=sid)
                 
         @self.sio.event
-        async def join_room(sid, data):
+        async def join_room(sid: str, data: Dict[str, Any]) -> None:
             """Handle room join requests"""
             try:
                 if sid not in self.user_sessions:
@@ -119,7 +126,7 @@ class SocketIOManager:
                 await self.sio.emit('error', {'message': 'Failed to join room'}, room=sid)
                 
         @self.sio.event
-        async def leave_room(sid, data):
+        async def leave_room(sid: str, data: Dict[str, Any]) -> None:
             """Handle room leave requests"""
             try:
                 if sid not in self.user_sessions:
@@ -144,13 +151,13 @@ class SocketIOManager:
                 await self.sio.emit('error', {'message': 'Failed to leave room'}, room=sid)
                 
         @self.sio.event
-        async def ping(sid, data):
+        async def ping(sid: str, data: Dict[str, Any]) -> None:
             """Handle ping requests for keepalive"""
             await self.sio.emit('pong', {
                 'timestamp': data.get('timestamp', datetime.utcnow().isoformat())
             }, room=sid)
     
-    async def connect_user(self, session_id: str, user_id: str):
+    async def connect_user(self, session_id: str, user_id: str) -> None:
         """Connect a user to Socket.IO"""
         # Remove any existing connection for this user
         if user_id in self.user_connections:
@@ -164,7 +171,7 @@ class SocketIOManager:
         
         logger.info(f"User {user_id} connected to Socket.IO with session {session_id}")
         
-    async def disconnect_user(self, user_id: str):
+    async def disconnect_user(self, user_id: str) -> None:
         """Disconnect a user from Socket.IO"""
         if user_id in self.user_connections:
             session_id = self.user_connections[user_id]
@@ -178,13 +185,16 @@ class SocketIOManager:
             for room_id in list(self.rooms.keys()):
                 if user_id in self.rooms[room_id]:
                     self.rooms[room_id].remove(user_id)
-                    await self.sio.leave_room(session_id, room_id)
+                    try:
+                        await self.sio.leave_room(session_id, room_id)
+                    except Exception as e:
+                        logger.warning(f"Error leaving room {room_id} for session {session_id}: {e}")
                     if not self.rooms[room_id]:  # Remove empty rooms
                         del self.rooms[room_id]
             
             logger.info(f"User {user_id} disconnected from Socket.IO")
     
-    async def join_room_user(self, user_id: str, room_id: str):
+    async def join_room_user(self, user_id: str, room_id: str) -> bool:
         """Add user to a room for group communications"""
         if user_id not in self.user_connections:
             logger.warning(f"User {user_id} not connected, cannot join room {room_id}")
@@ -192,37 +202,45 @@ class SocketIOManager:
             
         session_id = self.user_connections[user_id]
         
-        # Add to Socket.IO room
-        await self.sio.enter_room(session_id, room_id)
-        
-        # Track in our room management
-        if room_id not in self.rooms:
-            self.rooms[room_id] = set()
-        self.rooms[room_id].add(user_id)
-        
-        logger.info(f"User {user_id} joined room {room_id}")
-        return True
+        try:
+            # Add to Socket.IO room
+            await self.sio.enter_room(session_id, room_id)
+            
+            # Track in our room management
+            if room_id not in self.rooms:
+                self.rooms[room_id] = set()
+            self.rooms[room_id].add(user_id)
+            
+            logger.info(f"User {user_id} joined room {room_id}")
+            return True
+        except Exception as e:
+            logger.error(f"Error joining room {room_id} for user {user_id}: {e}")
+            return False
     
-    async def leave_room_user(self, user_id: str, room_id: str):
+    async def leave_room_user(self, user_id: str, room_id: str) -> bool:
         """Remove user from a room"""
         if user_id not in self.user_connections:
             return False
             
         session_id = self.user_connections[user_id]
         
-        # Remove from Socket.IO room
-        await self.sio.leave_room(session_id, room_id)
-        
-        # Remove from our tracking
-        if room_id in self.rooms and user_id in self.rooms[room_id]:
-            self.rooms[room_id].remove(user_id)
-            if not self.rooms[room_id]:  # Remove empty rooms
-                del self.rooms[room_id]
+        try:
+            # Remove from Socket.IO room
+            await self.sio.leave_room(session_id, room_id)
             
-        logger.info(f"User {user_id} left room {room_id}")
-        return True
+            # Remove from our tracking
+            if room_id in self.rooms and user_id in self.rooms[room_id]:
+                self.rooms[room_id].remove(user_id)
+                if not self.rooms[room_id]:  # Remove empty rooms
+                    del self.rooms[room_id]
+                
+            logger.info(f"User {user_id} left room {room_id}")
+            return True
+        except Exception as e:
+            logger.error(f"Error leaving room {room_id} for user {user_id}: {e}")
+            return False
 
-    async def send_personal_message(self, user_id: str, event: str, data: dict):
+    async def send_personal_message(self, user_id: str, event: str, data: Dict[str, Any]) -> bool:
         """Send message to a specific user"""
         if user_id not in self.user_connections:
             logger.warning(f"User {user_id} not connected, cannot send message")
@@ -240,7 +258,7 @@ class SocketIOManager:
             await self.disconnect_user(user_id)
             return False
 
-    async def send_room_message(self, room_id: str, event: str, data: dict, exclude_user: str = ""):
+    async def send_room_message(self, room_id: str, event: str, data: Dict[str, Any], exclude_user: str = "") -> bool:
         """Send message to all users in a room"""
         if room_id not in self.rooms:
             logger.warning(f"Room {room_id} does not exist")
@@ -258,7 +276,7 @@ class SocketIOManager:
         logger.debug(f"Sent {event} to {success_count}/{len(users_to_notify)} users in room {room_id}")
         return success_count > 0
 
-    async def broadcast_message(self, event: str, data: dict):
+    async def broadcast_message(self, event: str, data: Dict[str, Any]) -> bool:
         """Send message to all connected users"""
         try:
             await self.sio.emit(event, data)
@@ -268,7 +286,7 @@ class SocketIOManager:
             logger.error(f"Error broadcasting message: {e}")
             return False
 
-    async def broadcast_to_room(self, room_id: str, event: str, data: dict, exclude_user: str = ""):
+    async def broadcast_to_room(self, room_id: str, event: str, data: Dict[str, Any], exclude_user: str = "") -> bool:
         """Alias for send_room_message to maintain compatibility"""
         return await self.send_room_message(room_id, event, data, exclude_user)
 

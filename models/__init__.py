@@ -6,7 +6,7 @@ from .notifications import Notification, NotificationType, NotificationSettings,
 from .feedback import Feedback, Incident, IncidentSeverity
 from .payment import Payment, PaymentStatus, PaymentMethod, Ticket, TicketStatus, TicketType, PaymentMethodConfig
 from .approval import ApprovalRequest, ApprovalStatus
-from .attendance import AttendanceRecord, AttendanceType, AttendanceStatus, DailyAttendance
+from .attendance import Attendance, AttendanceStatus
 from .conversation import Message, MessageType, Conversation
 from .regulators import (
     ReallocationRequest, ReallocationReason, ReallocationStatus,
@@ -22,7 +22,7 @@ __all__ = [
     "Feedback", "Incident", "IncidentSeverity",
     "Payment", "PaymentStatus", "PaymentMethod", "Ticket", "TicketStatus", "TicketType", "PaymentMethodConfig",
     "ApprovalRequest", "ApprovalStatus",
-    "AttendanceRecord", "AttendanceType", "AttendanceStatus", "DailyAttendance",
+    "Attendance", "AttendanceStatus",
     "Message", "MessageType", "Conversation",
     "ReallocationRequest", "ReallocationReason", "ReallocationStatus",
     "OvercrowdingReport", "OvercrowdingSeverity"

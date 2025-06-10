@@ -4,6 +4,7 @@ from pydantic import BaseModel
 from enum import Enum
 from datetime import datetime
 from .base import DateTimeModelMixin, Location
+from .user import UserResponse
 
 class BusType(str, Enum):
     STANDARD = "STANDARD"
@@ -55,6 +56,7 @@ class BusResponse(DateTimeModelMixin):
     current_address: Optional[str] = None
     assigned_route_id: Optional[str] = None
     assigned_driver_id: Optional[str] = None
+    assigned_driver: Optional[UserResponse] = None  # Populated driver information
     bus_status: BusStatus
     manufacture_year: Optional[int] = None
     bus_model: Optional[str] = None

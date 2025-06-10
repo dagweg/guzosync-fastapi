@@ -1,14 +1,9 @@
-from typing import Optional, List
+from typing import Optional, List, Dict
 from pydantic import BaseModel, Field
 
 from datetime import datetime, date
 from enum import Enum
 from .base import DateTimeModelMixin, Location
-
-
-class AttendanceType(str, Enum):
-    CHECK_IN = "CHECK_IN"
-    CHECK_OUT = "CHECK_OUT"
 
 
 class AttendanceStatus(str, Enum):
@@ -17,21 +12,8 @@ class AttendanceStatus(str, Enum):
     LATE = "LATE"
 
 
-class CreateAttendanceRecordRequest(BaseModel):
-    type: AttendanceType
-    location: Optional[Location] = None
-
-
-class AttendanceRecordResponse(BaseModel):
-    id: str
-    user_id: str
-    timestamp: datetime
-    type: AttendanceType
-    location: Optional[Location] = None
-
-
-class MarkDailyAttendanceRequest(BaseModel):
-    """Request to mark daily attendance status"""
+class MarkAttendanceRequest(BaseModel):
+    """Request to mark attendance status"""
     user_id: str
     date: date
     status: AttendanceStatus
@@ -44,11 +26,11 @@ class MarkDailyAttendanceRequest(BaseModel):
 class BulkAttendanceRequest(BaseModel):
     """Request to mark attendance for multiple users"""
     date: date
-    attendance_records: List[MarkDailyAttendanceRequest]
+    attendance_records: List[MarkAttendanceRequest]
 
 
-class DailyAttendanceResponse(BaseModel):
-    """Response for daily attendance record"""
+class AttendanceResponse(BaseModel):
+    """Response for attendance record"""
     id: str
     user_id: str
     date: date
@@ -69,10 +51,18 @@ class AttendanceSummaryResponse(BaseModel):
     absent_days: int
     late_days: int
     attendance_percentage: float
-    records: List[DailyAttendanceResponse]
+    records: List[AttendanceResponse]
 
 
 class UpdateAttendanceStatusRequest(BaseModel):
     """Request to update attendance status"""
     status: AttendanceStatus
     notes: Optional[str] = None
+
+
+class AttendanceHeatmapResponse(BaseModel):
+    """Response for attendance heatmap data"""
+    user_id: str
+    date_from: date
+    date_to: date
+    attendance_data: Dict[str, str]  # date string -> status string mapping

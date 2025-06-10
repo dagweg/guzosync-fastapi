@@ -5,6 +5,7 @@ import socketio
 import googlemaps
 from dotenv import load_dotenv
 import os
+import asyncio
 from contextlib import asynccontextmanager
 from bson import UuidRepresentation  # Added import for UuidRepresentation
 
@@ -45,16 +46,27 @@ async def lifespan(app: FastAPI):
 
         logger.info("Connecting to MongoDB...")
 
-        # Modified: Added uuidRepresentation to AsyncIOMotorClient
+        # Modified: Added connection timeout and SSL configuration for Atlas
         app.state.mongodb_client = AsyncIOMotorClient(
             mongodb_url,
-            uuidRepresentation="unspecified"
+            uuidRepresentation="unspecified",
+            serverSelectionTimeoutMS=5000,  # 5 second timeout
+            connectTimeoutMS=5000,          # 5 second connection timeout
+            socketTimeoutMS=5000,           # 5 second socket timeout
+            maxPoolSize=10,                 # Limit connection pool
+            retryWrites=True
         )
-        app.state.mongodb = app.state.mongodb_client[database_name]       
-        await app.state.mongodb.command('ping')
-        logger.info("Successfully connected to MongoDB")
+        app.state.mongodb = app.state.mongodb_client[database_name]
         
-        # Initialize analytics services
+        # Test connection with timeout
+        try:
+            await asyncio.wait_for(app.state.mongodb.command('ping'), timeout=10.0)
+            logger.info("Successfully connected to MongoDB")
+        except asyncio.TimeoutError:
+            logger.error("MongoDB ping timeout - continuing without database verification")
+        except Exception as e:
+            logger.error(f"MongoDB ping failed: {e} - continuing without database verification")
+          # Initialize analytics services
         logger.info("Initializing analytics services...")
         from core.realtime_analytics import RealTimeAnalyticsService
         from core.scheduled_analytics import ScheduledAnalyticsService
@@ -64,24 +76,28 @@ async def lifespan(app: FastAPI):
         from core.socketio_manager import socketio_manager
 
         # Store app state in Socket.IO manager for authentication
-        socketio_manager.sio.app_state = app.state
+        socketio_manager.set_app_state(app.state)
 
         # Initialize real-time analytics service with Socket.IO
-        app.state.realtime_analytics = RealTimeAnalyticsService(
-            mongodb_client=app.state.mongodb,
-            websocket_manager=socketio_manager  # Use Socket.IO manager instead
-        )
-        await app.state.realtime_analytics.start()
-        logger.info("Real-time analytics service started")
+        try:
+            app.state.realtime_analytics = RealTimeAnalyticsService(
+                mongodb_client=app.state.mongodb,
+                websocket_manager=socketio_manager  # Use Socket.IO manager instead
+            )
+            await app.state.realtime_analytics.start()
+            logger.info("Real-time analytics service started")
+        except Exception as e:
+            logger.error(f"Failed to start real-time analytics service: {e}")
         
         # Initialize scheduled analytics service
-        app.state.scheduled_analytics = ScheduledAnalyticsService(
-            mongodb_client=app.state.mongodb
-        )
-        await app.state.scheduled_analytics.start()
-        logger.info("Scheduled analytics service started")
-
-        # Check email configuration
+        try:
+            app.state.scheduled_analytics = ScheduledAnalyticsService(
+                mongodb_client=app.state.mongodb
+            )
+            await app.state.scheduled_analytics.start()
+            logger.info("Scheduled analytics service started")
+        except Exception as e:
+            logger.error(f"Failed to start scheduled analytics service: {e}")        # Check email configuration
         from core.email_service import EmailConfig
         email_config = EmailConfig()
         if email_config.is_configured():
@@ -91,8 +107,24 @@ async def lifespan(app: FastAPI):
             logger.warning("   Add SMTP settings to .env file to enable email sending")
 
     except Exception as e:
-        logger.error("Error connecting to MongoDB", exc_info=True)
-        raise
+        logger.error("Error during startup", exc_info=True)
+        logger.warning("⚠️  Starting server in degraded mode without full database functionality")
+        # Set minimal app state for Socket.IO manager
+        try:
+            from core.socketio_manager import socketio_manager
+            socketio_manager.set_app_state(app.state)
+            logger.info("Socket.IO manager initialized in degraded mode")
+        except Exception as socket_error:
+            logger.error(f"Failed to initialize Socket.IO in degraded mode: {socket_error}")
+        # Don't raise - continue with degraded functionality
+        # Set minimal app state for Socket.IO manager
+        try:
+            from core.socketio_manager import socketio_manager
+            socketio_manager.set_app_state(app.state)
+            logger.info("Socket.IO manager initialized in degraded mode")
+        except Exception as socket_error:
+            logger.error(f"Failed to initialize Socket.IO in degraded mode: {socket_error}")
+        # Don't raise - continue with degraded functionality
 
     yield
 
@@ -150,7 +182,18 @@ app.include_router(realtime_demo.router)
 
 # Mount Socket.IO server
 from core.socketio_manager import socketio_manager
-socket_app = socketio.ASGIApp(socketio_manager.sio, app)
+
+# Create a custom ASGI app that handles both FastAPI and Socket.IO
+async def custom_asgi_app(scope, receive, send):
+    """Custom ASGI app that routes between FastAPI and Socket.IO"""
+    if scope["type"] == "http" and scope["path"].startswith("/socket.io/"):
+        # Handle Socket.IO requests
+        return await socketio_manager.sio.handle_request(scope, receive, send)
+    else:
+        # Handle regular FastAPI requests
+        return await app(scope, receive, send)
+
+socket_app = custom_asgi_app
 
 @app.get("/")
 async def root():

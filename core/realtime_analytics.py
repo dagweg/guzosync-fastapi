@@ -11,7 +11,7 @@ logger = logging.getLogger(__name__)
 
 class RealTimeAnalyticsService:
     """Service for real-time analytics and dashboard updates."""
-
+    
     def __init__(self, mongodb_client, websocket_manager):
         self.db = mongodb_client
         self.websocket_manager = websocket_manager
@@ -46,7 +46,7 @@ class RealTimeAnalyticsService:
         await asyncio.gather(*self._tasks, return_exceptions=True)
         logger.info("Real-time analytics service stopped")
 
-    async def _broadcast_to_room(self, room_id: str, event: str, data: dict):
+    async def _broadcast_to_room(self, room_id: str, event: str, data: Dict[str, Any]) -> None:
         """Compatibility method to broadcast to room using either WebSocket or Socket.IO"""
         try:
             # Check if it's a Socket.IO manager

@@ -8,12 +8,66 @@ from models.user import UserRole
 from models.transport import BusType as ModelBusType, BusStatus as ModelBusStatus, Location as ModelLocation
 from schemas.transport import BusResponse, BusStopResponse, CreateBusRequest, UpdateBusRequest, CreateBusStopRequest, UpdateBusStopRequest
 from schemas.trip import SimplifiedTripResponse
+from schemas.user import UserResponse
 from core.realtime.bus_tracking import bus_tracking_service
 
 from core import transform_mongo_doc, generate_uuid
 from core.mongo_utils import model_to_mongo_doc
 
 router = APIRouter(prefix="/api/buses", tags=["buses"])
+
+# Helper functions for populating driver information
+def build_bus_aggregation_pipeline(match_query: Optional[dict] = None) -> List[dict]:
+    """Build aggregation pipeline to populate driver information"""
+    pipeline = []
+    
+    # Match stage
+    if match_query:
+        pipeline.append({"$match": match_query})
+    
+    # Lookup stage for driver information
+    pipeline.extend([
+        {
+            "$lookup": {
+                "from": "users",
+                "localField": "assigned_driver_id",
+                "foreignField": "_id",
+                "as": "assigned_driver_data"
+            }
+        },
+        {
+            "$addFields": {
+                "assigned_driver": {
+                    "$cond": {
+                        "if": {"$gt": [{"$size": "$assigned_driver_data"}, 0]},
+                        "then": {"$arrayElemAt": ["$assigned_driver_data", 0]},
+                        "else": None
+                    }
+                }
+            }
+        },
+        {
+            "$project": {
+                "assigned_driver_data": 0  # Remove the temporary field
+            }
+        }
+    ])
+    
+    return pipeline
+
+def transform_bus_with_driver(bus_doc: dict) -> BusResponse:
+    """Transform bus document with populated driver into BusResponse format"""
+    # Transform the main bus document
+    bus_response = transform_mongo_doc(bus_doc, BusResponse)
+    
+    # Handle the populated driver
+    if bus_doc.get("assigned_driver"):
+        driver_doc = bus_doc["assigned_driver"]
+        bus_response.assigned_driver = transform_mongo_doc(driver_doc, UserResponse)
+    else:
+        bus_response.assigned_driver = None
+    
+    return bus_response
 
 # Bus CRUD Operations
 
@@ -29,14 +83,16 @@ async def create_bus(
             status_code=status.HTTP_403_FORBIDDEN,
             detail="Only control center admins can create buses"
         )
-      # Check if bus with same license plate already exists
+    
+    # Check if bus with same license plate already exists
     existing_bus = await request.app.state.mongodb.buses.find_one({"license_plate": bus_data.license_plate})
     if existing_bus:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail="Bus with this license plate already exists"
         )
-      # Create Bus model instance with UUID
+    
+    # Create Bus model instance with UUID
     bus = Bus(
         license_plate=bus_data.license_plate,
         capacity=bus_data.capacity,
@@ -50,9 +106,18 @@ async def create_bus(
     bus_doc = model_to_mongo_doc(bus)
     
     result = await request.app.state.mongodb.buses.insert_one(bus_doc)
-    created_bus = await request.app.state.mongodb.buses.find_one({"_id": result.inserted_id})
     
-    return transform_mongo_doc(created_bus, BusResponse)
+    # Get created bus with populated driver information
+    pipeline = build_bus_aggregation_pipeline({"_id": result.inserted_id})
+    buses = await request.app.state.mongodb.buses.aggregate(pipeline).to_list(length=1)
+    
+    if not buses:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Bus not found after creation"
+        )
+    
+    return transform_bus_with_driver(buses[0])
 
 @router.get("/", response_model=List[BusResponse])
 async def get_all_buses(
@@ -85,13 +150,19 @@ async def get_all_buses(
         # Could be used for bus_type, capacity range, etc.
         pass
     
-    # Calculate skip for pagination
-    skip = (page - 1) * page_size
+    # Build aggregation pipeline with populated driver information
+    pipeline = build_bus_aggregation_pipeline(query)
     
-    # Get buses from database
-    buses = await request.app.state.mongodb.buses.find(query).skip(skip).limit(page_size).to_list(length=page_size)
+    # Add pagination stages
+    pipeline.extend([
+        {"$skip": (page - 1) * page_size},
+        {"$limit": page_size}
+    ])
     
-    return [transform_mongo_doc(bus, BusResponse) for bus in buses]
+    # Execute aggregation
+    buses = await request.app.state.mongodb.buses.aggregate(pipeline).to_list(length=None)
+    
+    return [transform_bus_with_driver(bus) for bus in buses]
 
 @router.get("/{bus_id}", response_model=BusResponse)
 async def get_bus(
@@ -99,16 +170,21 @@ async def get_bus(
     bus_id: str, 
     current_user: User = Depends(get_current_user)
 ):
+    """Get a specific bus with populated driver information"""
     
+    # Build aggregation pipeline for single bus
+    pipeline = build_bus_aggregation_pipeline({"_id": bus_id})
     
-    bus = await request.app.state.mongodb.buses.find_one({"_id": bus_id})
-    if not bus:
+    # Execute aggregation
+    buses = await request.app.state.mongodb.buses.aggregate(pipeline).to_list(length=1)
+    
+    if not buses:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
             detail="Bus not found"
         )
     
-    return transform_mongo_doc(bus, BusResponse)
+    return transform_bus_with_driver(buses[0])
 
 @router.put("/{bus_id}", response_model=BusResponse)
 async def update_bus(
@@ -123,7 +199,8 @@ async def update_bus(
             status_code=status.HTTP_403_FORBIDDEN,
             detail="Only control center admins can update buses"
         )
-      # Check if trying to update license plate to an existing one
+    
+    # Check if trying to update license plate to an existing one
     if update_data.license_plate is not None:
         existing_bus = await request.app.state.mongodb.buses.find_one({
             "license_plate": update_data.license_plate,
@@ -134,7 +211,7 @@ async def update_bus(
                 status_code=status.HTTP_400_BAD_REQUEST,
                 detail="Bus with this license plate already exists"
             )
-    
+
     update_dict = {k: v for k, v in update_data.dict().items() if v is not None}
     update_dict["updated_at"] = datetime.utcnow()
     
@@ -149,8 +226,17 @@ async def update_bus(
             detail="Bus not found"
         )
     
-    updated_bus = await request.app.state.mongodb.buses.find_one({"_id": bus_id})
-    return transform_mongo_doc(updated_bus, BusResponse)
+    # Get updated bus with populated driver information
+    pipeline = build_bus_aggregation_pipeline({"_id": bus_id})
+    buses = await request.app.state.mongodb.buses.aggregate(pipeline).to_list(length=1)
+    
+    if not buses:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Bus not found"
+        )
+    
+    return transform_bus_with_driver(buses[0])
 
 @router.delete("/{bus_id}")
 async def delete_bus(
@@ -189,14 +275,16 @@ async def create_bus_stop(
             status_code=status.HTTP_403_FORBIDDEN,
             detail="Only control center admins can create bus stops"
         )
-      # Check if bus stop with same name already exists
+
+    # Check if bus stop with same name already exists
     existing_stop = await request.app.state.mongodb.bus_stops.find_one({"name": bus_stop_data.name})
     if existing_stop:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail="Bus stop with this name already exists"
         )
-      # Create BusStop model instance with UUID
+
+    # Create BusStop model instance with UUID
     bus_stop = BusStop(
         name=bus_stop_data.name,
         location=ModelLocation(
@@ -224,8 +312,8 @@ async def get_bus_stops(
     page_size: int = Query(10, alias="ps", ge=1, le=100),
     current_user: User = Depends(get_current_user)
 ):
-    
-    
+    """Get all bus stops with optional search and filtering"""
+
     # Build query
     query = {}
     if search:
@@ -248,8 +336,8 @@ async def get_bus_stop(
     bus_stop_id: str, 
     current_user: User = Depends(get_current_user)
 ):
-    
-    
+    """Get a specific bus stop by ID"""
+
     bus_stop = await request.app.state.mongodb.bus_stops.find_one({"_id": bus_stop_id})
     if not bus_stop:
         raise HTTPException(
@@ -272,7 +360,8 @@ async def update_bus_stop(
             status_code=status.HTTP_403_FORBIDDEN,
             detail="Only control center admins can update bus stops"
         )
-      # Check if trying to update name to an existing one
+
+    # Check if trying to update name to an existing one
     if update_data.name is not None:
         existing_stop = await request.app.state.mongodb.bus_stops.find_one({
             "name": update_data.name,
@@ -330,15 +419,17 @@ async def get_incoming_buses(
     bus_stop_id: str, 
     current_user: User = Depends(get_current_user)
 ):
-    
-      # First, verify bus stop exists
+    """Get incoming buses for a specific bus stop"""
+
+    # First, verify bus stop exists
     bus_stop = await request.app.state.mongodb.bus_stops.find_one({"_id": bus_stop_id})
     if not bus_stop:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
             detail="Bus stop not found"
         )
-      # Find routes that include this bus stop
+
+    # Find routes that include this bus stop
     routes = await request.app.state.mongodb.routes.find(
         {"stop_ids": bus_stop_id}
     ).to_list(length=None)

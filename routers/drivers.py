@@ -6,8 +6,7 @@ from datetime import datetime, date
 from core.dependencies import get_current_user
 from models import User
 from schemas.attendance import (
-    CreateAttendanceRecordRequest, AttendanceRecordResponse,
-    MarkDailyAttendanceRequest, DailyAttendanceResponse, AttendanceStatus
+    MarkAttendanceRequest, AttendanceResponse, AttendanceStatus
 )
 from schemas.feedback import ReportIncidentRequest, IncidentResponse
 from schemas.route import RouteChangeRequestRequest, RouteChangeResponse
@@ -17,77 +16,21 @@ from core import transform_mongo_doc
 
 router = APIRouter(prefix="/api/drivers", tags=["drivers"])
 
-@router.post("/attendance", response_model=AttendanceRecordResponse, status_code=status.HTTP_201_CREATED)
-async def create_driver_attendance(
+@router.post("/attendance", response_model=AttendanceResponse, status_code=status.HTTP_201_CREATED)
+async def mark_driver_attendance(
     request: Request,
-    attendance_request: CreateAttendanceRecordRequest, 
+    attendance_request: MarkAttendanceRequest,
     current_user: User = Depends(get_current_user)
 ):
-    """Create driver attendance record"""
+    """Mark driver's attendance status"""
     if current_user.role != "DRIVER":
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
-            detail="Only drivers can create attendance records"
-        )
-    
-    attendance_data = {
-        "user_id": current_user.id,
-        "type": attendance_request.type,
-        "location": attendance_request.location,
-        "timestamp": datetime.utcnow()
-    }
-    
-    result = await request.app.state.mongodb.attendance.insert_one(attendance_data)
-    created_attendance = await request.app.state.mongodb.attendance.find_one({"_id": result.inserted_id})
-    
-    return transform_mongo_doc(created_attendance, AttendanceRecordResponse)
-
-@router.get("/attendance/today", response_model=List[AttendanceRecordResponse])
-async def get_driver_attendance_today(
-    request: Request,
-    current_user: User = Depends(get_current_user)
-):
-    """Get driver's attendance records for today"""
-    if current_user.role != "DRIVER":
-        raise HTTPException(
-            status_code=status.HTTP_403_FORBIDDEN,
-            detail="Only drivers can view their attendance"
-        )
-    
-    today_start = datetime.utcnow().replace(hour=0, minute=0, second=0, microsecond=0)
-    today_end = datetime.utcnow().replace(hour=23, minute=59, second=59, microsecond=999999)
-    
-    attendance_records = await request.app.state.mongodb.attendance.find({
-        "user_id": current_user.id,
-        "timestamp": {"$gte": today_start, "$lte": today_end}
-    }).sort("timestamp", -1).to_list(length=None)
-    
-    return [transform_mongo_doc(record, AttendanceRecordResponse) for record in attendance_records]
-
-
-@router.post("/attendance/daily", response_model=DailyAttendanceResponse, status_code=status.HTTP_201_CREATED)
-async def mark_driver_daily_attendance(
-    request: Request,
-    attendance_request: MarkDailyAttendanceRequest,
-    current_user: User = Depends(get_current_user)
-):
-    """Mark daily attendance status for driver"""
-
-    if current_user.role != "DRIVER":
-        raise HTTPException(
-            status_code=status.HTTP_403_FORBIDDEN,
-            detail="Only drivers can mark their daily attendance"
-        )
-
-    # Drivers can only mark their own attendance
-    if attendance_request.user_id != str(current_user.id):
-        raise HTTPException(
-            status_code=status.HTTP_403_FORBIDDEN,
-            detail="You can only mark your own attendance"
+            detail="Only drivers can mark their attendance"
         )
 
     # Check if attendance already exists for this date
-    existing_attendance = await request.app.state.mongodb.daily_attendance.find_one({
+    existing_attendance = await request.app.state.mongodb.attendance.find_one({
         "user_id": str(current_user.id),
         "date": attendance_request.date
     })
@@ -99,11 +42,11 @@ async def mark_driver_daily_attendance(
         )
 
     # Import here to avoid circular imports
-    from models import DailyAttendance, Location, AttendanceStatus as ModelAttendanceStatus
+    from models import Attendance, Location, AttendanceStatus as ModelAttendanceStatus
     from core.mongo_utils import model_to_mongo_doc
 
-    # Create daily attendance record
-    daily_attendance = DailyAttendance(
+    # Create attendance record
+    attendance = Attendance(
         user_id=str(current_user.id),
         date=attendance_request.date,
         status=ModelAttendanceStatus(attendance_request.status.value),
@@ -119,26 +62,25 @@ async def mark_driver_daily_attendance(
     )
 
     # Convert model to MongoDB document
-    attendance_doc = model_to_mongo_doc(daily_attendance)
-    result = await request.app.state.mongodb.daily_attendance.insert_one(attendance_doc)
-    created_attendance = await request.app.state.mongodb.daily_attendance.find_one({"_id": result.inserted_id})
+    attendance_doc = model_to_mongo_doc(attendance)
+    result = await request.app.state.mongodb.attendance.insert_one(attendance_doc)
+    created_attendance = await request.app.state.mongodb.attendance.find_one({"_id": result.inserted_id})
 
-    return transform_mongo_doc(created_attendance, DailyAttendanceResponse)
+    return transform_mongo_doc(created_attendance, AttendanceResponse)
 
-
-@router.get("/attendance/daily", response_model=List[DailyAttendanceResponse])
-async def get_driver_daily_attendance(
+@router.get("/attendance", response_model=List[AttendanceResponse])
+async def get_driver_attendance(
     request: Request,
     date_from: Optional[date] = Query(None, description="Start date"),
     date_to: Optional[date] = Query(None, description="End date"),
     current_user: User = Depends(get_current_user)
 ):
-    """Get driver's daily attendance records"""
+    """Get driver's attendance records"""
 
     if current_user.role != "DRIVER":
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
-            detail="Only drivers can view their daily attendance"
+            detail="Only drivers can view their attendance"
         )
 
     # Build query
@@ -154,9 +96,9 @@ async def get_driver_daily_attendance(
         query["date"] = date_filter
 
     # Get records
-    attendance_records = await request.app.state.mongodb.daily_attendance.find(query).sort("date", -1).to_list(length=None)
+    attendance_records = await request.app.state.mongodb.attendance.find(query).sort("date", -1).to_list(length=None)
 
-    return [transform_mongo_doc(record, DailyAttendanceResponse) for record in attendance_records]
+    return [transform_mongo_doc(record, AttendanceResponse) for record in attendance_records]
 
 @router.post("/incidents", response_model=IncidentResponse, status_code=status.HTTP_201_CREATED)
 async def report_driver_incident(

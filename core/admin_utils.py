@@ -57,7 +57,7 @@ class AdminManager:
     async def get_control_admin_by_user_id(self, user_id: str) -> Optional[Dict[str, Any]]:
         """Get Control Admin by user ID."""
         result = await self.db.control_admins.find_one({"user_id": user_id})
-        return result  # type: ignore
+        return result
     
     async def update_admin_last_login(self, admin_id: str) -> bool:
         """Update admin's last login timestamp."""
@@ -100,7 +100,7 @@ class AdminManager:
     async def get_control_staff_by_user_id(self, user_id: str) -> Optional[Dict[str, Any]]:
         """Get Control Staff by user ID."""
         result = await self.db.control_staff.find_one({"user_id": user_id})
-        return result  # type: ignore
+        return result
     
     # Bus Driver Operations
     async def create_bus_driver(
@@ -176,7 +176,7 @@ class AdminManager:
         """Get all available drivers."""
         cursor = self.db.bus_drivers.find({"status": DriverStatus.AVAILABLE})
         result = await cursor.to_list(length=None)
-        return result  # type: ignore
+        return result
     
     async def assign_driver_to_bus(self, driver_id: str, bus_id: str) -> bool:
         """Assign a driver to a bus."""
