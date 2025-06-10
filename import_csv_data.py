@@ -7,7 +7,7 @@ import csv
 import sys
 import os
 from motor.motor_asyncio import AsyncIOMotorClient
-from models.transport import BusStop, Route
+from models.transport import BusStop, Route, Location
 from core.mongo_utils import model_to_mongo_doc
 
 # Add the current directory to Python path
@@ -26,7 +26,7 @@ async def import_bus_stops():
     """Import bus stops from CSV file"""
     print("🚏 Importing bus stops from data/stops.txt...")
     
-    client = AsyncIOMotorClient(MONGODB_URL)
+    client: AsyncIOMotorClient = AsyncIOMotorClient(MONGODB_URL)
     db = client[DATABASE_NAME]
     
     try:
@@ -38,11 +38,10 @@ async def import_bus_stops():
                     # Create BusStop model
                     bus_stop = BusStop(
                         name=row['stop_name'],
-                        location={
-                            "type": "Point",
-                            "coordinates": [float(row['stop_lon']), float(row['stop_lat'])]
-                        },
-                        stop_code=row['stop_id'],
+                        location=Location(
+                            latitude=float(row['stop_lat']),
+                            longitude=float(row['stop_lon'])
+                        ),
                         is_active=True
                     )
                     
@@ -72,7 +71,7 @@ async def import_routes():
     """Import routes from CSV file"""
     print("🛣️ Importing routes from data/routes.txt...")
     
-    client = AsyncIOMotorClient(MONGODB_URL)
+    client: AsyncIOMotorClient = AsyncIOMotorClient(MONGODB_URL)
     db = client[DATABASE_NAME]
     
     try:
@@ -84,13 +83,9 @@ async def import_routes():
                     # Create Route model
                     route = Route(
                         name=row['route_long_name'],
-                        route_code=row['route_short_name'],
                         description=row.get('route_desc', ''),
-                        start_location=row['route_long_name'].split(' ↔ ')[0] if ' ↔ ' in row['route_long_name'] else '',
-                        end_location=row['route_long_name'].split(' ↔ ')[1] if ' ↔ ' in row['route_long_name'] else '',
-                        is_active=True,
-                        route_type="bus",
-                        color=f"#{row.get('route_color', '1779c2')}"
+                        stop_ids=[],  # Will be populated later when stops are linked
+                        is_active=True
                     )
                     
                     # Convert to MongoDB document

@@ -25,7 +25,7 @@ async def test_database_content():
     
     try:
         # Connect to MongoDB
-        client = AsyncIOMotorClient(MONGODB_URL)
+        client: AsyncIOMotorClient = AsyncIOMotorClient(MONGODB_URL)
         db = client[DATABASE_NAME]
         
         # Check collections
