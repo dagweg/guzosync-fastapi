@@ -5,7 +5,7 @@ from datetime import datetime
 from core.dependencies import get_current_user
 from models import User, Route, Bus, BusStop
 from models.user import UserRole
-from models.transport import Location
+from models.base import Location
 from schemas.route import (
     RouteResponse, CreateRouteRequest, UpdateRouteRequest,
     ETAResponse, RouteShapeResponse, BusETAResponse
@@ -79,7 +79,7 @@ async def get_all_routes(
     request: Request,
     search: Optional[str] = Query(None, description="Search routes by name or description"),
     page: int = Query(1, ge=1, description="Page number"),
-    limit: int = Query(10, ge=1, le=100, description="Number of routes per page"),
+    limit: int = Query(10, ge=1, description="Number of routes per page"),
     is_active: Optional[bool] = Query(None, description="Filter by active status"),
     current_user: User = Depends(get_current_user)
 ):

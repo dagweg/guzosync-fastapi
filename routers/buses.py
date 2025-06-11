@@ -5,7 +5,8 @@ from datetime import datetime
 from core.dependencies import get_current_user
 from models import User, Bus, BusStop
 from models.user import UserRole
-from models.transport import BusType as ModelBusType, BusStatus as ModelBusStatus, Location as ModelLocation
+from models.transport import BusType as ModelBusType, BusStatus as ModelBusStatus
+from models.base import Location as ModelLocation
 from schemas.transport import BusResponse, BusStopResponse, CreateBusRequest, UpdateBusRequest, CreateBusStopRequest, UpdateBusStopRequest, BusDetailedResponse, RouteInfo, CurrentTripInfo, DriverAssignmentResponse
 from schemas.trip import SimplifiedTripResponse
 from schemas.user import UserResponse
@@ -198,7 +199,7 @@ async def get_bus_stops(
     search: Optional[str] = None,
     filter_by: Optional[str] = None,
     page: int = Query(1, alias="pn", ge=1),
-    page_size: int = Query(10, alias="ps", ge=1, le=100),
+    page_size: int = Query(10, alias="ps", ge=1),
     current_user: User = Depends(get_current_user)
 ):
     """Get all bus stops with optional search and filtering"""
@@ -341,7 +342,7 @@ async def get_all_buses(
     filter_by: Optional[str] = None,
     status: Optional[str] = None,
     page: int = Query(1, alias="pn", ge=1),
-    page_size: int = Query(10, alias="ps", ge=1, le=100),
+    page_size: int = Query(10, alias="ps", ge=1),
     current_user: User = Depends(get_current_user)
 ):
     """Get all buses with optional search, filtering, and pagination"""

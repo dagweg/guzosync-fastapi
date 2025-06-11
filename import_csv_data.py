@@ -7,7 +7,8 @@ import csv
 import sys
 import os
 from motor.motor_asyncio import AsyncIOMotorClient
-from models.transport import BusStop, Route, Location
+from models.transport import BusStop, Route
+from models.base import Location
 from core.mongo_utils import model_to_mongo_doc
 
 # Add the current directory to Python path

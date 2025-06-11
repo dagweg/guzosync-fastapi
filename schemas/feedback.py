@@ -2,7 +2,8 @@ from typing import Optional
 from pydantic import BaseModel
 
 from enum import Enum
-from .base import DateTimeModelMixin, Location
+from .base import DateTimeModelMixin
+from models.base import Location
 
 class SubmitFeedbackRequest(BaseModel):
     content: str

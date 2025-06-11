@@ -228,7 +228,7 @@ async def register_personnel(
 async def get_queue_regulators(
     request: Request,
     skip: int = Query(0, ge=0),
-    limit: int = Query(10, ge=1, le=100),
+    limit: int = Query(10, ge=1),
     current_user: User = Depends(get_current_user)
 ):
     """Get all queue regulators"""
@@ -378,7 +378,7 @@ async def assign_regulator_to_bus_stop(
 async def get_bus_drivers(
     request: Request,
     skip: int = Query(0, ge=0),
-    limit: int = Query(10, ge=1, le=100),
+    limit: int = Query(10, ge=1),
     current_user: User = Depends(get_current_user)
 ):
     """Get all bus drivers"""
@@ -568,7 +568,7 @@ async def get_all_personnel(
 async def get_all_passengers(
     request: Request,
     skip: int = Query(0, ge=0),
-    limit: int = Query(10, ge=1, le=100),
+    limit: int = Query(10, ge=1),
     current_user: User = Depends(get_current_user)
 ):
     """Get all passengers (CONTROL_ADMIN and CONTROL_STAFF can access)"""
@@ -629,7 +629,7 @@ async def create_bus_stop(
 async def get_control_center_bus_stops(
     request: Request,
     skip: int = Query(0, ge=0),
-    limit: int = Query(10, ge=1, le=100),
+    limit: int = Query(10, ge=1),
     current_user: User = Depends(get_current_user)
 ):
     """Get all bus stops for management"""
@@ -724,7 +724,7 @@ async def delete_control_center_bus_stop(
 async def get_control_center_buses(
     request: Request,
     skip: int = Query(0, ge=0),
-    limit: int = Query(10, ge=1, le=100),
+    limit: int = Query(10, ge=1),
     current_user: User = Depends(get_current_user)
 ):
     """Get all buses for management"""
@@ -962,7 +962,7 @@ async def create_control_center_route(
 async def get_control_center_routes(
     request: Request,
     skip: int = Query(0, ge=0),
-    limit: int = Query(10, ge=1, le=100),
+    limit: int = Query(10, ge=1),
     current_user: User = Depends(get_current_user)
 ):
     """Get all routes for management"""
@@ -1056,7 +1056,7 @@ async def delete_control_center_route(
 async def get_reallocation_requests(
     request: Request,
     skip: int = Query(0, ge=0),
-    limit: int = Query(10, ge=1, le=100),
+    limit: int = Query(10, ge=1),
     current_user: User = Depends(get_current_user)
 ):
     """Get all reallocation requests"""
@@ -1172,7 +1172,7 @@ async def process_reallocation_request(
 async def get_pending_reallocation_requests(
     request: Request,
     skip: int = Query(0, ge=0),
-    limit: int = Query(10, ge=1, le=100),
+    limit: int = Query(10, ge=1),
     current_user: User = Depends(get_current_user)
 ):
     """Get pending reallocation requests that need AI processing"""
@@ -1202,7 +1202,7 @@ async def get_reallocation_history(
     start_date: Optional[str] = Query(None, description="Start date filter (YYYY-MM-DD)"),
     end_date: Optional[str] = Query(None, description="End date filter (YYYY-MM-DD)"),
     skip: int = Query(0, ge=0),
-    limit: int = Query(20, ge=1, le=100),
+    limit: int = Query(20, ge=1),
     current_user: User = Depends(get_current_user)
 ):
     """Get comprehensive reallocation history with filtering options"""

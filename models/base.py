@@ -1,7 +1,12 @@
 from datetime import datetime
-from typing import Optional
+
 from pydantic import BaseModel, Field
 from core.custom_types import  generate_uuid
+
+
+class Location(BaseModel):
+    latitude: float
+    longitude: float
 
 
 class BaseDBModel(BaseModel):

@@ -37,13 +37,14 @@ class WebSocketManager:
     async def connect_user(self, websocket: WebSocket, user_id: str) -> str:
         """Connect a user and return connection ID"""
         connection_id = f"ws_{user_id}_{datetime.now().timestamp()}"
-        
+
         # Store the connection
         self.user_connections[user_id] = websocket
         self.user_connection_ids[user_id] = connection_id
         self.user_sessions[connection_id] = user_id
-        
-        logger.info(f"User {user_id} connected via WebSocket with connection {connection_id}")
+
+        total_connections = len(self.user_connections)
+        logger.info(f"🔌 User {user_id} connected via WebSocket with connection {connection_id} (Total connections: {total_connections})")
         return connection_id
 
     async def disconnect_user(self, user_id: str) -> None:
@@ -51,55 +52,70 @@ class WebSocketManager:
         if user_id in self.user_connections:
             # Remove from all rooms
             rooms_to_clean = []
+            rooms_left = []
             for room_id, users in self.rooms.items():
                 if user_id in users:
                     users.discard(user_id)
+                    rooms_left.append(room_id)
                     if len(users) == 0:
                         rooms_to_clean.append(room_id)
-            
+
             # Clean up empty rooms
             for room_id in rooms_to_clean:
                 del self.rooms[room_id]
-            
+
             # Remove connection tracking
             connection_id = self.user_connection_ids.get(user_id)
             if connection_id:
                 self.user_sessions.pop(connection_id, None)
-            
+
             self.user_connections.pop(user_id, None)
             self.user_connection_ids.pop(user_id, None)
             self.proximity_preferences.pop(user_id, None)
-            
-            logger.info(f"User {user_id} disconnected and cleaned up")
+
+            remaining_connections = len(self.user_connections)
+            logger.info(f"🔌 User {user_id} disconnected and cleaned up (Remaining connections: {remaining_connections})")
+            if rooms_left:
+                logger.debug(f"🔌 User {user_id} was removed from rooms: {rooms_left}")
+            if rooms_to_clean:
+                logger.debug(f"🔌 Cleaned up empty rooms: {rooms_to_clean}")
 
     async def join_room_user(self, user_id: str, room_id: str) -> bool:
         """Add user to a room for group communications"""
         if user_id not in self.user_connections:
-            logger.warning(f"User {user_id} not connected, cannot join room {room_id}")
+            logger.warning(f"🔌 User {user_id} not connected, cannot join room {room_id}")
             return False
-            
+
         try:
             # Track in our room management
             if room_id not in self.rooms:
                 self.rooms[room_id] = set()
+                logger.debug(f"🏠 Created new room: {room_id}")
+
             self.rooms[room_id].add(user_id)
-            
-            logger.info(f"User {user_id} joined room {room_id}")
+            room_size = len(self.rooms[room_id])
+
+            logger.info(f"🏠 User {user_id} joined room {room_id} (Room size: {room_size})")
             return True
         except Exception as e:
-            logger.error(f"Error joining room {room_id} for user {user_id}: {e}")
+            logger.error(f"💥 Error joining room {room_id} for user {user_id}: {e}")
             return False
 
     async def leave_room_user(self, user_id: str, room_id: str) -> bool:
         """Remove user from a room"""
         if room_id not in self.rooms:
+            logger.debug(f"🏠 Room {room_id} doesn't exist, cannot remove user {user_id}")
             return False
-            
+
         self.rooms[room_id].discard(user_id)
-        if len(self.rooms[room_id]) == 0:
+        remaining_users = len(self.rooms[room_id])
+
+        if remaining_users == 0:
             del self.rooms[room_id]
-            
-        logger.info(f"User {user_id} left room {room_id}")
+            logger.info(f"🏠 User {user_id} left room {room_id} (Room deleted - was empty)")
+        else:
+            logger.info(f"🏠 User {user_id} left room {room_id} (Room size: {remaining_users})")
+
         return True
 
     def get_connection_count(self) -> int:
@@ -121,17 +137,23 @@ class WebSocketManager:
     async def send_personal_message(self, user_id: str, message: Dict[str, Any]) -> bool:
         """Send message to a specific user"""
         if user_id not in self.user_connections:
-            logger.warning(f"User {user_id} not connected, cannot send message")
+            logger.warning(f"🔌 User {user_id} not connected, cannot send message")
             return False
 
         websocket = self.user_connections[user_id]
+        message_type = message.get('type', 'unknown')
 
         try:
-            await websocket.send_text(json.dumps(message))
-            logger.debug(f"Sent message to user {user_id}: {message.get('type', 'unknown')}")
+            message_json = json.dumps(message)
+            await websocket.send_text(message_json)
+
+            # Log successful message send
+            logger.info(f"📤 SENT WebSocket Message: {message_type} to user {user_id}")
+            logger.debug(f"📤 Message Data: {message}")
+
             return True
         except Exception as e:
-            logger.error(f"Error sending message to user {user_id}: {e}")
+            logger.error(f"💥 Error sending WebSocket message {message_type} to user {user_id}: {e}")
             # Remove disconnected connection
             await self.disconnect_user(user_id)
             return False
@@ -139,29 +161,47 @@ class WebSocketManager:
     async def send_room_message(self, room_id: str, message: Dict[str, Any], exclude_user: str = "") -> bool:
         """Send message to all users in a room"""
         if room_id not in self.rooms:
-            logger.warning(f"Room {room_id} does not exist")
+            logger.warning(f"🏠 Room {room_id} does not exist")
             return False
 
         users_to_notify = self.rooms[room_id].copy()
         if exclude_user:
             users_to_notify.discard(exclude_user)
 
+        message_type = message.get('type', 'unknown')
+        logger.info(f"📡 BROADCASTING to room {room_id}: {message_type} to {len(users_to_notify)} users")
+        if exclude_user:
+            logger.debug(f"📡 Excluding user {exclude_user} from broadcast")
+
         success_count = 0
         for user_id in users_to_notify:
             if await self.send_personal_message(user_id, message):
                 success_count += 1
 
-        logger.debug(f"Sent message to {success_count}/{len(users_to_notify)} users in room {room_id}")
+        if success_count > 0:
+            logger.info(f"✅ Successfully broadcasted {message_type} to {success_count}/{len(users_to_notify)} users in room {room_id}")
+        else:
+            logger.warning(f"❌ Failed to broadcast {message_type} to any users in room {room_id}")
+
         return success_count > 0
 
     async def broadcast_message(self, message: Dict[str, Any]) -> bool:
         """Send message to all connected users"""
+        message_type = message.get('type', 'unknown')
+        total_users = len(self.user_connections)
+
+        logger.info(f"🌐 GLOBAL BROADCAST: {message_type} to {total_users} connected users")
+
         success_count = 0
         for user_id in list(self.user_connections.keys()):
             if await self.send_personal_message(user_id, message):
                 success_count += 1
 
-        logger.debug(f"Broadcasted message to {success_count} users")
+        if success_count > 0:
+            logger.info(f"✅ Global broadcast {message_type} successful: {success_count}/{total_users} users")
+        else:
+            logger.warning(f"❌ Global broadcast {message_type} failed: 0/{total_users} users")
+
         return success_count > 0
 
     async def broadcast_to_room(self, room_id: str, message: Dict[str, Any], exclude_user: str = "") -> bool:

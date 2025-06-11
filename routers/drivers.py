@@ -144,7 +144,7 @@ async def report_driver_incident(
 async def get_driver_incidents(
     request: Request,
     skip: int = Query(0, ge=0),
-    limit: int = Query(10, ge=1, le=100),
+    limit: int = Query(10, ge=1),
     current_user: User = Depends(get_current_user)
 ):
     """Get incidents reported by the driver"""
@@ -197,7 +197,7 @@ async def create_route_change_request(
 async def get_driver_route_change_requests(
     request: Request,
     skip: int = Query(0, ge=0),
-    limit: int = Query(10, ge=1, le=100),
+    limit: int = Query(10, ge=1),
     current_user: User = Depends(get_current_user)
 ):
     """Get driver's route change requests"""
@@ -261,7 +261,7 @@ async def get_route_schedule(
 async def get_driver_instructions(
     request: Request,
     skip: int = Query(0, ge=0),
-    limit: int = Query(10, ge=1, le=100),
+    limit: int = Query(10, ge=1),
     current_user: User = Depends(get_current_user)
 ):
     """Get instructions for the driver"""

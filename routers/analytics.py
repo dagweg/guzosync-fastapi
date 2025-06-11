@@ -134,7 +134,7 @@ async def get_time_series_data(
 async def get_reports(
     request: Request,
     skip: int = Query(0, ge=0),
-    limit: int = Query(10, ge=1, le=100),
+    limit: int = Query(10, ge=1),
     report_type: Optional[str] = Query(None, description="Filter by report type"),
     current_user: User = Depends(require_control_admin_or_staff)
 ):

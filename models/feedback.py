@@ -2,7 +2,7 @@ from typing import Optional
 
 from enum import Enum
 
-from models.transport import Location
+from .base import Location
 from .base import BaseDBModel
 
 class IncidentSeverity(str, Enum):

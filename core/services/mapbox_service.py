@@ -12,7 +12,7 @@ from shapely.geometry import LineString, Point
 import redis.asyncio as redis
 
 from core.logger import get_logger
-from models.transport import Location
+from models.base import Location
 
 logger = get_logger(__name__)
 

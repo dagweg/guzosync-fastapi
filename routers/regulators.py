@@ -4,7 +4,7 @@ from datetime import datetime
 
 from core.dependencies import get_current_user, require_regulator
 from models import User
-from models.transport import Location as ModelLocation
+from models.base import Location as ModelLocation
 from models.regulators import ReallocationRequest, OvercrowdingReport, ReallocationReason, OvercrowdingSeverity
 from schemas.transport import BusStopResponse
 from schemas.regulators import (

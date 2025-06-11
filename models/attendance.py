@@ -2,8 +2,7 @@ from typing import Optional
 from datetime import datetime, date
 from enum import Enum
 
-from .base import BaseDBModel
-from .transport import Location
+from .base import BaseDBModel, Location
 
 
 class AttendanceStatus(str, Enum):

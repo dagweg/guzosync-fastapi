@@ -2,7 +2,7 @@ from datetime import datetime, date
 from typing import Optional
 from pydantic import BaseModel, Field, EmailStr
 from enum import Enum
-from .base import BaseDBModel
+from .base import BaseDBModel, Location
 
 class UserRole(str, Enum):
     PASSENGER = "PASSENGER"
@@ -70,4 +70,9 @@ class User(BaseDBModel):
     # Analytics and Tracking
     total_trips: int = 0
     total_distance_traveled: float = 0.0
+
+    # Location Tracking (for passengers)
+    current_location: Optional[Location] = None
+    last_location_update: Optional[datetime] = None
+    location_sharing_enabled: bool = False  # Privacy control for passengers
 

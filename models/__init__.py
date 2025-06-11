@@ -1,6 +1,6 @@
-from .base import BaseDBModel
+from .base import BaseDBModel, Location
 from .user import User, UserRole, Gender
-from .transport import Bus, BusType, BusStatus, BusStop, Route, Location, Alert, AlertType, AlertSeverity, RouteChangeRequest
+from .transport import Bus, BusType, BusStatus, BusStop, Route, Alert, AlertType, AlertSeverity, RouteChangeRequest
 from .operations import Trip, TripStatus, Schedule
 from .notifications import Notification, NotificationType, NotificationSettings, RelatedEntity
 from .feedback import Feedback, Incident, IncidentSeverity, IncidentType

@@ -1,4 +1,5 @@
-from .base import Location, RelatedEntity
+from .base import RelatedEntity
+from models.base import Location
 from .user import (
     UserRole, RegisterUserRequest, LoginRequest, ForgotPasswordRequest,
     ResetPasswordRequest, UpdateUserRequest, UserResponse

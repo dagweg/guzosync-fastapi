@@ -11,7 +11,8 @@ from core.services.route_service import route_service
 from core.services.mapbox_service import mapbox_service
 from core.realtime.bus_tracking import bus_tracking_service
 from core.socketio_manager import socketio_manager
-from models.transport import Bus, BusStop, Location
+from models.transport import Bus, BusStop
+from models.base import Location
 
 logger = get_logger(__name__)
 

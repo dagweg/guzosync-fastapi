@@ -77,18 +77,24 @@ async def websocket_endpoint(websocket: WebSocket, token: str = Query(...)):
         while True:
             try:
                 data = await websocket.receive_text()
+                logger.debug(f"📨 RAW WebSocket Data from user {user_id}: {data}")
+
                 message = json.loads(data)
+                logger.info(f"📨 RECEIVED WebSocket Message from user {user_id}: {message.get('type', 'unknown')}")
+
                 await handle_websocket_message(user_id, message, websocket)
-                
+
             except WebSocketDisconnect:
+                logger.info(f"🔌 WebSocket disconnected for user {user_id}")
                 break
-            except json.JSONDecodeError:
+            except json.JSONDecodeError as e:
+                logger.warning(f"❌ Invalid JSON from user {user_id}: {data[:100]}... Error: {e}")
                 await websocket.send_text(json.dumps({
                     "type": "error",
                     "message": "Invalid JSON format"
                 }))
             except Exception as e:
-                logger.error(f"Error handling WebSocket message from user {user_id}: {e}")
+                logger.error(f"💥 Error handling WebSocket message from user {user_id}: {e}")
                 await websocket.send_text(json.dumps({
                     "type": "error",
                     "message": "Internal server error"
@@ -113,8 +119,11 @@ async def websocket_endpoint(websocket: WebSocket, token: str = Query(...)):
 async def handle_websocket_message(user_id: str, message: Dict[str, Any], websocket: WebSocket):
     """Handle incoming WebSocket messages"""
     message_type = message.get("type")
-    
+
+    logger.info(f"🔄 PROCESSING WebSocket message: {message_type} from user {user_id}")
+
     if not message_type:
+        logger.warning(f"❌ Missing message type from user {user_id}")
         await websocket.send_text(json.dumps({
             "type": "error",
             "message": "Message type required"
@@ -213,8 +222,17 @@ async def handle_websocket_message(user_id: str, message: Dict[str, Any], websoc
                 
         else:
             # Handle other message types through event handlers
-            from core.realtime.websocket_events import websocket_event_handlers
-            await websocket_event_handlers.handle_message(user_id, message_type, message, websocket_manager.app_state)
+            from core.realtime.websocket_events import WebSocketEventHandlers
+
+            # Extract the data portion of the message
+            message_data = message.get("data", {})
+            logger.debug(f"🔄 Extracting data for event handler: {message_data}")
+
+            result = await WebSocketEventHandlers.handle_message(user_id, message_type, message_data, websocket_manager.app_state)
+
+            # Send response back to client
+            if result:
+                await websocket.send_text(json.dumps(result))
             
     except Exception as e:
         logger.error(f"Error handling message type {message_type} from user {user_id}: {e}")

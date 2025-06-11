@@ -3,7 +3,8 @@ from pydantic import BaseModel
 
 from enum import Enum
 from datetime import datetime
-from .base import DateTimeModelMixin, Location
+from .base import DateTimeModelMixin
+from models.base import Location
 from .user import UserResponse
 
 class BusType(str, Enum):

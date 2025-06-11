@@ -3,7 +3,8 @@ from pydantic import BaseModel, Field
 
 from datetime import datetime, date
 from enum import Enum
-from .base import DateTimeModelMixin, Location
+from .base import DateTimeModelMixin
+from models.base import Location
 
 
 class AttendanceStatus(str, Enum):

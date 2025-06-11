@@ -292,7 +292,7 @@ async def verify_payment(
 async def get_user_payments(
     request: Request,
     skip: int = Query(0, ge=0),
-    limit: int = Query(10, ge=1, le=100),
+    limit: int = Query(10, ge=1),
     current_user: User = Depends(get_current_user)
 ):
     """Get user's payment history"""
@@ -309,7 +309,7 @@ async def get_user_payments(
 async def get_user_tickets(
     request: Request,
     skip: int = Query(0, ge=0),
-    limit: int = Query(10, ge=1, le=100),
+    limit: int = Query(10, ge=1),
     ticket_status: Optional[TicketStatus] = None,
     current_user: User = Depends(get_current_user)
 ):

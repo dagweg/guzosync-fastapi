@@ -128,7 +128,7 @@ async def create_conversation(
 async def get_conversations(
     request: Request,
     skip: int = Query(0, ge=0),
-    limit: int = Query(10, ge=1, le=100),
+    limit: int = Query(10, ge=1),
     current_user: User = Depends(get_current_user)
 ):
     """Get conversations for current user"""
@@ -150,7 +150,7 @@ async def get_conversation_messages(
     request: Request,
     conversation_id: str,
     skip: int = Query(0, ge=0),
-    limit: int = Query(50, ge=1, le=100),
+    limit: int = Query(50, ge=1),
     current_user: User = Depends(get_current_user)
 ):    
     """Get messages from a conversation"""

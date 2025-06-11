@@ -39,7 +39,7 @@ async def submit_trip_feedback(
 async def get_trip_feedback(
     request: Request,
     skip: int = Query(0, ge=0),
-    limit: int = Query(10, ge=1, le=100),
+    limit: int = Query(10, ge=1),
     current_user: User = Depends(get_current_user)
 ):
     """Get trip feedback"""

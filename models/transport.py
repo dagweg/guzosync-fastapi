@@ -1,14 +1,9 @@
 from datetime import datetime
 from typing import Optional, List, Dict, Any
-from pydantic import BaseModel, Field
+from pydantic import Field
 from enum import Enum
 
-from .base import BaseDBModel
-
-
-class Location(BaseModel):
-    latitude: float
-    longitude: float
+from .base import BaseDBModel, Location
 
 class BusType(str, Enum):
     STANDARD = "STANDARD"
