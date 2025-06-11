@@ -249,32 +249,54 @@ class BusTrackingService:
     async def calculate_eta_for_bus(bus_id: str, target_stop_id: str, app_state=None) -> Optional[Dict[str, Any]]:
         """Calculate ETA for a bus to reach a specific stop"""
         try:
+            logger.info(f"🧮 Starting ETA calculation for bus {bus_id} to stop {target_stop_id}")
+
             if app_state is None or app_state.mongodb is None:
+                logger.error("❌ No app_state or mongodb available for ETA calculation")
                 return None
 
             # Get bus details
             bus = await app_state.mongodb.buses.find_one({"id": bus_id})
-            if not bus or not bus.get("current_location"):
+            if not bus:
+                logger.error(f"❌ Bus {bus_id} not found in database")
                 return None
+
+            if not bus.get("current_location"):
+                logger.error(f"❌ Bus {bus_id} has no current_location set")
+                return None
+
+            logger.info(f"✅ Found bus {bus_id} with location: {bus.get('current_location')}")
 
             # Get target bus stop
             bus_stop = await app_state.mongodb.bus_stops.find_one({"id": target_stop_id})
-            if not bus_stop or not bus_stop.get("location"):
+            if not bus_stop:
+                logger.error(f"❌ Bus stop {target_stop_id} not found in database")
                 return None
+
+            if not bus_stop.get("location"):
+                logger.error(f"❌ Bus stop {target_stop_id} has no location set")
+                return None
+
+            logger.info(f"✅ Found bus stop {target_stop_id}: {bus_stop.get('name')} at {bus_stop.get('location')}")
 
             # Get route information if bus is on a route
             route_id = bus.get("assigned_route_id")
             if not route_id:
-                return None
-
-            route = await app_state.mongodb.routes.find_one({"id": route_id})
-            if not route:
-                return None
+                logger.warning(f"⚠️ Bus {bus_id} has no assigned_route_id - using direct distance calculation")
+                # Continue without route - we can still calculate direct distance
+            else:
+                route = await app_state.mongodb.routes.find_one({"id": route_id})
+                if not route:
+                    logger.warning(f"⚠️ Route {route_id} not found - using direct distance calculation")
+                else:
+                    logger.info(f"✅ Found route {route_id}: {route.get('name')}")
 
             # Simple distance-based ETA calculation
             # In a real implementation, you'd use route service with traffic data
             bus_location = bus["current_location"]
             stop_location = bus_stop["location"]
+
+            logger.info(f"🧮 Calculating distance from bus at ({bus_location['latitude']}, {bus_location['longitude']}) to stop at ({stop_location['latitude']}, {stop_location['longitude']})")
 
             # Calculate straight-line distance
             distance_km = BusTrackingService._calculate_distance(
@@ -282,13 +304,19 @@ class BusTrackingService:
                 stop_location["latitude"], stop_location["longitude"]
             ) / 1000
 
+            logger.info(f"📏 Distance calculated: {distance_km:.2f} km")
+
             # Estimate speed (use current speed or default to 30 km/h in city)
             current_speed = bus.get("speed", 30)  # km/h
             if current_speed < 5:  # If bus is stopped or moving very slowly
                 current_speed = 25  # Use average city speed
 
+            logger.info(f"🚗 Using speed: {current_speed} km/h")
+
             # Calculate ETA in minutes
             eta_minutes = max(1, round((distance_km / current_speed) * 60))
+
+            logger.info(f"⏰ Calculated ETA: {eta_minutes} minutes")
 
             eta_data = {
                 "bus_id": bus_id,
@@ -299,6 +327,7 @@ class BusTrackingService:
                 "calculated_at": datetime.now(timezone.utc).isoformat()
             }
 
+            logger.info(f"✅ ETA calculation completed successfully: {eta_data}")
             return eta_data
 
         except Exception as e:

@@ -1,7 +1,7 @@
 """
 Socket.IO endpoints and HTTP helpers for real-time communication
 """
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, Request
 from pydantic import BaseModel
 from typing import Dict, Any, List, Optional
 import socketio
@@ -147,6 +147,48 @@ async def calculate_eta(
 
     except Exception as e:
         logger.error(f"Error in ETA calculation endpoint: {e}")
+        raise HTTPException(status_code=500, detail="Internal server error")
+
+
+@router.get("/debug/available-ids")
+async def get_available_ids(
+    request: Request,
+    current_user=Depends(get_current_user)
+):
+    """Debug endpoint to get available bus and bus stop IDs for testing"""
+    try:
+        # Get buses with current locations
+        buses = await request.app.state.mongodb.buses.find({
+            "current_location": {"$exists": True}
+        }).limit(5).to_list(length=5)
+
+        # Get active bus stops
+        bus_stops = await request.app.state.mongodb.bus_stops.find({
+            "is_active": True
+        }).limit(5).to_list(length=5)
+
+        return {
+            "buses": [
+                {
+                    "id": bus["id"],
+                    "license_plate": bus.get("license_plate"),
+                    "has_location": bus.get("current_location") is not None,
+                    "assigned_route_id": bus.get("assigned_route_id"),
+                    "current_location": bus.get("current_location")
+                }
+                for bus in buses
+            ],
+            "bus_stops": [
+                {
+                    "id": stop["id"],
+                    "name": stop.get("name"),
+                    "location": stop.get("location")
+                }
+                for stop in bus_stops
+            ]
+        }
+    except Exception as e:
+        logger.error(f"Error getting available IDs: {e}")
         raise HTTPException(status_code=500, detail="Internal server error")
 
 
