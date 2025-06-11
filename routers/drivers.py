@@ -5,6 +5,7 @@ from datetime import datetime, date
 
 from core.dependencies import get_current_user
 from models import User
+from models.user import UserRole
 from schemas.attendance import (
     MarkAttendanceRequest, AttendanceResponse, AttendanceStatus
 )
@@ -23,7 +24,7 @@ async def mark_driver_attendance(
     current_user: User = Depends(get_current_user)
 ):
     """Mark driver's attendance status"""
-    if current_user.role != "DRIVER":
+    if current_user.role != UserRole.BUS_DRIVER:
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
             detail="Only drivers can mark their attendance"
@@ -77,7 +78,7 @@ async def get_driver_attendance(
 ):
     """Get driver's attendance records"""
 
-    if current_user.role != "DRIVER":
+    if current_user.role != UserRole.BUS_DRIVER:
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
             detail="Only drivers can view their attendance"
@@ -107,7 +108,7 @@ async def report_driver_incident(
     current_user: User = Depends(get_current_user)
 ):
     """Report an incident as a driver"""
-    if current_user.role != "DRIVER":
+    if current_user.role != UserRole.BUS_DRIVER:
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
             detail="Only drivers can report incidents"
@@ -138,7 +139,7 @@ async def get_driver_incidents(
     current_user: User = Depends(get_current_user)
 ):
     """Get incidents reported by the driver"""
-    if current_user.role != "DRIVER":
+    if current_user.role != UserRole.BUS_DRIVER:
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
             detail="Only drivers can view their incidents"
@@ -157,7 +158,7 @@ async def create_route_change_request(
     current_user: User = Depends(get_current_user)
 ):
     """Create a route change request"""
-    if current_user.role != "DRIVER":
+    if current_user.role != UserRole.BUS_DRIVER:
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
             detail="Only drivers can request route changes"
@@ -185,7 +186,7 @@ async def get_driver_route_change_requests(
     current_user: User = Depends(get_current_user)
 ):
     """Get driver's route change requests"""
-    if current_user.role != "DRIVER":
+    if current_user.role != UserRole.BUS_DRIVER:
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
             detail="Only drivers can view their route change requests"
@@ -203,7 +204,7 @@ async def get_driver_schedules(
     current_user: User = Depends(get_current_user)
 ):
     """Get driver's schedules"""
-    if current_user.role != "DRIVER":
+    if current_user.role != UserRole.BUS_DRIVER:
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
             detail="Only drivers can view their schedules"
@@ -222,7 +223,7 @@ async def get_route_schedule(
     current_user: User = Depends(get_current_user)
 ):
     """Get schedule for a specific route"""
-    if current_user.role != "DRIVER":
+    if current_user.role != UserRole.BUS_DRIVER:
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
             detail="Only drivers can view route schedules"
@@ -249,7 +250,7 @@ async def get_driver_instructions(
     current_user: User = Depends(get_current_user)
 ):
     """Get instructions for the driver"""
-    if current_user.role != "DRIVER":
+    if current_user.role != UserRole.BUS_DRIVER:
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
             detail="Only drivers can view their instructions"
@@ -268,7 +269,7 @@ async def acknowledge_instruction(
     current_user: User = Depends(get_current_user)
 ):
     """Acknowledge an instruction"""
-    if current_user.role != "DRIVER":
+    if current_user.role != UserRole.BUS_DRIVER:
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
             detail="Only drivers can acknowledge instructions"
