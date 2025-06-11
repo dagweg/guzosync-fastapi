@@ -1,7 +1,6 @@
 from fastapi import FastAPI
 from motor.motor_asyncio import AsyncIOMotorClient
 from fastapi.middleware.cors import CORSMiddleware
-import socketio
 import googlemaps
 from dotenv import load_dotenv
 import os
@@ -19,7 +18,7 @@ from core.scheduled_analytics import ScheduledAnalyticsService
 # Import routers
 from routers import (
     accounts, account, notifications, config, buses, routes, feedback, issues, attendance,
-    alerts, conversations, drivers, regulators, control_center, approvals, trip, payments, websocket, socketio as socketio_router, realtime_demo, analytics
+    alerts, conversations, drivers, regulators, control_center, approvals, trip, payments, websocket as websocket_router, realtime_demo, analytics
 )
 
 # Load environment variables
@@ -85,13 +84,11 @@ async def lifespan(app: FastAPI):
         logger.info("Initializing analytics services...")
         from core.realtime_analytics import RealTimeAnalyticsService
         from core.scheduled_analytics import ScheduledAnalyticsService
+        # Initialize WebSocket manager
         from core.websocket_manager import websocket_manager
-        
-        # Initialize Socket.IO manager
-        from core.socketio_manager import socketio_manager
 
-        # Store app state in Socket.IO manager for authentication
-        socketio_manager.set_app_state(app.state)
+        # Store app state in WebSocket manager for authentication
+        websocket_manager.set_app_state(app.state)
 
         # Initialize background tasks for Mapbox integration
         logger.info("Starting background tasks...")
@@ -100,11 +97,11 @@ async def lifespan(app: FastAPI):
         await background_task_service.start_background_tasks()
         logger.info("Background tasks started successfully")
 
-        # Initialize real-time analytics service with Socket.IO
+        # Initialize real-time analytics service with WebSocket
         try:
             app.state.realtime_analytics = RealTimeAnalyticsService(
                 mongodb_client=app.state.mongodb,
-                websocket_manager=socketio_manager  # Use Socket.IO manager instead
+                websocket_manager=websocket_manager
             )
             await app.state.realtime_analytics.start()
             logger.info("Real-time analytics service started")
@@ -119,7 +116,9 @@ async def lifespan(app: FastAPI):
             await app.state.scheduled_analytics.start()
             logger.info("Scheduled analytics service started")
         except Exception as e:
-            logger.error(f"Failed to start scheduled analytics service: {e}")        # Check email configuration
+            logger.error(f"Failed to start scheduled analytics service: {e}")
+
+        # Check email configuration
         from core.email_service import EmailConfig
         email_config = EmailConfig()
         if email_config.is_configured():
@@ -131,21 +130,13 @@ async def lifespan(app: FastAPI):
     except Exception as e:
         logger.error("Error during startup", exc_info=True)
         logger.warning("⚠️  Starting server in degraded mode without full database functionality")
-        # Set minimal app state for Socket.IO manager
+        # Set minimal app state for WebSocket manager
         try:
-            from core.socketio_manager import socketio_manager
-            socketio_manager.set_app_state(app.state)
-            logger.info("Socket.IO manager initialized in degraded mode")
-        except Exception as socket_error:
-            logger.error(f"Failed to initialize Socket.IO in degraded mode: {socket_error}")
-        # Don't raise - continue with degraded functionality
-        # Set minimal app state for Socket.IO manager
-        try:
-            from core.socketio_manager import socketio_manager
-            socketio_manager.set_app_state(app.state)
-            logger.info("Socket.IO manager initialized in degraded mode")
-        except Exception as socket_error:
-            logger.error(f"Failed to initialize Socket.IO in degraded mode: {socket_error}")
+            from core.websocket_manager import websocket_manager
+            websocket_manager.set_app_state(app.state)
+            logger.info("WebSocket manager initialized in degraded mode")
+        except Exception as websocket_error:
+            logger.error(f"Failed to initialize WebSocket in degraded mode: {websocket_error}")
         # Don't raise - continue with degraded functionality
 
     yield
@@ -213,29 +204,28 @@ app.include_router(control_center.router)
 app.include_router(approvals.router)
 app.include_router(payments.router)
 app.include_router(analytics.router)
-app.include_router(websocket.router)
-app.include_router(socketio_router.router)
+# Include WebSocket router for real-time features
+app.include_router(websocket_router.router)
 app.include_router(realtime_demo.router)
 
-# Mount Socket.IO server
-from core.socketio_manager import socketio_manager
-
-# Create a custom ASGI app that handles both FastAPI and Socket.IO
-async def custom_asgi_app(scope, receive, send):
-    """Custom ASGI app that routes between FastAPI and Socket.IO"""
-    if scope["type"] == "http" and scope["path"].startswith("/socket.io/"):
-        # Handle Socket.IO requests
-        return await socketio_manager.sio.handle_request(scope, receive, send)
-    else:
-        # Handle regular FastAPI requests
-        return await app(scope, receive, send)
-
-socket_app = custom_asgi_app
+# Use the main FastAPI app
+socket_app = app
 
 @app.get("/")
 async def root():
     logger.info("Root endpoint accessed")
     return {"message": "Welcome to GuzoSync API"}
+
+
+@app.get("/health")
+async def health_check():
+    """Health check endpoint for testing"""
+    from datetime import datetime, timezone
+    return {
+        "status": "healthy",
+        "websocket": "active",
+        "timestamp": datetime.now(timezone.utc).isoformat()
+    }
 
 # Email configuration is now handled in the lifespan function above
 

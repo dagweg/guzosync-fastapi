@@ -1,10 +1,10 @@
 """
 Real-time notifications service
 """
-from datetime import datetime
+from datetime import datetime, timezone
 from typing import List, Optional
 
-from core.socketio_manager import socketio_manager
+from core.websocket_manager import websocket_manager
 from core.logger import get_logger
 
 logger = get_logger(__name__)
@@ -32,7 +32,7 @@ class NotificationService:
                 "type": notification_type,
                 "is_read": False,
                 "related_entity": related_entity,
-                "created_at": datetime.utcnow()
+                "created_at": datetime.now(timezone.utc)
             }
             
             if app_state and app_state.mongodb:
@@ -48,12 +48,16 @@ class NotificationService:
                     "message": message,
                     "notification_type": notification_type,
                     "related_entity": related_entity,
-                    "timestamp": datetime.utcnow().isoformat(),
+                    "timestamp": datetime.now(timezone.utc).isoformat(),
                     "is_read": False
                 }
             }
             
-            await socketio_manager.send_personal_message(str(user_id), "notification", websocket_message)
+            ws_message = {
+                "type": "notification",
+                **websocket_message
+            }
+            await websocket_manager.send_personal_message(str(user_id), ws_message)
             logger.info(f"Sent real-time notification to user {user_id}: {title}")
             
         except Exception as e:
@@ -98,7 +102,7 @@ class NotificationService:
                         "type": notification_type,
                         "is_read": False,
                         "related_entity": related_entity,
-                        "created_at": datetime.utcnow()
+                        "created_at": datetime.now(timezone.utc)
                     }
                     notifications.append(notification_data)
                 
@@ -113,21 +117,27 @@ class NotificationService:
                     "message": message,
                     "notification_type": notification_type,
                     "related_entity": related_entity,
-                    "timestamp": datetime.utcnow().isoformat(),
+                    "timestamp": datetime.now(timezone.utc).isoformat(),
                     "is_read": False
                 }            }
             
+            # Convert to WebSocket message format
+            ws_message = {
+                "type": "notification",
+                **websocket_message
+            }
+
             if target_user_ids:
                 # Send to specific users
                 for user_id in target_user_ids:
-                    await socketio_manager.send_personal_message(str(user_id), "notification", websocket_message)
+                    await websocket_manager.send_personal_message(str(user_id), ws_message)
             elif target_users:
                 # Send to users from database query
                 for user in target_users:
-                    await socketio_manager.send_personal_message(str(user["id"]), "notification", websocket_message)
+                    await websocket_manager.send_personal_message(str(user["id"]), ws_message)
             else:
                 # Broadcast to all connected users
-                await socketio_manager.broadcast_message("notification", websocket_message)
+                await websocket_manager.broadcast_message(ws_message)
             
             recipient_count = len(target_user_ids) if target_user_ids else len(target_users)
             logger.info(f"Broadcast notification to {recipient_count} users: {title}")
@@ -178,24 +188,30 @@ class NotificationService:
                             "trip_id": str(trip_id),
                             "delay_minutes": delay_minutes
                         },
-                        "timestamp": datetime.utcnow().isoformat(),
+                        "timestamp": datetime.now(timezone.utc).isoformat(),
                         "is_read": False
                     }
                 }
                 
+                # Convert to WebSocket message format
+                ws_message = {
+                    "type": "trip_notification",
+                    **websocket_message
+                }
+
                 # Send to individual participants
                 if participants:
                     for participant_id in participants:
-                        await socketio_manager.send_personal_message(str(participant_id), "trip_notification", websocket_message)
+                        await websocket_manager.send_personal_message(str(participant_id), ws_message)
 
                 # Also send to users tracking this specific trip/route
                 room_id = f"trip_tracking:{trip_id}"
-                await socketio_manager.send_room_message(room_id, "trip_notification", websocket_message)
+                await websocket_manager.send_room_message(room_id, ws_message)
 
                 # Also send to route subscribers
                 if route_id:
                     route_room_id = f"route_tracking:{route_id}"
-                    await socketio_manager.send_room_message(route_room_id, "trip_notification", websocket_message)
+                    await websocket_manager.send_room_message(route_room_id, ws_message)
                 
                 logger.info(f"Sent trip update notification for trip {trip_id}")
             

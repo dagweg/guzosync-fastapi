@@ -6,7 +6,7 @@ import socketio
 from core.logger import get_logger
 import json
 from uuid import UUID
-from datetime import datetime
+from datetime import datetime, timezone
 import asyncio
 
 logger = get_logger(__name__)
@@ -20,19 +20,22 @@ class SocketIOManager:
         self.sio: socketio.AsyncServer = socketio.AsyncServer(
             cors_allowed_origins="*",
             logger=False,
-            engineio_logger=False
+            engineio_logger=False,
+            
         )
-        
+
         # Store user sessions by session ID
         self.user_sessions: Dict[str, str] = {}  # session_id -> user_id
         # Store user connections by user ID
         self.user_connections: Dict[str, str] = {}  # user_id -> session_id
         # Store room subscriptions
         self.rooms: Dict[str, Set[str]] = {}  # room_id -> set of user_ids
-        
+        # Store proximity alert preferences
+        self.proximity_preferences: Dict[str, Dict[str, Any]] = {}  # user_id -> preferences
+
         # Store app state for authentication
         self.app_state: Optional[Any] = None
-        
+
         # Register event handlers
         self._register_handlers()
         
@@ -156,6 +159,281 @@ class SocketIOManager:
             await self.sio.emit('pong', {
                 'timestamp': data.get('timestamp', datetime.utcnow().isoformat())
             }, room=sid)
+
+        # Enhanced event handlers for messaging, notifications, and bus tracking
+        @self.sio.event
+        async def send_message(sid: str, data: Dict[str, Any]) -> None:
+            """Handle direct messaging between users"""
+            try:
+                if sid not in self.user_sessions:
+                    await self.sio.emit('error', {'message': 'Not authenticated'}, room=sid)
+                    return
+
+                sender_id = self.user_sessions[sid]
+                recipient_id = data.get('recipient_id')
+                message_content = data.get('message')
+                message_type = data.get('message_type', 'TEXT')
+
+                if not recipient_id or not message_content:
+                    await self.sio.emit('error', {'message': 'Recipient ID and message required'}, room=sid)
+                    return
+
+                # Import here to avoid circular imports
+                from core.realtime.chat import chat_service
+
+                # Create or get conversation between users
+                if self.app_state and self.app_state.mongodb:
+                    # Find existing conversation between these users
+                    conversation = await self.app_state.mongodb.conversations.find_one({
+                        "participants": {"$all": [sender_id, recipient_id]},
+                        "type": "DIRECT"
+                    })
+
+                    if not conversation:
+                        # Create new conversation
+                        from uuid import uuid4
+                        conversation_id = str(uuid4())
+                        conversation_data = {
+                            "id": conversation_id,
+                            "type": "DIRECT",
+                            "participants": [sender_id, recipient_id],
+                            "created_at": datetime.utcnow(),
+                            "last_message_at": datetime.utcnow()
+                        }
+                        await self.app_state.mongodb.conversations.insert_one(conversation_data)
+                    else:
+                        conversation_id = conversation["id"]
+
+                    # Save message to database
+                    from uuid import uuid4
+                    message_id = str(uuid4())
+                    message_data = {
+                        "id": message_id,
+                        "conversation_id": conversation_id,
+                        "sender_id": sender_id,
+                        "content": message_content,
+                        "message_type": message_type,
+                        "sent_at": datetime.utcnow(),
+                        "is_read": False
+                    }
+                    await self.app_state.mongodb.messages.insert_one(message_data)
+
+                    # Send real-time message
+                    await chat_service.send_real_time_message(
+                        conversation_id, sender_id, message_content, message_id, message_type, self.app_state
+                    )
+
+                    # Confirm to sender
+                    await self.sio.emit('message_sent', {
+                        'message_id': message_id,
+                        'conversation_id': conversation_id,
+                        'timestamp': datetime.utcnow().isoformat()
+                    }, room=sid)
+
+            except Exception as e:
+                logger.error(f"Error handling send_message for session {sid}: {e}")
+                await self.sio.emit('error', {'message': 'Failed to send message'}, room=sid)
+
+        @self.sio.event
+        async def subscribe_bus_tracking(sid: str, data: Dict[str, Any]) -> None:
+            """Subscribe to bus location updates"""
+            try:
+                if sid not in self.user_sessions:
+                    await self.sio.emit('error', {'message': 'Not authenticated'}, room=sid)
+                    return
+
+                user_id = self.user_sessions[sid]
+                bus_id = data.get('bus_id')
+
+                if not bus_id:
+                    await self.sio.emit('error', {'message': 'Bus ID required'}, room=sid)
+                    return
+
+                from core.realtime.bus_tracking import bus_tracking_service
+                await bus_tracking_service.subscribe_to_bus(user_id, bus_id)
+
+            except Exception as e:
+                logger.error(f"Error handling subscribe_bus_tracking for session {sid}: {e}")
+                await self.sio.emit('error', {'message': 'Failed to subscribe to bus tracking'}, room=sid)
+
+        @self.sio.event
+        async def subscribe_route_tracking(sid: str, data: Dict[str, Any]) -> None:
+            """Subscribe to route updates (all buses on route)"""
+            try:
+                if sid not in self.user_sessions:
+                    await self.sio.emit('error', {'message': 'Not authenticated'}, room=sid)
+                    return
+
+                user_id = self.user_sessions[sid]
+                route_id = data.get('route_id')
+
+                if not route_id:
+                    await self.sio.emit('error', {'message': 'Route ID required'}, room=sid)
+                    return
+
+                from core.realtime.bus_tracking import bus_tracking_service
+                await bus_tracking_service.subscribe_to_route(user_id, route_id)
+
+            except Exception as e:
+                logger.error(f"Error handling subscribe_route_tracking for session {sid}: {e}")
+                await self.sio.emit('error', {'message': 'Failed to subscribe to route tracking'}, room=sid)
+
+        @self.sio.event
+        async def subscribe_proximity_alerts(sid: str, data: Dict[str, Any]) -> None:
+            """Subscribe to proximity alerts for bus stops"""
+            try:
+                if sid not in self.user_sessions:
+                    await self.sio.emit('error', {'message': 'Not authenticated'}, room=sid)
+                    return
+
+                user_id = self.user_sessions[sid]
+                bus_stop_id = data.get('bus_stop_id')
+                radius_meters = data.get('radius_meters', 100)  # Default 100m radius
+
+                if not bus_stop_id:
+                    await self.sio.emit('error', {'message': 'Bus stop ID required'}, room=sid)
+                    return
+
+                # Join proximity alert room for this bus stop
+                room_id = f"proximity_alerts:{bus_stop_id}"
+                await self.join_room_user(user_id, room_id)
+
+                # Store user's proximity preferences
+                self.proximity_preferences[user_id] = {
+                    'bus_stop_id': bus_stop_id,
+                    'radius_meters': radius_meters,
+                    'subscribed_at': datetime.now(timezone.utc)
+                }
+
+                await self.sio.emit('proximity_alerts_subscribed', {
+                    'bus_stop_id': bus_stop_id,
+                    'radius_meters': radius_meters,
+                    'message': f'Subscribed to proximity alerts for bus stop {bus_stop_id}'
+                }, room=sid)
+
+                logger.info(f"User {user_id} subscribed to proximity alerts for bus stop {bus_stop_id}")
+
+            except Exception as e:
+                logger.error(f"Error handling subscribe_proximity_alerts for session {sid}: {e}")
+                await self.sio.emit('error', {'message': 'Failed to subscribe to proximity alerts'}, room=sid)
+
+        @self.sio.event
+        async def update_bus_location(sid: str, data: Dict[str, Any]) -> None:
+            """Handle bus location updates from drivers"""
+            try:
+                if sid not in self.user_sessions:
+                    await self.sio.emit('error', {'message': 'Not authenticated'}, room=sid)
+                    return
+
+                user_id = self.user_sessions[sid]
+
+                # Verify user is a bus driver
+                if self.app_state and self.app_state.mongodb:
+                    user = await self.app_state.mongodb.users.find_one({"id": user_id})
+                    if not user or user.get("role") != "BUS_DRIVER":
+                        await self.sio.emit('error', {'message': 'Only bus drivers can update bus locations'}, room=sid)
+                        return
+
+                bus_id = data.get('bus_id')
+                latitude = data.get('latitude')
+                longitude = data.get('longitude')
+                heading = data.get('heading')
+                speed = data.get('speed')
+
+                if not bus_id or latitude is None or longitude is None:
+                    await self.sio.emit('error', {'message': 'Bus ID, latitude, and longitude required'}, room=sid)
+                    return
+
+                # Type validation
+                try:
+                    latitude = float(latitude)
+                    longitude = float(longitude)
+                    if heading is not None:
+                        heading = float(heading)
+                    if speed is not None:
+                        speed = float(speed)
+                except (ValueError, TypeError):
+                    await self.sio.emit('error', {'message': 'Invalid numeric values for location data'}, room=sid)
+                    return
+
+                from core.realtime.bus_tracking import bus_tracking_service
+                await bus_tracking_service.update_bus_location(
+                    str(bus_id), latitude, longitude, heading, speed, self.app_state
+                )
+
+                # Check for proximity alerts
+                await self._check_proximity_alerts(str(bus_id), latitude, longitude)
+
+                await self.sio.emit('location_updated', {
+                    'bus_id': bus_id,
+                    'timestamp': datetime.now(timezone.utc).isoformat()
+                }, room=sid)
+
+            except Exception as e:
+                logger.error(f"Error handling update_bus_location for session {sid}: {e}")
+                await self.sio.emit('error', {'message': 'Failed to update bus location'}, room=sid)
+
+        @self.sio.event
+        async def get_bus_details(sid: str, data: Dict[str, Any]) -> None:
+            """Get comprehensive bus details for map display"""
+            try:
+                if sid not in self.user_sessions:
+                    await self.sio.emit('error', {'message': 'Not authenticated'}, room=sid)
+                    return
+
+                bus_id = data.get('bus_id')
+                if not bus_id:
+                    await self.sio.emit('error', {'message': 'Bus ID required'}, room=sid)
+                    return
+
+                if self.app_state and self.app_state.mongodb:
+                    # Get bus details
+                    bus = await self.app_state.mongodb.buses.find_one({"id": bus_id})
+                    if not bus:
+                        await self.sio.emit('error', {'message': 'Bus not found'}, room=sid)
+                        return
+
+                    # Get route details if bus is assigned to a route
+                    route_details = None
+                    if bus.get('assigned_route_id'):
+                        route = await self.app_state.mongodb.routes.find_one({"id": bus['assigned_route_id']})
+                        if route:
+                            route_details = {
+                                'id': route['id'],
+                                'name': route.get('name'),
+                                'start_location': route.get('start_location'),
+                                'end_location': route.get('end_location'),
+                                'route_shape': route.get('route_shape'),  # GeoJSON for Mapbox
+                                'bus_stops': route.get('bus_stops', [])
+                            }
+
+                    # Calculate ETA if possible (this would need route service integration)
+                    eta_info = None
+                    if route_details and bus.get('current_location'):
+                        # This would integrate with your route service for ETA calculation
+                        # For now, we'll provide a placeholder
+                        eta_info = {
+                            'next_stop_eta': None,  # Would be calculated
+                            'end_destination_eta': None  # Would be calculated
+                        }
+
+                    bus_details = {
+                        'id': bus['id'],
+                        'license_plate': bus.get('license_plate'),
+                        'current_location': bus.get('current_location'),
+                        'heading': bus.get('heading'),
+                        'speed': bus.get('speed'),
+                        'last_location_update': bus.get('last_location_update'),
+                        'route': route_details,
+                        'eta_info': eta_info,
+                        'status': bus.get('status', 'ACTIVE')
+                    }
+
+                    await self.sio.emit('bus_details', bus_details, room=sid)
+
+            except Exception as e:
+                logger.error(f"Error handling get_bus_details for session {sid}: {e}")
+                await self.sio.emit('error', {'message': 'Failed to get bus details'}, room=sid)
     
     async def connect_user(self, session_id: str, user_id: str) -> None:
         """Connect a user to Socket.IO"""
@@ -186,7 +464,7 @@ class SocketIOManager:
                 if user_id in self.rooms[room_id]:
                     self.rooms[room_id].remove(user_id)
                     try:
-                        await self.sio.leave_room(session_id, room_id)
+                        self.sio.leave_room(session_id, room_id)
                     except Exception as e:
                         logger.warning(f"Error leaving room {room_id} for session {session_id}: {e}")
                     if not self.rooms[room_id]:  # Remove empty rooms
@@ -204,8 +482,8 @@ class SocketIOManager:
         
         try:
             # Add to Socket.IO room
-            await self.sio.enter_room(session_id, room_id)
-            
+            self.sio.enter_room(session_id, room_id)
+
             # Track in our room management
             if room_id not in self.rooms:
                 self.rooms[room_id] = set()
@@ -226,8 +504,8 @@ class SocketIOManager:
         
         try:
             # Remove from Socket.IO room
-            await self.sio.leave_room(session_id, room_id)
-            
+            self.sio.leave_room(session_id, room_id)
+
             # Remove from our tracking
             if room_id in self.rooms and user_id in self.rooms[room_id]:
                 self.rooms[room_id].remove(user_id)
@@ -321,6 +599,68 @@ class SocketIOManager:
     def is_user_in_room(self, user_id: str, room_id: str) -> bool:
         """Check if a user is in a specific room"""
         return room_id in self.rooms and user_id in self.rooms[room_id]
+
+    async def _check_proximity_alerts(self, bus_id: str, latitude: float, longitude: float) -> None:
+        """Check if bus is near any bus stops and send proximity alerts"""
+        try:
+            if not self.app_state or not self.app_state.mongodb:
+                return
+
+            # Get all bus stops
+            bus_stops = await self.app_state.mongodb.bus_stops.find({}).to_list(length=None)
+
+            for bus_stop in bus_stops:
+                stop_location = bus_stop.get('location')
+                if not stop_location:
+                    continue
+
+                stop_lat = stop_location.get('latitude')
+                stop_lng = stop_location.get('longitude')
+                if stop_lat is None or stop_lng is None:
+                    continue
+
+                # Calculate distance using simple Haversine formula
+                distance_meters = self._calculate_distance(latitude, longitude, stop_lat, stop_lng)
+
+                # Check if any users are subscribed to proximity alerts for this stop
+                room_id = f"proximity_alerts:{bus_stop['id']}"
+                if room_id in self.rooms:
+                    for user_id in self.rooms[room_id]:
+                        user_prefs = self.proximity_preferences.get(user_id)
+                        if user_prefs and distance_meters <= user_prefs.get('radius_meters', 100):
+                            # Send proximity alert
+                            alert_message = {
+                                'type': 'proximity_alert',
+                                'bus_id': bus_id,
+                                'bus_stop_id': bus_stop['id'],
+                                'bus_stop_name': bus_stop.get('name', 'Unknown Stop'),
+                                'distance_meters': round(distance_meters, 1),
+                                'estimated_arrival_minutes': max(1, round(distance_meters / 200)),  # Rough estimate
+                                'timestamp': datetime.now(timezone.utc).isoformat()
+                            }
+
+                            await self.send_personal_message(user_id, 'proximity_alert', alert_message)
+                            logger.info(f"Sent proximity alert to user {user_id} for bus {bus_id} near stop {bus_stop['id']}")
+
+        except Exception as e:
+            logger.error(f"Error checking proximity alerts: {e}")
+
+    def _calculate_distance(self, lat1: float, lon1: float, lat2: float, lon2: float) -> float:
+        """Calculate distance between two points using Haversine formula"""
+        import math
+
+        # Convert latitude and longitude from degrees to radians
+        lat1, lon1, lat2, lon2 = map(math.radians, [lat1, lon1, lat2, lon2])
+
+        # Haversine formula
+        dlat = lat2 - lat1
+        dlon = lon2 - lon1
+        a = math.sin(dlat/2)**2 + math.cos(lat1) * math.cos(lat2) * math.sin(dlon/2)**2
+        c = 2 * math.asin(math.sqrt(a))
+
+        # Radius of earth in meters
+        r = 6371000
+        return c * r
 
 
 # Global Socket.IO manager instance

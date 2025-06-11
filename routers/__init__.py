@@ -18,7 +18,6 @@ from . import (
     payments,
     analytics,
     websocket,
-    socketio,
     realtime_demo
 )
 
@@ -40,7 +39,7 @@ __all__ = [
     "control_center",
     "approvals",
     "payments",
+    "analytics",
     "websocket",
-    "socketio",
     "realtime_demo"
 ]

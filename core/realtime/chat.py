@@ -1,9 +1,9 @@
 """
 Real-time chat/conversation service
 """
-from datetime import datetime
+from datetime import datetime, timezone
 
-from core.socketio_manager import socketio_manager
+from core.websocket_manager import websocket_manager
 from core.logger import get_logger
 
 logger = get_logger(__name__)
@@ -39,35 +39,38 @@ class ChatService:
                     "sender_id": str(sender_id),
                     "content": content,
                     "message_type": message_type,
-                    "sent_at": datetime.utcnow().isoformat()
+                    "sent_at": datetime.now(timezone.utc).isoformat()
                 }
             }
             
             # Send to conversation room
             room_id = f"conversation:{conversation_id}"
-            await socketio_manager.send_room_message(
+            ws_message = {
+                "type": "new_message",
+                **websocket_message
+            }
+            await websocket_manager.send_room_message(
                 room_id,
-                "new_message",
-                websocket_message,
+                ws_message,
                 exclude_user=str(sender_id)  # Don't send back to sender
             )
-            
+
             # Send individual notifications to participants who aren't in the room
             for participant_id in participants:
                 if str(participant_id) != str(sender_id):
                     # Check if user is in the conversation room
-                    room_users = socketio_manager.get_room_users(room_id)
+                    room_users = websocket_manager.get_users_in_room(room_id)
                     if str(participant_id) not in room_users:
                         # Send as personal notification
                         notification_message = {
+                            "type": "message_notification",
                             "conversation_id": str(conversation_id),
                             "from_user_id": str(sender_id),
                             "preview": content[:100] + "..." if len(content) > 100 else content,
-                            "timestamp": datetime.utcnow().isoformat()
+                            "timestamp": datetime.now(timezone.utc).isoformat()
                         }
-                        await socketio_manager.send_personal_message(
+                        await websocket_manager.send_personal_message(
                             str(participant_id),
-                            "message_notification",
                             notification_message
                         )
             
@@ -92,16 +95,17 @@ class ChatService:
             
             # Join conversation room
             room_id = f"conversation:{conversation_id}"
-            await socketio_manager.join_room_user(user_id, room_id)
+            await websocket_manager.join_room_user(user_id, room_id)
 
             # Send confirmation
             message = {
+                "type": "conversation_joined",
                 "conversation_id": str(conversation_id),
                 "room_id": room_id,
                 "message": f"Joined conversation {conversation_id}"
             }
 
-            await socketio_manager.send_personal_message(user_id, "conversation_joined", message)
+            await websocket_manager.send_personal_message(user_id, message)
             logger.info(f"User {user_id} joined conversation {conversation_id}")
             return True
             
@@ -113,7 +117,7 @@ class ChatService:
     async def leave_conversation(user_id: str, conversation_id: str):
         """Remove user from conversation room"""
         room_id = f"conversation:{conversation_id}"
-        await socketio_manager.leave_room_user(user_id, room_id)
+        await websocket_manager.leave_room_user(user_id, room_id)
         logger.info(f"User {user_id} left conversation {conversation_id}")
     
     @staticmethod
@@ -126,13 +130,16 @@ class ChatService:
                 "conversation_id": str(conversation_id),
                 "user_id": user_id,
                 "is_typing": is_typing,
-                "timestamp": datetime.utcnow().isoformat()
+                "timestamp": datetime.now(timezone.utc).isoformat()
             }
             
-            await socketio_manager.send_room_message(
+            ws_message = {
+                "type": "typing_status",
+                **message
+            }
+            await websocket_manager.send_room_message(
                 room_id,
-                "typing_status",
-                message,
+                ws_message,
                 exclude_user=user_id  # Don't send back to typing user
             )
             
@@ -149,13 +156,16 @@ class ChatService:
                 "conversation_id": str(conversation_id),
                 "user_id": user_id,
                 "message_id": message_id,
-                "timestamp": datetime.utcnow().isoformat()
+                "timestamp": datetime.now(timezone.utc).isoformat()
             }
             
-            await socketio_manager.send_room_message(
+            ws_message = {
+                "type": "message_read",
+                **message
+            }
+            await websocket_manager.send_room_message(
                 room_id,
-                "message_read",
-                message,
+                ws_message,
                 exclude_user=user_id
             )
             
