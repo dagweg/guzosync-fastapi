@@ -60,6 +60,17 @@ class Route(BaseDBModel):
     shape_cache_key: Optional[str] = None
     geometry_simplified: Optional[Dict[str, Any]] = None  # Simplified geometry for performance
 
+class RouteChangeRequest(BaseDBModel):
+    driver_id: str
+    current_route_id: str
+    requested_route_id: str
+    reason: str
+    status: str = "PENDING"  # PENDING, APPROVED, REJECTED
+    requested_at: datetime = Field(default_factory=datetime.utcnow)
+    reviewed_by: Optional[str] = None
+    reviewed_at: Optional[datetime] = None
+    review_notes: Optional[str] = None
+
 class AlertType(str, Enum):
     TRAFFIC = "TRAFFIC"
     WEATHER = "WEATHER"

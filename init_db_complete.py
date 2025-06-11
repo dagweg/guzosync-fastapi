@@ -397,7 +397,7 @@ async def create_users(db, count=25):
 
             # Preferences and Settings
             "preferred_language": random.choice(["en", "am"]),
-            "is_active": random.random() > 0.05,
+            "is_active": True,
             "is_verified": random.random() > 0.3,
 
             # Payment and Discounts

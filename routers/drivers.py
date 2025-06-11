@@ -104,7 +104,7 @@ async def get_driver_attendance(
 @router.post("/incidents", response_model=IncidentResponse, status_code=status.HTTP_201_CREATED)
 async def report_driver_incident(
     request: Request,
-    incident_request: ReportIncidentRequest, 
+    incident_request: ReportIncidentRequest,
     current_user: User = Depends(get_current_user)
 ):
     """Report an incident as a driver"""
@@ -113,22 +113,31 @@ async def report_driver_incident(
             status_code=status.HTTP_403_FORBIDDEN,
             detail="Only drivers can report incidents"
         )
-    
-    incident_data = {
-        "reported_by_user_id": current_user.id,
-        "description": incident_request.description,
-        "incident_type": incident_request.incident_type,
-        "severity": incident_request.severity,
-        "location": incident_request.location,
-        "related_bus_id": incident_request.related_bus_id,
-        "related_route_id": incident_request.related_route_id,
-        "status": "REPORTED",
-        "reported_at": datetime.utcnow()
-    }
-    
+
+    # Import here to avoid circular imports
+    from models import Incident, Location, IncidentSeverity, IncidentType
+    from core.mongo_utils import model_to_mongo_doc
+
+    # Create Incident model instance
+    incident = Incident(
+        reported_by_user_id=current_user.id,
+        description=incident_request.description,
+        incident_type=IncidentType(incident_request.incident_type.value),
+        location=Location(
+            latitude=incident_request.location.latitude,
+            longitude=incident_request.location.longitude
+        ) if incident_request.location else None,
+        related_bus_id=incident_request.related_bus_id,
+        related_route_id=incident_request.related_route_id,
+        severity=IncidentSeverity(incident_request.severity.value)
+    )
+
+    # Convert to MongoDB document
+    incident_data = model_to_mongo_doc(incident)
+
     result = await request.app.state.mongodb.incidents.insert_one(incident_data)
     created_incident = await request.app.state.mongodb.incidents.find_one({"_id": result.inserted_id})
-    
+
     return transform_mongo_doc(created_incident, IncidentResponse)
 
 @router.get("/incidents", response_model=List[IncidentResponse])
@@ -154,7 +163,7 @@ async def get_driver_incidents(
 @router.post("/route-change-requests", response_model=RouteChangeResponse, status_code=status.HTTP_201_CREATED)
 async def create_route_change_request(
     request: Request,
-    route_change_request: RouteChangeRequestRequest, 
+    route_change_request: RouteChangeRequestRequest,
     current_user: User = Depends(get_current_user)
 ):
     """Create a route change request"""
@@ -163,19 +172,25 @@ async def create_route_change_request(
             status_code=status.HTTP_403_FORBIDDEN,
             detail="Only drivers can request route changes"
         )
-    
-    request_data = {
-        "driver_id": current_user.id,
-        "current_route_id": route_change_request.current_route_id,
-        "requested_route_id": route_change_request.requested_route_id,
-        "reason": route_change_request.reason,
-        "status": "PENDING",
-        "requested_at": datetime.utcnow()
-    }
-    
+
+    # Import here to avoid circular imports
+    from models import RouteChangeRequest
+    from core.mongo_utils import model_to_mongo_doc
+
+    # Create RouteChangeRequest model instance
+    route_change = RouteChangeRequest(
+        driver_id=current_user.id,
+        current_route_id=route_change_request.current_route_id,
+        requested_route_id=route_change_request.requested_route_id,
+        reason=route_change_request.reason
+    )
+
+    # Convert to MongoDB document
+    request_data = model_to_mongo_doc(route_change)
+
     result = await request.app.state.mongodb.route_change_requests.insert_one(request_data)
     created_request = await request.app.state.mongodb.route_change_requests.find_one({"_id": result.inserted_id})
-    
+
     return transform_mongo_doc(created_request, RouteChangeResponse)
 
 @router.get("/route-change-requests", response_model=List[RouteChangeResponse])
