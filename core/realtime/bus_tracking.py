@@ -81,7 +81,7 @@ class BusTrackingService:
 
             # Also broadcast to global bus tracking room (all subscribers)
             global_room_id = "all_bus_tracking"
-            logger.info(f"📡 Broadcasting bus {bus_id} location to global room {global_room_id}")
+            logger.debug(f"📡 Broadcasting bus {bus_id} location to global room {global_room_id}")
             await websocket_manager.send_room_message(global_room_id, ws_message)
 
             # Also broadcast to route subscribers if bus is on a route
@@ -151,32 +151,42 @@ class BusTrackingService:
             if app_state is None or app_state.mongodb is None:
                 return
 
-            # Get all active buses with their current locations
-            buses = await app_state.mongodb.buses.find({
-                "status": "ACTIVE",
-                "current_location": {"$exists": True}
-            }).to_list(length=None)
+            # Get all buses and filter manually (more reliable than complex MongoDB queries)
+            all_buses = await app_state.mongodb.buses.find({}).to_list(length=None)
 
             bus_locations = []
-            for bus in buses:
-                location = bus.get("current_location")
-                if location and location.get("latitude") and location.get("longitude"):
-                    bus_data = {
-                        "bus_id": bus["id"],
-                        "license_plate": bus.get("license_plate"),
-                        "location": {
-                            "latitude": location["latitude"],
-                            "longitude": location["longitude"]
-                        },
-                        "heading": bus.get("heading"),
-                        "speed": bus.get("speed"),
-                        "route_id": bus.get("assigned_route_id"),
-                        "last_update": bus.get("last_location_update"),
-                        "status": bus.get("status", "ACTIVE")
-                    }
-                    bus_locations.append(bus_data)
+            for bus in all_buses:
+                # Check if bus is trackable (exclude only BREAKDOWN status)
+                bus_status = bus.get("bus_status")
+                if bus_status == "BREAKDOWN":
+                    continue
 
-            # Broadcast to all users subscribed to general bus tracking
+                # Check if bus has valid location
+                location = bus.get("current_location")
+                if (location is None or
+                    not isinstance(location, dict) or
+                    not location.get("latitude") or
+                    not location.get("longitude")):
+                    continue
+
+                # Bus meets criteria - add to broadcast list
+                last_update = bus.get("last_location_update")
+                bus_data = {
+                    "bus_id": bus["id"],
+                    "license_plate": bus.get("license_plate"),
+                    "location": {
+                        "latitude": location["latitude"],
+                        "longitude": location["longitude"]
+                    },
+                    "heading": bus.get("heading"),
+                    "speed": bus.get("speed"),
+                    "route_id": bus.get("assigned_route_id"),
+                    "last_update": last_update.isoformat() if last_update else None,
+                    "status": bus.get("bus_status", "OPERATIONAL")
+                }
+                bus_locations.append(bus_data)
+
+            # Broadcast to users subscribed to all bus tracking room
             message = {
                 "type": "all_bus_locations",
                 "buses": bus_locations,
@@ -188,8 +198,19 @@ class BusTrackingService:
                 "type": "all_bus_locations",
                 **message
             }
-            await websocket_manager.broadcast_message(ws_message)
-            logger.debug(f"Broadcasted {len(bus_locations)} bus locations")
+
+            # Send to the specific room that clients join when they subscribe_all_buses
+            room_id = "all_bus_tracking"
+
+            # Check if room has subscribers before broadcasting
+            from core.websocket_manager import websocket_manager
+            room_size = len(websocket_manager.rooms.get(room_id, set()))
+
+            if room_size > 0:
+                await websocket_manager.send_room_message(room_id, ws_message)
+                logger.info(f"📡 Broadcasted {len(bus_locations)} bus locations to {room_size} subscribers in {room_id} room")
+            else:
+                logger.debug(f"📡 No subscribers in {room_id} room, skipping broadcast of {len(bus_locations)} bus locations")
 
         except Exception as e:
             logger.error(f"Error broadcasting all bus locations: {e}")

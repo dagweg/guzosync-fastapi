@@ -226,13 +226,17 @@ async def handle_websocket_message(user_id: str, message: Dict[str, Any], websoc
 
             # Extract the data portion of the message
             message_data = message.get("data", {})
-            logger.debug(f"🔄 Extracting data for event handler: {message_data}")
+            logger.info(f"🔄 Routing message type '{message_type}' from user {user_id} to event handler")
+            logger.debug(f"🔄 Message data: {message_data}")
 
             result = await WebSocketEventHandlers.handle_message(user_id, message_type, message_data, websocket_manager.app_state)
 
             # Send response back to client
             if result:
+                logger.info(f"✅ Sending response to user {user_id}: {result}")
                 await websocket.send_text(json.dumps(result))
+            else:
+                logger.warning(f"⚠️ No response generated for message type '{message_type}' from user {user_id}")
             
     except Exception as e:
         logger.error(f"Error handling message type {message_type} from user {user_id}: {e}")

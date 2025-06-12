@@ -45,6 +45,8 @@ class WebSocketManager:
 
         total_connections = len(self.user_connections)
         logger.info(f"🔌 User {user_id} connected via WebSocket with connection {connection_id} (Total connections: {total_connections})")
+        logger.debug(f"🔌 Connection stored: user_connections[{user_id}] = {websocket}")
+        logger.debug(f"🔌 All connected users: {list(self.user_connections.keys())}")
         return connection_id
 
     async def disconnect_user(self, user_id: str) -> None:
@@ -82,8 +84,14 @@ class WebSocketManager:
 
     async def join_room_user(self, user_id: str, room_id: str) -> bool:
         """Add user to a room for group communications"""
+        # Debug: Check connection state
+        logger.debug(f"🔍 Checking connection for user {user_id} to join room {room_id}")
+        logger.debug(f"🔍 Connected users: {list(self.user_connections.keys())}")
+        logger.debug(f"🔍 User {user_id} in connections: {user_id in self.user_connections}")
+
         if user_id not in self.user_connections:
             logger.warning(f"🔌 User {user_id} not connected, cannot join room {room_id}")
+            logger.warning(f"🔌 Currently connected users: {list(self.user_connections.keys())}")
             return False
 
         try:

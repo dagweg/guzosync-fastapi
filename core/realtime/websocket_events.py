@@ -96,18 +96,28 @@ class WebSocketEventHandlers:
     async def handle_subscribe_all_buses(user_id: str, data: Dict[str, Any], app_state=None) -> Dict[str, Any]:
         """Subscribe user to all bus location updates"""
         try:
+            logger.info(f"🚌 Processing subscribe_all_buses request from user {user_id}")
+
             # Join global bus tracking room
             room_id = "all_bus_tracking"
-            await websocket_manager.join_room_user(user_id, room_id)
-            
-            # Send initial bus locations
-            await bus_tracking_service.broadcast_all_bus_locations(app_state)
-            
-            return {
-                "success": True,
-                "message": "Subscribed to all bus tracking",
-                "room_id": room_id
-            }
+            success = await websocket_manager.join_room_user(user_id, room_id)
+
+            if success:
+                logger.info(f"✅ User {user_id} successfully joined {room_id} room")
+
+                # Send initial bus locations
+                logger.info(f"📡 Sending initial bus locations to user {user_id}")
+                await bus_tracking_service.broadcast_all_bus_locations(app_state)
+
+                return {
+                    "success": True,
+                    "message": "Subscribed to all bus tracking",
+                    "room_id": room_id
+                }
+            else:
+                logger.error(f"❌ Failed to join user {user_id} to {room_id} room")
+                return {"success": False, "error": "Failed to join bus tracking room"}
+
         except Exception as e:
             logger.error(f"Error subscribing user {user_id} to all buses: {e}")
             return {"success": False, "error": str(e)}

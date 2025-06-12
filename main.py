@@ -1,4 +1,4 @@
-from fastapi import FastAPI
+from fastapi import FastAPI, Request
 from motor.motor_asyncio import AsyncIOMotorClient
 from fastapi.middleware.cors import CORSMiddleware
 import googlemaps
@@ -18,7 +18,7 @@ from core.scheduled_analytics import ScheduledAnalyticsService
 # Import routers
 from routers import (
     accounts, account, notifications, config, buses, routes, feedback, issues, attendance,
-    alerts, conversations, drivers, regulators, control_center, approvals, trip, payments, websocket as websocket_router, realtime_demo, analytics
+    alerts, conversations, drivers, regulators, control_center, approvals, trip, payments, websocket as websocket_router, realtime_demo, analytics, simulation
 )
 
 # Load environment variables
@@ -118,6 +118,16 @@ async def lifespan(app: FastAPI):
         except Exception as e:
             logger.error(f"Failed to start scheduled analytics service: {e}")
 
+        # Initialize bus simulation service
+        try:
+            from simulation import bus_simulation_service
+            bus_simulation_service.set_app_state(app.state)
+            await bus_simulation_service.start()
+            app.state.bus_simulation = bus_simulation_service
+            logger.info("Bus simulation service initialized")
+        except Exception as e:
+            logger.error(f"Failed to start bus simulation service: {e}")
+
         # Check email configuration
         from core.email_service import EmailConfig
         email_config = EmailConfig()
@@ -157,6 +167,11 @@ async def lifespan(app: FastAPI):
         if hasattr(app.state, 'scheduled_analytics'):
             await app.state.scheduled_analytics.stop()
             logger.info("Scheduled analytics service stopped")
+
+        # Stop bus simulation service
+        if hasattr(app.state, 'bus_simulation'):
+            await app.state.bus_simulation.stop()
+            logger.info("Bus simulation service stopped")
 
         logger.info("Closing MongoDB connection...")
         app.state.mongodb_client.close()
@@ -204,6 +219,7 @@ app.include_router(control_center.router)
 app.include_router(approvals.router)
 app.include_router(payments.router)
 app.include_router(analytics.router)
+app.include_router(simulation.router)
 # Include WebSocket router for real-time features
 app.include_router(websocket_router.router)
 app.include_router(realtime_demo.router)
@@ -218,13 +234,29 @@ async def root():
 
 
 @app.get("/health")
-async def health_check():
+async def health_check(request: Request):
     """Health check endpoint for testing"""
     from datetime import datetime, timezone
+    from fastapi import Request
+
+    # Get simulation status if available
+    simulation_status = {}
+    if hasattr(request.app.state, 'bus_simulation'):
+        try:
+            sim_status = request.app.state.bus_simulation.get_status()
+            simulation_status = {
+                "simulation_enabled": sim_status.get("enabled", False),
+                "simulation_running": sim_status.get("is_running", False),
+                "active_buses": sim_status.get("active_buses", 0)
+            }
+        except Exception:
+            simulation_status = {"simulation_enabled": False, "simulation_running": False}
+
     return {
         "status": "healthy",
         "websocket": "active",
-        "timestamp": datetime.now(timezone.utc).isoformat()
+        "timestamp": datetime.now(timezone.utc).isoformat(),
+        **simulation_status
     }
 
 # Email configuration is now handled in the lifespan function above

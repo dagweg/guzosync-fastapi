@@ -38,7 +38,7 @@ class RouteService:
             Route shape data or None if failed
         """
         if len(bus_stops) < 2:
-            logger.error(f"Route {route_id} needs at least 2 stops for shape generation")
+            #logger.error(f"Route {route_id} needs at least 2 stops for shape generation")
             return None
         
         # Convert bus stops to coordinates
@@ -69,11 +69,11 @@ class RouteService:
                 
                 return shape_data
             else:
-                logger.error(f"Failed to get route shape for route {route_id}")
+                #logger.error(f"Failed to get route shape for route {route_id}")
                 return None
                 
         except Exception as e:
-            logger.error(f"Error generating route shape for {route_id}: {e}")
+            #logger.error(f"Error generating route shape for {route_id}: {e}")
             return None
     
     async def calculate_bus_eta_to_stops(
@@ -136,7 +136,7 @@ class RouteService:
             return eta_responses
             
         except Exception as e:
-            logger.error(f"Error calculating bus ETA for bus {bus.id}: {e}")
+            #logger.error(f"Error calculating bus ETA for bus {bus.id}: {e}")
             return []
     
     async def get_route_shape_cached(
@@ -151,17 +151,16 @@ class RouteService:
             route_id: Route ID
             app_state: Application state
             
-        Returns:
             Route shape data or None
         """
-        if app_state is None or not hasattr(app_state, 'mongodb') or app_state.mongodb is None:
+        if app_state is None or not hasattr(app_state, 'mongodb'):
             return None
         
         try:
             # Get route from database
             route_doc = await app_state.mongodb.routes.find_one({"id": route_id})
             if not route_doc:
-                logger.error(f"Route {route_id} not found")
+                #logger.error(f"Route {route_id} not found")
                 return None
             
             # Check if we have cached shape data
@@ -184,7 +183,7 @@ class RouteService:
             # Get bus stops for this route
             stop_ids = route_doc.get("stop_ids", [])
             if len(stop_ids) < 2:
-                logger.error(f"Route {route_id} has insufficient stops for shape generation")
+                #logger.error(f"Route {route_id} has insufficient stops for shape generation")
                 return None
             
             # Fetch bus stops from database
@@ -210,14 +209,14 @@ class RouteService:
                         break
             
             if len(bus_stops) < 2:
-                logger.error(f"Could not find enough bus stops for route {route_id}")
+                #logger.error(f"Could not find enough bus stops for route {route_id}")
                 return None
             
             # Generate route shape
             return await self.generate_route_shape(route_id, bus_stops, app_state)
             
         except Exception as e:
-            logger.error(f"Error getting route shape for {route_id}: {e}")
+            #logger.error(f"Error getting route shape for {route_id}: {e}")
             return None
     
     async def update_all_route_shapes(self, app_state=None):
@@ -227,8 +226,8 @@ class RouteService:
         Args:
             app_state: Application state
         """
-        if app_state is None or not hasattr(app_state, 'mongodb') or app_state.mongodb is None:
-            logger.error("Cannot update route shapes without database connection")
+        if app_state is None or not hasattr(app_state, 'mongodb'):
+            #logger.error("Cannot update route shapes without database connection")
             return
         
         try:
@@ -281,7 +280,7 @@ class RouteService:
                         await asyncio.sleep(0.5)
                     
                 except Exception as e:
-                    logger.error(f"Error updating shape for route {route_doc.get('id', 'unknown')}: {e}")
+                    #logger.error(f"Error updating shape for route {route_doc.get('id', 'unknown')}: {e}")
                     continue
             
             logger.info("Completed route shapes update")

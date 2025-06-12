@@ -525,15 +525,15 @@ async def create_buses(db, count=15):
             "license_plate": f"AA-{random.randint(1000, 9999)}",
             "bus_type": bus_type,
             "capacity": capacity,
-            "current_location": random_location() if random.random() > 0.2 else None,
-            "last_location_update": datetime.utcnow() - timedelta(minutes=random.randint(1, 120)) if random.random() > 0.2 else None,
-            "heading": random.uniform(0, 359) if random.random() > 0.2 else None,
-            "speed": random.uniform(0, 80) if random.random() > 0.2 else None,
-            "location_accuracy": random.uniform(3, 15) if random.random() > 0.2 else None,
-            "current_address": fake.street_address() if random.random() > 0.2 else None,
+            "current_location": random_location(),  # Always give buses locations for broadcasting
+            "last_location_update": datetime.utcnow() - timedelta(minutes=random.randint(1, 120)),
+            "heading": random.uniform(0, 359),
+            "speed": random.uniform(0, 80),
+            "location_accuracy": random.uniform(3, 15),
+            "current_address": fake.street_address(),
             "assigned_route_id": None,  # Will be assigned later
             "assigned_driver_id": None,  # Will be assigned later
-            "bus_status": random.choice(BUS_STATUS),
+            "bus_status": random.choices(BUS_STATUS, weights=[0.6, 0.2, 0.15, 0.05], k=1)[0],  # More OPERATIONAL buses
             "manufacture_year": random.randint(2010, 2023),
             "bus_model": random.choice(["Volvo 7900", "Mercedes-Benz Citaro", "MAN Lion's City", "Scania Citywide"]),
             "created_at": random_datetime(-180, -30),
@@ -546,6 +546,65 @@ async def create_buses(db, count=15):
         print(f"✅ Created {len(result.inserted_ids)} buses")
 
     return buses
+
+async def assign_drivers_to_buses(db, buses, users):
+    """Assign bus drivers to buses, leaving some unassigned for testing."""
+    print("🔗 Assigning drivers to buses...")
+
+    # Get all bus drivers
+    bus_drivers = [user for user in users if user["role"] == "BUS_DRIVER"]
+
+    if not bus_drivers:
+        print("⚠️ No bus drivers available for assignment")
+        return
+
+    if not buses:
+        print("⚠️ No buses available for driver assignment")
+        return
+
+    # Calculate how many buses to assign drivers to (leave ~20% unassigned for testing)
+    total_buses = len(buses)
+    buses_to_assign = int(total_buses * 0.8)  # Assign 80% of buses
+
+    # Shuffle buses and drivers for random assignment
+    import random
+    available_buses = buses.copy()
+    available_drivers = bus_drivers.copy()
+    random.shuffle(available_buses)
+    random.shuffle(available_drivers)
+
+    assignments_made = 0
+
+    # Assign drivers to buses (one driver per bus, no driver assigned to multiple buses)
+    for i in range(min(buses_to_assign, len(available_drivers))):
+        bus = available_buses[i]
+        driver = available_drivers[i]
+
+        # Update bus with assigned driver
+        result = await db.buses.update_one(
+            {"id": bus["id"]},
+            {
+                "$set": {
+                    "assigned_driver_id": driver["id"],
+                    "updated_at": datetime.utcnow()
+                }
+            }
+        )
+
+        if result.modified_count > 0:
+            assignments_made += 1
+            print(f"   ✅ Assigned driver {driver['first_name']} {driver['last_name']} to bus {bus['license_plate']}")
+
+            # Print credentials for debugging (as per user preference)
+            print(f"      🔑 Driver credentials - Email: {driver['email']}, Password: Test123!")
+
+    unassigned_buses = total_buses - assignments_made
+    unassigned_drivers = len(bus_drivers) - assignments_made
+
+    print(f"✅ Driver assignment complete:")
+    print(f"   📊 {assignments_made} buses assigned drivers")
+    print(f"   📊 {unassigned_buses} buses left unassigned (for testing)")
+    print(f"   📊 {unassigned_drivers} drivers available for future assignment")
 
 async def create_routes(db, bus_stops, count=10):
     """Create mock routes using existing bus stops."""
@@ -1415,8 +1474,11 @@ async def main():
         # Step 4: Create users
         users = await create_users(db, count=30)
 
-        # Step 5: Create buses
-        buses = await create_buses(db, count=18)
+        # Step 5: Create buses (increased count for more broadcasting)
+        buses = await create_buses(db, count=25)
+
+        # Step 5.5: Assign drivers to buses
+        await assign_drivers_to_buses(db, buses, users)
 
         # Step 6: Create schedules
         drivers = [user for user in users if user["role"] == "BUS_DRIVER"]
