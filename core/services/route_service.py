@@ -40,40 +40,76 @@ class RouteService:
         if len(bus_stops) < 2:
             #logger.error(f"Route {route_id} needs at least 2 stops for shape generation")
             return None
-        
-        # Convert bus stops to coordinates
-        coordinates = [stop.location for stop in bus_stops]
-        
+
+        # 💾 FIRST: Check if we already have cached geometry in database (avoid API calls!)
+        if app_state is not None and app_state.mongodb is not None:
+            try:
+                route_doc = await app_state.mongodb.routes.find_one({"id": route_id})
+                if (route_doc and
+                    route_doc.get("route_geometry") and
+                    route_doc.get("route_shape_data")):
+
+                    logger.info(f"💾 Using cached route geometry for {route_id} (no API call needed)")
+                    return route_doc["route_shape_data"]
+            except Exception as e:
+                logger.warning(f"Error checking cached geometry: {e}")
+
+        # 🔑 Only call Mapbox API if we don't have cached data
+        if not self.mapbox.access_token:
+            logger.error("❌ Mapbox access token not configured and no cached geometry available")
+            return None
+
+        # Use only first and last stops for main route geometry to get realistic distance
+        # This prevents Mapbox from creating a route that visits every single stop
+        start_stop = bus_stops[0].location
+        end_stop = bus_stops[-1].location
+        main_coordinates = [start_stop, end_stop]
+
+        # Debug: Log coordinates being sent to Mapbox
+        logger.warning(f"🔑 Calling Mapbox API for route {route_id} (start→end) - will cache permanently to avoid future API calls")
+        logger.debug(f"   Start: {start_stop.latitude}, {start_stop.longitude}")
+        logger.debug(f"   End: {end_stop.latitude}, {end_stop.longitude}")
+        logger.info(f"   📍 Route has {len(bus_stops)} total stops (intermediate stops will be interpolated)")
+
         try:
-            # Get route shape from Mapbox
-            shape_data = await self.mapbox.get_route_shape(coordinates, profile="driving")
+            # Get route shape from Mapbox using only start and end points
+            shape_data = await self.mapbox.get_route_shape(main_coordinates, profile="driving")
             
             if shape_data:
                 # Update route in database with shape data
-                if app_state and app_state.mongodb:
-                    update_data = {
-                        "route_geometry": shape_data["geometry"],
-                        "route_shape_data": shape_data,
-                        "last_shape_update": datetime.utcnow(),
-                        "total_distance": round(shape_data["distance"] / 1000, 2),  # Convert to km
-                        "estimated_duration": round(shape_data["duration"] / 60, 2),  # Convert to minutes
-                        "shape_cache_key": f"route_shape:{route_id}:{hash(str(coordinates))}"
-                    }
-                    
-                    await app_state.mongodb.routes.update_one(
-                        {"id": route_id},
-                        {"$set": update_data}
-                    )
-                    
-                    logger.info(f"Updated route {route_id} with Mapbox shape data")
-                
+                if app_state is not None and app_state.mongodb is not None:
+                    try:
+                        update_data = {
+                            "route_geometry": shape_data["geometry"],
+                            "route_shape_data": shape_data,
+                            "last_shape_update": datetime.utcnow(),
+                            "total_distance": round(shape_data["distance"] / 1000, 2),  # Convert to km
+                            "estimated_duration": round(shape_data["duration"] / 60, 2),  # Convert to minutes
+                            "shape_cache_key": f"route_shape:{route_id}:{hash(str(main_coordinates))}"
+                        }
+
+                        logger.info(f"💾 Updating route {route_id} in database with Mapbox shape data")
+                        result = await app_state.mongodb.routes.update_one(
+                            {"id": route_id},
+                            {"$set": update_data}
+                        )
+
+                        if result.modified_count > 0:
+                            logger.info(f"✅ Successfully updated route {route_id} with Mapbox shape data")
+                        else:
+                            logger.warning(f"⚠️ Route {route_id} update matched but no changes made")
+
+                    except Exception as db_error:
+                        logger.error(f"❌ Database error updating route {route_id}: {db_error}")
+                        return None
+
                 return shape_data
             else:
-                #logger.error(f"Failed to get route shape for route {route_id}")
+                logger.error(f"❌ Failed to get route shape for route {route_id}")
                 return None
-                
+
         except Exception as e:
-            #logger.error(f"Error generating route shape for {route_id}: {e}")
+            logger.error(f"❌ Error generating route shape for {route_id}: {e}")
             return None
     
     async def calculate_bus_eta_to_stops(
@@ -163,19 +199,12 @@ class RouteService:
                 #logger.error(f"Route {route_id} not found")
                 return None
             
-            # Check if we have cached shape data
-            if (route_doc.get("route_geometry") and 
-                route_doc.get("last_shape_update") and
-                datetime.utcnow() - route_doc["last_shape_update"] < timedelta(hours=24)):
-                
-                logger.debug(f"Using cached route shape for {route_id}")
-                return {
-                    "geometry": route_doc["route_geometry"],
-                    "distance": route_doc.get("total_distance", 0) * 1000,  # Convert to meters
-                    "duration": route_doc.get("estimated_duration", 0) * 60,  # Convert to seconds
-                    "profile": "driving",
-                    "created_at": route_doc["last_shape_update"].isoformat()
-                }
+            # Check if we have cached shape data (permanent cache - no expiry)
+            if (route_doc.get("route_geometry") and
+                route_doc.get("route_shape_data")):
+
+                logger.debug(f"💾 Using permanently cached route shape for {route_id}")
+                return route_doc["route_shape_data"]
             
             # Generate new shape data
             logger.info(f"Generating new route shape for {route_id}")

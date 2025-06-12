@@ -88,11 +88,13 @@ class MapboxService:
         )
         
         try:
+            logger.debug(f"Making Mapbox API request to: {url}")
             async with aiohttp.ClientSession() as session:
                 async with session.get(url) as response:
                     if response.status == 200:
                         data = await response.json()
-                        
+                        logger.debug(f"Mapbox API response: {data}")
+
                         if data.get("routes"):
                             route = data["routes"][0]
                             result = {
@@ -103,27 +105,30 @@ class MapboxService:
                                 "profile": profile,
                                 "created_at": datetime.utcnow().isoformat()
                             }
-                            
+
+                            logger.info(f"✅ Mapbox route shape generated: {result['distance']/1000:.2f}km, {result['duration']/60:.1f}min")
+
                             # Cache the result
                             if self.redis_client:
                                 try:
                                     await self.redis_client.setex(
-                                        cache_key, 
-                                        self.cache_ttl, 
+                                        cache_key,
+                                        self.cache_ttl,
                                         json.dumps(result)
                                     )
                                     logger.debug(f"Cached route shape for {cache_key}")
                                 except Exception as e:
                                     logger.warning(f"Cache write error: {e}")
-                            
+
                             return result
                         else:
-                            logger.error("No routes found in Mapbox response")
+                            logger.error(f"No routes found in Mapbox response: {data}")
                             return None
                     else:
-                        logger.error(f"Mapbox API error: {response.status}")
+                        response_text = await response.text()
+                        logger.error(f"Mapbox API error: {response.status} - {response_text}")
                         return None
-                        
+
         except Exception as e:
             logger.error(f"Error fetching route shape: {e}")
             return None
