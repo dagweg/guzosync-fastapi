@@ -6,6 +6,8 @@ from typing import List, Optional
 
 from core.websocket_manager import websocket_manager
 from core.logger import get_logger
+# Import UserRole as string to avoid circular import
+# from models.users import UserRole
 
 logger = get_logger(__name__)
 
@@ -24,6 +26,13 @@ class NotificationService:
     ):
         """Send real-time notification to a specific user"""
         try:
+            logger.info(f"🔔 STARTING notification send to user {user_id}")
+            logger.info(f"🔔 Notification details: title='{title}', type='{notification_type}'")
+
+            # Check if user is connected to WebSocket
+            is_connected = websocket_manager.is_user_connected(user_id)
+            logger.info(f"🔌 User {user_id} WebSocket connection status: {'CONNECTED' if is_connected else 'NOT CONNECTED'}")
+
             # Save notification to database
             notification_data = {
                 "user_id": user_id,
@@ -34,11 +43,15 @@ class NotificationService:
                 "related_entity": related_entity,
                 "created_at": datetime.now(timezone.utc)
             }
-            
-            if app_state and app_state.mongodb:
+
+            if app_state and app_state.mongodb is not None:
+                logger.debug(f"💾 Saving notification to database for user {user_id}")
                 result = await app_state.mongodb.notifications.insert_one(notification_data)
                 notification_data["id"] = str(result.inserted_id)
-            
+                logger.debug(f"💾 Notification saved with ID: {notification_data['id']}")
+            else:
+                logger.warning(f"⚠️ No database connection - notification not saved to DB")
+
             # Send real-time notification via WebSocket
             websocket_message = {
                 "type": "notification",
@@ -52,16 +65,24 @@ class NotificationService:
                     "is_read": False
                 }
             }
-            
+
             ws_message = {
                 "type": "notification",
                 **websocket_message
             }
-            await websocket_manager.send_personal_message(str(user_id), ws_message)
-            logger.info(f"Sent real-time notification to user {user_id}: {title}")
-            
+
+            logger.info(f"📤 Attempting to send WebSocket message to user {user_id}")
+            logger.debug(f"📤 WebSocket message content: {ws_message}")
+
+            success = await websocket_manager.send_personal_message(str(user_id), ws_message)
+
+            if success:
+                logger.info(f"✅ Successfully sent real-time notification to user {user_id}: {title}")
+            else:
+                logger.error(f"❌ Failed to send real-time notification to user {user_id}: {title}")
+
         except Exception as e:
-            logger.error(f"Error sending real-time notification to user {user_id}: {e}")
+            logger.error(f"💥 Error sending real-time notification to user {user_id}: {e}", exc_info=True)
     
     @staticmethod
     async def broadcast_notification(
@@ -77,7 +98,7 @@ class NotificationService:
         try:
             target_users = []
             
-            if app_state and app_state.mongodb:
+            if app_state and app_state.mongodb is not None:
                 if target_user_ids:
                     # Send to specific users
                     target_users = await app_state.mongodb.users.find(
@@ -155,7 +176,7 @@ class NotificationService:
         """Send trip update notification to relevant users"""
         try:
             # Get trip details and passengers
-            if app_state and app_state.mongodb:
+            if app_state and app_state.mongodb is not None:
                 trip = await app_state.mongodb.trips.find_one({"id": trip_id})
                 if not trip:
                     logger.warning(f"Trip {trip_id} not found for notification")
@@ -217,6 +238,224 @@ class NotificationService:
             
         except Exception as e:
             logger.error(f"Error sending trip update notification: {e}")
+
+    @staticmethod
+    async def send_route_reallocation_notification(
+        bus_id: str,
+        old_route_id: str,
+        new_route_id: str,
+        reallocated_by_user_id: str,
+        app_state=None,
+        requesting_regulator_id: Optional[str] = None  # Add parameter for requesting regulator
+    ):
+        """Send notifications when a route is reallocated"""
+        try:
+            if not app_state or app_state.mongodb is None:
+                logger.warning("No database connection for route reallocation notification")
+                return
+
+            # Get bus and route information - Fix database queries to use _id
+            bus = await app_state.mongodb.buses.find_one({"_id": bus_id})
+            old_route = await app_state.mongodb.routes.find_one({"_id": old_route_id}) if old_route_id else None
+            new_route = await app_state.mongodb.routes.find_one({"_id": new_route_id})
+            reallocated_by = await app_state.mongodb.users.find_one({"_id": reallocated_by_user_id})
+
+            if not bus or not new_route:
+                logger.warning(f"Bus {bus_id} or new route {new_route_id} not found for reallocation notification")
+                return
+
+            # Prepare notification data
+            old_route_name = old_route.get("name", "Unknown Route") if old_route else "No Previous Route"
+            new_route_name = new_route.get("name", "Unknown Route")
+            reallocated_by_name = reallocated_by.get("full_name", "System") if reallocated_by else "System"
+
+            related_entity = {
+                "entity_type": "route_reallocation",
+                "bus_id": bus_id,
+                "old_route_id": old_route_id,
+                "new_route_id": new_route_id,
+                "reallocated_by": reallocated_by_user_id
+            }
+
+            # 1. Notify the bus driver
+            driver_id = bus.get("assigned_driver_id")
+            if driver_id:
+                await NotificationService.send_real_time_notification(
+                    user_id=driver_id,
+                    title="Route Reallocation",
+                    message=f"Your bus has been reallocated from {old_route_name} to {new_route_name} by {reallocated_by_name}",
+                    notification_type="ROUTE_REALLOCATION",
+                    related_entity=related_entity,
+                    app_state=app_state
+                )
+                logger.info(f"Sent route reallocation notification to driver {driver_id}")
+
+            # 2. Notify the requesting regulator (most important!)
+            if requesting_regulator_id:
+                logger.info(f"🎯 CRITICAL: Sending approval notification to requesting regulator {requesting_regulator_id}")
+                logger.info(f"🎯 Bus: {bus.get('license_plate', bus_id)}, Old Route: {old_route_name}, New Route: {new_route_name}")
+
+                await NotificationService.send_real_time_notification(
+                    user_id=requesting_regulator_id,
+                    title="Reallocation Request Approved",
+                    message=f"Your reallocation request has been approved! Bus {bus.get('license_plate', bus_id)} has been reallocated from {old_route_name} to {new_route_name}",
+                    notification_type="REALLOCATION_REQUEST_APPROVED",
+                    related_entity=related_entity,
+                    app_state=app_state
+                )
+                logger.info(f"✅ Completed sending reallocation approval notification to requesting regulator {requesting_regulator_id}")
+            else:
+                logger.warning(f"⚠️ No requesting_regulator_id provided - cannot send approval notification!")
+
+            # 3. Notify the queue regulator of the previous route (if exists)
+            if old_route_id:
+                # Find queue regulators assigned to the old route
+                old_route_regulators = await app_state.mongodb.users.find({
+                    "role": "QUEUE_REGULATOR",
+                    "assigned_route_ids": old_route_id
+                }).to_list(length=None)
+
+                for regulator in old_route_regulators:
+                    # Don't double-notify the requesting regulator
+                    if regulator.get("_id") != requesting_regulator_id:
+                        await NotificationService.send_real_time_notification(
+                            user_id=regulator["_id"],  # Fix: use _id instead of id
+                            title="Bus Removed from Route",
+                            message=f"Bus {bus.get('license_plate', bus_id)} has been reallocated from your route {old_route_name} to {new_route_name}",
+                            notification_type="ROUTE_REALLOCATION",
+                            related_entity=related_entity,
+                            app_state=app_state
+                        )
+                        logger.info(f"Sent route reallocation notification to old route regulator {regulator['_id']}")
+
+            # 4. Notify the queue regulator of the new route
+            new_route_regulators = await app_state.mongodb.users.find({
+                "role": "QUEUE_REGULATOR",
+                "assigned_route_ids": new_route_id
+            }).to_list(length=None)
+
+            for regulator in new_route_regulators:
+                # Don't double-notify the requesting regulator
+                if regulator.get("_id") != requesting_regulator_id:
+                    await NotificationService.send_real_time_notification(
+                        user_id=regulator["_id"],  # Fix: use _id instead of id
+                        title="Bus Added to Route",
+                        message=f"Bus {bus.get('license_plate', bus_id)} has been allocated to your route {new_route_name}",
+                        notification_type="ROUTE_REALLOCATION",
+                        related_entity=related_entity,
+                        app_state=app_state
+                    )
+                    logger.info(f"Sent route reallocation notification to new route regulator {regulator['_id']}")
+
+            logger.info(f"Route reallocation notifications sent for bus {bus_id}")
+
+        except Exception as e:
+            logger.error(f"Error sending route reallocation notifications: {e}")
+
+    @staticmethod
+    async def send_reallocation_request_discarded_notification(
+        request_id: str,
+        requesting_regulator_id: str,
+        reason: str,
+        app_state=None
+    ):
+        """Send notification when a reallocation request is discarded"""
+        try:
+            logger.info(f"🚫 STARTING rejection notification for request {request_id} to regulator {requesting_regulator_id}")
+            logger.info(f"🚫 Rejection reason: {reason}")
+
+            if not app_state or app_state.mongodb is None:
+                logger.warning("No database connection for reallocation request discarded notification")
+                return
+
+            # Get the reallocation request details - Fix database query to use _id
+            logger.debug(f"🔍 Looking up reallocation request {request_id} in database")
+            request = await app_state.mongodb.reallocation_requests.find_one({"_id": request_id})
+            if not request:
+                logger.warning(f"⚠️ Reallocation request {request_id} not found in database")
+                return
+
+            logger.debug(f"📋 Found reallocation request: bus_id={request.get('bus_id')}")
+
+            related_entity = {
+                "entity_type": "reallocation_request",
+                "request_id": request_id,
+                "bus_id": request.get("bus_id"),
+                "status": "DISCARDED"
+            }
+
+            # Notify the requesting regulator
+            logger.info(f"🎯 CRITICAL: Sending rejection notification to requesting regulator {requesting_regulator_id}")
+            await NotificationService.send_real_time_notification(
+                user_id=requesting_regulator_id,
+                title="Reallocation Request Discarded",
+                message=f"Your reallocation request for bus {request.get('bus_id', 'Unknown')} has been discarded. Reason: {reason}",
+                notification_type="REALLOCATION_REQUEST_DISCARDED",
+                related_entity=related_entity,
+                app_state=app_state
+            )
+
+            logger.info(f"✅ Completed sending reallocation request discarded notification to regulator {requesting_regulator_id}")
+
+        except Exception as e:
+            logger.error(f"💥 Error sending reallocation request discarded notification: {e}", exc_info=True)
+
+    @staticmethod
+    async def send_incident_reported_notification(
+        incident_id: str,
+        reported_by_user_id: str,
+        incident_type: str,
+        severity: str,
+        app_state=None
+    ):
+        """Send notification to control center when an incident is reported"""
+        try:
+            if not app_state or app_state.mongodb is None:
+                logger.warning("No database connection for incident reported notification")
+                return
+
+            # Get incident details - Fix database queries to use _id
+            incident = await app_state.mongodb.incidents.find_one({"_id": incident_id})
+            reporter = await app_state.mongodb.users.find_one({"_id": reported_by_user_id})
+
+            if not incident:
+                logger.warning(f"Incident {incident_id} not found")
+                return
+
+            reporter_name = reporter.get("full_name", "Unknown User") if reporter else "Unknown User"
+            reporter_role = reporter.get("role", "Unknown Role") if reporter else "Unknown Role"
+
+            related_entity = {
+                "entity_type": "incident",
+                "incident_id": incident_id,
+                "incident_type": incident_type,
+                "severity": severity,
+                "reported_by": reported_by_user_id
+            }
+
+            # Prepare notification message
+            message = f"New {severity.lower()} severity {incident_type.replace('_', ' ').lower()} incident reported by {reporter_name} ({reporter_role})"
+            if incident.get("related_bus_id"):
+                message += f" involving bus {incident['related_bus_id']}"
+            if incident.get("related_route_id"):
+                route = await app_state.mongodb.routes.find_one({"_id": incident["related_route_id"]})
+                route_name = route.get("name", incident["related_route_id"]) if route else incident["related_route_id"]
+                message += f" on route {route_name}"
+
+            # Send to control center staff - Use string instead of UserRole enum
+            await NotificationService.broadcast_notification(
+                title="Incident Reported",
+                message=message,
+                notification_type="INCIDENT_REPORTED",
+                target_roles=["CONTROL_ADMIN", "CONTROL_STAFF"],  # Use strings instead of enum
+                related_entity=related_entity,
+                app_state=app_state
+            )
+
+            logger.info(f"Sent incident reported notification for incident {incident_id}")
+
+        except Exception as e:
+            logger.error(f"Error sending incident reported notification: {e}")
 
 
 # Global notification service instance

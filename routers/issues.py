@@ -4,10 +4,12 @@ from typing import List
 
 from core.dependencies import get_current_user
 from models import User, Incident, Location, IncidentSeverity, IncidentType
+from models.user import UserRole
 from schemas.feedback import ReportIncidentRequest, IncidentResponse
 
 from core import transform_mongo_doc
 from core.mongo_utils import model_to_mongo_doc
+from core.realtime.notifications import notification_service
 
 router = APIRouter(prefix="/api/issues", tags=["issues"])
 
@@ -36,7 +38,16 @@ async def report_issue(
     incident_doc = model_to_mongo_doc(incident)
     result = await request.app.state.mongodb.incidents.insert_one(incident_doc)
     created_incident = await request.app.state.mongodb.incidents.find_one({"_id": result.inserted_id})
-    
+
+    # Send incident reported notification to control center
+    await notification_service.send_incident_reported_notification(
+        incident_id=incident.id,
+        reported_by_user_id=current_user.id,
+        incident_type=incident_request.incident_type.value,
+        severity=incident_request.severity.value,
+        app_state=request.app.state
+    )
+
     return transform_mongo_doc(created_incident, IncidentResponse)
 
 @router.get("", response_model=List[IncidentResponse])
@@ -49,7 +60,7 @@ async def get_issues(
     # For regular users, only show their own reported incidents
     query = {"reported_by_user_id": current_user.id}
       # For admins, show all incidents
-    if current_user.role in ["CONTROL_CENTER_ADMIN", "REGULATOR"]:
+    if current_user.role in [UserRole.CONTROL_ADMIN, UserRole.QUEUE_REGULATOR]:
         query = {}
     
     incidents = await request.app.state.mongodb.incidents.find(query).skip(skip).limit(limit).to_list(length=limit)

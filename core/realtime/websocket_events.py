@@ -10,6 +10,7 @@ from core.realtime.notifications import notification_service
 from core.logger import get_logger
 from models.base import Location
 from core.mongo_utils import model_to_mongo_doc
+from models.user import UserRole
 
 logger = get_logger(__name__)
 
@@ -75,6 +76,8 @@ class WebSocketEventHandlers:
                     result = {"success": False, "error": "Conversation ID and Message ID required"}
                 else:
                     result = await WebSocketEventHandlers.handle_mark_message_read(user_id, conversation_id, message_id)
+            elif message_type == "send_notification":
+                result = await WebSocketEventHandlers.handle_send_notification(user_id, data, app_state)
             else:
                 logger.warning(f"❓ Unknown WebSocket message type: {message_type} from user {user_id}")
                 result = {"success": False, "error": f"Unknown message type: {message_type}"}
@@ -503,6 +506,80 @@ class WebSocketEventHandlers:
             return {"success": True}
         except Exception as e:
             logger.error(f"Error marking message as read for user {user_id}: {e}")
+            return {"success": False, "error": str(e)}
+
+    @staticmethod
+    async def handle_send_notification(user_id: str, data: Dict[str, Any], app_state=None) -> Dict[str, Any]:
+        """General notification handler for sending notifications to users"""
+        try:
+            # Extract notification data
+            title = data.get("title", "")
+            message = data.get("message", "")
+            notification_type = data.get("notification_type", "GENERAL")
+            target_user_ids = data.get("target_user_ids")
+            target_roles = data.get("target_roles")
+            related_entity = data.get("related_entity")
+
+            if not title or not message:
+                return {"success": False, "error": "Title and message are required"}
+
+            # Verify sender has appropriate permissions for certain notification types
+            if app_state is not None and app_state.mongodb is not None:
+                sender = await app_state.mongodb.users.find_one({"id": user_id})
+                if not sender:
+                    return {"success": False, "error": "Sender not found"}
+
+                # Check permissions for system notifications
+                restricted_types = ["ROUTE_REALLOCATION", "REALLOCATION_REQUEST_DISCARDED", "INCIDENT_REPORTED"]
+                if notification_type in restricted_types:
+                    allowed_roles = [UserRole.CONTROL_ADMIN, "CONTROL_STAFF", "QUEUE_REGULATOR", "BUS_DRIVER"]
+                    if sender.get("role") not in allowed_roles:
+                        return {"success": False, "error": "Insufficient permissions for this notification type"}
+
+            # Send notification using the notification service
+            if target_user_ids:
+                # Send to specific users
+                for target_user_id in target_user_ids:
+                    await notification_service.send_real_time_notification(
+                        user_id=target_user_id,
+                        title=title,
+                        message=message,
+                        notification_type=notification_type,
+                        related_entity=related_entity,
+                        app_state=app_state
+                    )
+                recipient_count = len(target_user_ids)
+            else:
+                # Broadcast to roles or all users
+                await notification_service.broadcast_notification(
+                    title=title,
+                    message=message,
+                    notification_type=notification_type,
+                    target_roles=target_roles,
+                    related_entity=related_entity,
+                    app_state=app_state
+                )
+                # Get recipient count for response
+                if target_roles and app_state is not None and app_state.mongodb is not None:
+                    target_users = await app_state.mongodb.users.find(
+                        {"role": {"$in": target_roles}}
+                    ).to_list(length=None)
+                    recipient_count = len(target_users)
+                else:
+                    recipient_count = 0  # Will be calculated in broadcast_notification
+
+            logger.info(f"✅ Notification sent successfully by user {user_id}: {title}")
+
+            return {
+                "success": True,
+                "message": "Notification sent successfully",
+                "notification_type": notification_type,
+                "recipient_count": recipient_count,
+                "timestamp": datetime.now(timezone.utc).isoformat()
+            }
+
+        except Exception as e:
+            logger.error(f"Error sending notification from user {user_id}: {e}")
             return {"success": False, "error": str(e)}
 
 

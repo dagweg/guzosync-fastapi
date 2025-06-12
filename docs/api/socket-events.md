@@ -348,6 +348,54 @@ All WebSocket messages follow this structure:
 }
 ```
 
+### 13. Send Notification (General)
+
+**Event:** `send_notification`
+**Role:** CONTROL_CENTER_ADMIN, CONTROL_STAFF, QUEUE_REGULATOR, BUS_DRIVER (for system notifications)
+**Description:** Send notifications to specific users or roles
+
+```json
+{
+  "type": "send_notification",
+  "data": {
+    "title": "Route Reallocation",
+    "message": "Your bus has been reallocated from Route A to Route B",
+    "notification_type": "ROUTE_REALLOCATION",
+    "target_user_ids": ["user_123", "user_456"], // Optional: specific users
+    "target_roles": ["BUS_DRIVER", "QUEUE_REGULATOR"], // Optional: user roles
+    "related_entity": {
+      // Optional: related data
+      "entity_type": "route_reallocation",
+      "bus_id": "bus_123",
+      "old_route_id": "route_001",
+      "new_route_id": "route_002"
+    }
+  }
+}
+```
+
+**Response:**
+
+```json
+{
+  "success": true,
+  "message": "Notification sent successfully",
+  "notification_type": "ROUTE_REALLOCATION",
+  "recipient_count": 5,
+  "timestamp": "2024-01-15T10:40:00Z"
+}
+```
+
+**Notification Types:**
+
+- `GENERAL` - General notifications
+- `ROUTE_REALLOCATION` - Bus route reallocation notifications
+- `REALLOCATION_REQUEST_DISCARDED` - Reallocation request discarded
+- `INCIDENT_REPORTED` - Incident reported to control center
+- `CHAT_MESSAGE` - Chat message notifications
+- `TRIP_UPDATE` - Trip status updates
+- `SERVICE_ALERT` - Service alerts
+
 ## Server → Client Events
 
 ### 1. Bus Location Update (Broadcast)
@@ -438,6 +486,80 @@ All WebSocket messages follow this structure:
       "passenger_distance_meters": 200.0
     },
     "timestamp": "2024-01-15T10:32:00Z",
+    "is_read": false
+  }
+}
+```
+
+### 4a. Route Reallocation Notification
+
+**Event Type:** `notification`
+**Sent to:** Bus driver, old route regulators, new route regulators
+
+```json
+{
+  "type": "notification",
+  "notification": {
+    "title": "Route Reallocation",
+    "message": "Your bus has been reallocated from Route A to Route B by Admin John",
+    "notification_type": "ROUTE_REALLOCATION",
+    "related_entity": {
+      "entity_type": "route_reallocation",
+      "bus_id": "bus_123",
+      "old_route_id": "route_001",
+      "new_route_id": "route_002",
+      "reallocated_by": "admin_456"
+    },
+    "timestamp": "2024-01-15T10:45:00Z",
+    "is_read": false
+  }
+}
+```
+
+### 4b. Reallocation Request Discarded Notification
+
+**Event Type:** `notification`
+**Sent to:** Requesting regulator
+
+```json
+{
+  "type": "notification",
+  "notification": {
+    "title": "Reallocation Request Discarded",
+    "message": "Your reallocation request for bus AA-12345 has been discarded. Reason: No suitable alternative route found",
+    "notification_type": "REALLOCATION_REQUEST_DISCARDED",
+    "related_entity": {
+      "entity_type": "reallocation_request",
+      "request_id": "req_789",
+      "bus_id": "bus_123",
+      "status": "DISCARDED"
+    },
+    "timestamp": "2024-01-15T10:50:00Z",
+    "is_read": false
+  }
+}
+```
+
+### 4c. Incident Reported Notification
+
+**Event Type:** `notification`
+**Sent to:** Control center staff and admins
+
+```json
+{
+  "type": "notification",
+  "notification": {
+    "title": "Incident Reported",
+    "message": "New high severity vehicle issue incident reported by John Driver (BUS_DRIVER) involving bus AA-12345 on route Route A",
+    "notification_type": "INCIDENT_REPORTED",
+    "related_entity": {
+      "entity_type": "incident",
+      "incident_id": "inc_101",
+      "incident_type": "VEHICLE_ISSUE",
+      "severity": "HIGH",
+      "reported_by": "driver_123"
+    },
+    "timestamp": "2024-01-15T10:55:00Z",
     "is_read": false
   }
 }

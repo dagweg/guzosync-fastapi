@@ -5,6 +5,7 @@ from datetime import datetime
 
 from core.dependencies import get_current_user
 from models import User, Feedback
+from models.user import UserRole
 from schemas.feedback import SubmitFeedbackRequest, FeedbackResponse
 
 from core import transform_mongo_doc
@@ -44,7 +45,7 @@ async def get_feedback(
     query = {"submitted_by_user_id": current_user.id}
     
     # For admins, show all feedback
-    if current_user.role in ["CONTROL_CENTER_ADMIN", "REGULATOR"]:
+    if current_user.role in [UserRole.CONTROL_ADMIN, UserRole.QUEUE_REGULATOR]:
         query = {}
     
     feedback_list = await request.app.state.mongodb.feedback.find(query).skip(skip).limit(limit).to_list(length=limit)

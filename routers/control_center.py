@@ -19,9 +19,10 @@ from schemas.transport import (
 from schemas.route import CreateRouteRequest, UpdateRouteRequest, RouteResponse
 from models.user import UserRole
 from schemas.control_center import (RegisterPersonnelRequest, RegisterControlStaffRequest)
-from schemas.regulators import ReallocationHistoryResponse
+from schemas.regulators import ReallocationHistoryResponse, ReallocationAction, ReviewReallocationRequest
 from uuid import uuid4
 from core.ai_agent import route_optimization_agent
+from core.realtime.notifications import notification_service
 
 
 logger = get_logger(__name__)
@@ -232,7 +233,7 @@ async def get_queue_regulators(
     current_user: User = Depends(get_current_user)
 ):
     """Get all queue regulators"""
-    if current_user.role != "CONTROL_CENTER_ADMIN":
+    if current_user.role != UserRole.CONTROL_ADMIN:
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
             detail="Only control center admins can view personnel"
@@ -251,7 +252,7 @@ async def get_queue_regulator(
     current_user: User = Depends(get_current_user)
 ):
     """Get specific queue regulator"""
-    if current_user.role != "CONTROL_CENTER_ADMIN":
+    if current_user.role != UserRole.CONTROL_ADMIN:
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
             detail="Only control center admins can view personnel"
@@ -278,7 +279,7 @@ async def update_queue_regulator(
     current_user: User = Depends(get_current_user)
 ):
     """Update queue regulator"""
-    if current_user.role != "CONTROL_CENTER_ADMIN":
+    if current_user.role != UserRole.CONTROL_ADMIN:
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
             detail="Only control center admins can update personnel"
@@ -305,7 +306,7 @@ async def delete_queue_regulator(
     current_user: User = Depends(get_current_user)
 ):
     """Delete queue regulator"""
-    if current_user.role != "CONTROL_CENTER_ADMIN":
+    if current_user.role != UserRole.CONTROL_ADMIN:
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
             detail="Only control center admins can delete personnel"
@@ -332,7 +333,7 @@ async def assign_regulator_to_bus_stop(
     current_user: User = Depends(get_current_user)
 ):
     """Assign regulator to a bus stop"""
-    if current_user.role != "CONTROL_CENTER_ADMIN":
+    if current_user.role != UserRole.CONTROL_ADMIN:
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
             detail="Only control center admins can assign regulators"
@@ -350,7 +351,7 @@ async def assign_regulator_to_bus_stop(
         )
     
     # Check if bus stop exists
-    bus_stop = await request.app.state.mongodb.bus_stops.find_one({"_id": bus_stop_id})
+    bus_stop = await request.app.state.mongodb.bus_stops.find_one({"id": bus_stop_id})
     if not bus_stop:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
@@ -382,7 +383,7 @@ async def get_bus_drivers(
     current_user: User = Depends(get_current_user)
 ):
     """Get all bus drivers"""
-    if current_user.role != "CONTROL_CENTER_ADMIN":
+    if current_user.role != UserRole.CONTROL_ADMIN:
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
             detail="Only control center admins can view personnel"
@@ -401,7 +402,7 @@ async def get_bus_driver(
     current_user: User = Depends(get_current_user)
 ):
     """Get specific bus driver"""
-    if current_user.role != "CONTROL_CENTER_ADMIN":
+    if current_user.role != UserRole.CONTROL_ADMIN:
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
             detail="Only control center admins can view personnel"
@@ -428,7 +429,7 @@ async def update_bus_driver(
     current_user: User = Depends(get_current_user)
 ):
     """Update bus driver"""
-    if current_user.role != "CONTROL_CENTER_ADMIN":
+    if current_user.role != UserRole.CONTROL_ADMIN:
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
             detail="Only control center admins can update personnel"
@@ -455,7 +456,7 @@ async def delete_bus_driver(
     current_user: User = Depends(get_current_user)
 ):
     """Delete bus driver"""
-    if current_user.role != "CONTROL_CENTER_ADMIN":
+    if current_user.role != UserRole.CONTROL_ADMIN:
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
             detail="Only control center admins can delete personnel"
@@ -482,7 +483,7 @@ async def assign_driver_to_bus(
     current_user: User = Depends(get_current_user)
 ):
     """Assign driver to a bus"""
-    if current_user.role != "CONTROL_CENTER_ADMIN":
+    if current_user.role != UserRole.CONTROL_ADMIN:
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
             detail="Only control center admins can assign drivers"
@@ -500,7 +501,7 @@ async def assign_driver_to_bus(
         )
     
     # Check if bus exists
-    bus = await request.app.state.mongodb.buses.find_one({"_id": bus_id})
+    bus = await request.app.state.mongodb.buses.find_one({"id": bus_id})
     if not bus:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
@@ -508,7 +509,7 @@ async def assign_driver_to_bus(
         )
       # Update bus with assigned driver
     await request.app.state.mongodb.buses.update_one(
-        {"_id": bus_id},
+        {"id": bus_id},
         {"$set": {"assigned_driver_id": driver_id}}
     )
     
@@ -603,7 +604,7 @@ async def create_bus_stop(
     current_user: User = Depends(get_current_user)
 ):
     """Create a new bus stop"""
-    if current_user.role != "CONTROL_CENTER_ADMIN":
+    if current_user.role != UserRole.CONTROL_ADMIN:
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
             detail="Only control center admins can create bus stops"
@@ -633,7 +634,7 @@ async def get_control_center_bus_stops(
     current_user: User = Depends(get_current_user)
 ):
     """Get all bus stops for management"""
-    if current_user.role != "CONTROL_CENTER_ADMIN":
+    if current_user.role != UserRole.CONTROL_ADMIN:
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
             detail="Only control center admins can view all bus stops"
@@ -650,19 +651,19 @@ async def get_control_center_bus_stop(
     current_user: User = Depends(get_current_user)
 ):
     """Get specific bus stop for management"""
-    if current_user.role != "CONTROL_CENTER_ADMIN":
+    if current_user.role != UserRole.CONTROL_ADMIN:
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
             detail="Only control center admins can view bus stop details"
         )
     
-    bus_stop = await request.app.state.mongodb.bus_stops.find_one({"_id": bus_stop_id})
+    bus_stop = await request.app.state.mongodb.bus_stops.find_one({"id": bus_stop_id})
     if not bus_stop:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
             detail="Bus stop not found"
         )
-    
+
     return transform_mongo_doc(bus_stop, BusStopResponse)
 
 @router.put("/bus-stops/{bus_stop_id}", response_model=BusStopResponse)
@@ -673,7 +674,7 @@ async def update_control_center_bus_stop(
     current_user: User = Depends(get_current_user)
 ):
     """Update bus stop"""
-    if current_user.role != "CONTROL_CENTER_ADMIN":
+    if current_user.role != UserRole.CONTROL_ADMIN:
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
             detail="Only control center admins can update bus stops"
@@ -683,17 +684,17 @@ async def update_control_center_bus_stop(
     update_dict["updated_at"] = datetime.utcnow()
     
     result = await request.app.state.mongodb.bus_stops.update_one(
-        {"_id": bus_stop_id},
+        {"id": bus_stop_id},
         {"$set": update_dict}
     )
-    
+
     if result.modified_count == 0:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
             detail="Bus stop not found"
         )
-    
-    updated_bus_stop = await request.app.state.mongodb.bus_stops.find_one({"_id": bus_stop_id})
+
+    updated_bus_stop = await request.app.state.mongodb.bus_stops.find_one({"id": bus_stop_id})
     return transform_mongo_doc(updated_bus_stop, BusStopResponse)
 
 @router.delete("/bus-stops/{bus_stop_id}")
@@ -703,13 +704,13 @@ async def delete_control_center_bus_stop(
     current_user: User = Depends(get_current_user)
 ):
     """Delete bus stop"""
-    if current_user.role != "CONTROL_CENTER_ADMIN":
+    if current_user.role != UserRole.CONTROL_ADMIN:
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
             detail="Only control center admins can delete bus stops"
         )
     
-    result = await request.app.state.mongodb.bus_stops.delete_one({"_id": bus_stop_id})
+    result = await request.app.state.mongodb.bus_stops.delete_one({"id": bus_stop_id})
     
     if result.deleted_count == 0:
         raise HTTPException(
@@ -728,7 +729,7 @@ async def get_control_center_buses(
     current_user: User = Depends(get_current_user)
 ):
     """Get all buses for management"""
-    if current_user.role != "CONTROL_CENTER_ADMIN":
+    if current_user.role != UserRole.CONTROL_ADMIN:
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
             detail="Only control center admins can view all buses"
@@ -755,15 +756,15 @@ async def get_control_center_bus(
     current_user: User = Depends(get_current_user)
 ):
     """Get specific bus for management"""
-    if current_user.role != "CONTROL_CENTER_ADMIN":
+    if current_user.role != UserRole.CONTROL_ADMIN:
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
             detail="Only control center admins can view bus details"
         )
     
     # Build aggregation pipeline for single bus
-    pipeline = build_bus_aggregation_pipeline({"_id": bus_id})
-    
+    pipeline = build_bus_aggregation_pipeline({"id": bus_id})
+
     # Execute aggregation
     buses = await request.app.state.mongodb.buses.aggregate(pipeline).to_list(length=1)
     
@@ -783,7 +784,7 @@ async def update_control_center_bus(
     current_user: User = Depends(get_current_user)
 ):
     """Update bus"""
-    if current_user.role != "CONTROL_CENTER_ADMIN":
+    if current_user.role != UserRole.CONTROL_ADMIN:
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
             detail="Only control center admins can update buses"
@@ -793,18 +794,18 @@ async def update_control_center_bus(
     update_dict["updated_at"] = datetime.utcnow()
     
     result = await request.app.state.mongodb.buses.update_one(
-        {"_id": bus_id},
+        {"id": bus_id},
         {"$set": update_dict}
     )
-    
+
     if result.modified_count == 0:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
             detail="Bus not found"
         )
-    
+
     # Get updated bus with populated driver information
-    pipeline = build_bus_aggregation_pipeline({"_id": bus_id})
+    pipeline = build_bus_aggregation_pipeline({"id": bus_id})
     buses = await request.app.state.mongodb.buses.aggregate(pipeline).to_list(length=1)
     
     if not buses:
@@ -823,31 +824,31 @@ async def assign_bus_to_route(
     current_user: User = Depends(get_current_user)
 ):
     """Assign bus to a route"""
-    if current_user.role != "CONTROL_CENTER_ADMIN":
+    if current_user.role != UserRole.CONTROL_ADMIN:
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
             detail="Only control center admins can assign buses to routes"
         )
     
     # Check if bus exists
-    bus = await request.app.state.mongodb.buses.find_one({"_id": bus_id})
+    bus = await request.app.state.mongodb.buses.find_one({"id": bus_id})
     if not bus:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
             detail="Bus not found"
         )
-    
+
     # Check if route exists
-    route = await request.app.state.mongodb.routes.find_one({"_id": route_id})
+    route = await request.app.state.mongodb.routes.find_one({"id": route_id})
     if not route:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
             detail="Route not found"
         )
-    
+
     # Update bus with assigned route
     await request.app.state.mongodb.buses.update_one(
-        {"_id": bus_id},
+        {"id": bus_id},
         {"$set": {"assigned_route_id": route_id}}
     )
     
@@ -861,28 +862,28 @@ async def reallocate_bus_route(
     current_user: User = Depends(get_current_user)
 ):
     """Reallocate bus to a different route"""
-    if current_user.role != "CONTROL_CENTER_ADMIN":
+    if current_user.role != UserRole.CONTROL_ADMIN:
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
             detail="Only control center admins can reallocate buses"
         )
     
     # Check if bus exists
-    bus = await request.app.state.mongodb.buses.find_one({"_id": bus_id})
+    bus = await request.app.state.mongodb.buses.find_one({"id": bus_id})
     if not bus:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
             detail="Bus not found"
         )
-    
+
     # Check if route exists
-    route = await request.app.state.mongodb.routes.find_one({"_id": route_id})
+    route = await request.app.state.mongodb.routes.find_one({"id": route_id})
     if not route:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
             detail="Route not found"
         )
-    
+
     # Create reallocation record
     reallocation_data = {
         "bus_id": bus_id,
@@ -892,15 +893,25 @@ async def reallocate_bus_route(
         "reallocated_at": datetime.utcnow(),
         "status": "COMPLETED"
     }
-    
+
     await request.app.state.mongodb.reallocation_requests.insert_one(reallocation_data)
-    
+
     # Update bus with new route
     await request.app.state.mongodb.buses.update_one(
-        {"_id": bus_id},
+        {"id": bus_id},
         {"$set": {"assigned_route_id": route_id}}
     )
-    
+
+    # Send route reallocation notifications
+    await notification_service.send_route_reallocation_notification(
+        bus_id=bus_id,
+        old_route_id=bus.get("assigned_route_id"),
+        new_route_id=route_id,
+        reallocated_by_user_id=current_user.id,
+        app_state=request.app.state,
+        requesting_regulator_id=None  # Direct reallocation, no requesting regulator
+    )
+
     return {"message": "Bus reallocated to new route successfully"}
 
 @router.post("/buses/deploy-stationary")
@@ -910,7 +921,7 @@ async def deploy_stationary_bus(
     current_user: User = Depends(get_current_user)
 ):
     """Deploy a stationary bus"""
-    if current_user.role != "CONTROL_CENTER_ADMIN":
+    if current_user.role != UserRole.CONTROL_ADMIN:
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
             detail="Only control center admins can deploy buses"
@@ -936,7 +947,7 @@ async def create_control_center_route(
     current_user: User = Depends(get_current_user)
 ):
     """Create a new route"""
-    if current_user.role != "CONTROL_CENTER_ADMIN":
+    if current_user.role != UserRole.CONTROL_ADMIN:
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
             detail="Only control center admins can create routes"
@@ -966,7 +977,7 @@ async def get_control_center_routes(
     current_user: User = Depends(get_current_user)
 ):
     """Get all routes for management"""
-    if current_user.role != "CONTROL_CENTER_ADMIN":
+    if current_user.role != UserRole.CONTROL_ADMIN:
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
             detail="Only control center admins can view all routes"
@@ -983,19 +994,19 @@ async def get_control_center_route(
     current_user: User = Depends(get_current_user)
 ):
     """Get specific route for management"""
-    if current_user.role != "CONTROL_CENTER_ADMIN":
+    if current_user.role != UserRole.CONTROL_ADMIN:
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
             detail="Only control center admins can view route details"
         )
     
-    route = await request.app.state.mongodb.routes.find_one({"_id": route_id})
+    route = await request.app.state.mongodb.routes.find_one({"id": route_id})
     if not route:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
             detail="Route not found"
         )
-    
+
     return transform_mongo_doc(route, RouteResponse)
 
 @router.put("/routes/{route_id}", response_model=RouteResponse)
@@ -1006,7 +1017,7 @@ async def update_control_center_route(
     current_user: User = Depends(get_current_user)
 ):
     """Update route"""
-    if current_user.role != "CONTROL_CENTER_ADMIN":
+    if current_user.role != UserRole.CONTROL_ADMIN:
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
             detail="Only control center admins can update routes"
@@ -1016,17 +1027,17 @@ async def update_control_center_route(
     update_dict["updated_at"] = datetime.utcnow()
     
     result = await request.app.state.mongodb.routes.update_one(
-        {"_id": route_id},
+        {"id": route_id},
         {"$set": update_dict}
     )
-    
+
     if result.modified_count == 0:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
             detail="Route not found"
         )
-    
-    updated_route = await request.app.state.mongodb.routes.find_one({"_id": route_id})
+
+    updated_route = await request.app.state.mongodb.routes.find_one({"id": route_id})
     return transform_mongo_doc(updated_route, RouteResponse)
 
 @router.delete("/routes/{route_id}")
@@ -1036,13 +1047,13 @@ async def delete_control_center_route(
     current_user: User = Depends(get_current_user)
 ):
     """Delete route"""
-    if current_user.role != "CONTROL_CENTER_ADMIN":
+    if current_user.role != UserRole.CONTROL_ADMIN:
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
             detail="Only control center admins can delete routes"
         )
     
-    result = await request.app.state.mongodb.routes.delete_one({"_id": route_id})
+    result = await request.app.state.mongodb.routes.delete_one({"id": route_id})
     
     if result.deleted_count == 0:
         raise HTTPException(
@@ -1060,7 +1071,7 @@ async def get_reallocation_requests(
     current_user: User = Depends(get_current_user)
 ):
     """Get all reallocation requests"""
-    if current_user.role != "CONTROL_CENTER_ADMIN":
+    if current_user.role != UserRole.CONTROL_ADMIN:
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
             detail="Only control center admins can view reallocation requests"
@@ -1070,103 +1081,260 @@ async def get_reallocation_requests(
     
     return requests
 
-@router.post("/reallocation-requests/{request_id}/process")
-async def process_reallocation_request(
+# @router.post("/reallocation-requests/{request_id}/process")
+# async def process_reallocation_request(
+#     request: Request,
+#     request_id: str,
+#     current_user: User = Depends(get_current_user)
+# ):
+#     """Process a reallocation request using AI agent to determine optimal route"""
+#     if current_user.role != UserRole.CONTROL_ADMIN:
+#         raise HTTPException(
+#             status_code=status.HTTP_403_FORBIDDEN,
+#             detail="Only control center admins can process reallocation requests"
+#         )
+    
+#     # Get the reallocation request
+#     reallocation_request = await request.app.state.mongodb.reallocation_requests.find_one({"_id": request_id})
+#     if not reallocation_request:
+#         raise HTTPException(
+#             status_code=status.HTTP_404_NOT_FOUND,
+#             detail="Reallocation request not found"
+#         )
+    
+#     if reallocation_request.get("status") != "PENDING":
+#         raise HTTPException(
+#             status_code=status.HTTP_400_BAD_REQUEST,
+#             detail="Request has already been processed"
+#         )
+    
+#     # Use AI agent to determine optimal route if not already set
+#     optimal_route_id = reallocation_request.get("requested_route_id")
+#     if not optimal_route_id:
+#         optimal_route_id = await route_optimization_agent.determine_optimal_route(
+#             bus_id=reallocation_request["bus_id"],
+#             current_route_id=reallocation_request["current_route_id"],
+#             reason=reallocation_request["reason"],
+#             priority=reallocation_request.get("priority", "NORMAL"),
+#             description=reallocation_request.get("description", ""),
+#             mongodb_client=request.app.state.mongodb
+#         )
+    
+#     if not optimal_route_id:
+#         # Update request as rejected if no suitable route found
+#         await request.app.state.mongodb.reallocation_requests.update_one(
+#             {"_id": request_id},
+#             {
+#                 "$set": {
+#                     "status": "REJECTED",
+#                     "reviewed_by": current_user.id,
+#                     "reviewed_at": datetime.utcnow().isoformat(),
+#                     "review_notes": "AI agent could not find suitable alternative route"
+#                 }
+#             }
+#         )
+
+#         # Send reallocation request discarded notification
+#         await notification_service.send_reallocation_request_discarded_notification(
+#             request_id=request_id,
+#             requesting_regulator_id=reallocation_request["requested_by_user_id"],
+#             reason="AI agent could not find suitable alternative route",
+#             app_state=request.app.state
+#         )
+
+#         return {"message": "No suitable route found for reallocation", "status": "REJECTED"}
+    
+#     # Verify the optimal route exists and is active
+#     optimal_route = await request.app.state.mongodb.routes.find_one({"_id": optimal_route_id})
+#     if not optimal_route or not optimal_route.get("is_active", True):
+#         raise HTTPException(
+#             status_code=status.HTTP_400_BAD_REQUEST,
+#             detail="Selected route is not available"
+#         )
+    
+#     # Update the bus assignment
+#     bus_update_result = await request.app.state.mongodb.buses.update_one(
+#         {"_id": reallocation_request["bus_id"]},
+#         {"$set": {"assigned_route_id": optimal_route_id}}
+#     )
+    
+#     if bus_update_result.modified_count == 0:
+#         raise HTTPException(
+#             status_code=status.HTTP_404_NOT_FOUND,
+#             detail="Bus not found or could not be updated"
+#         )
+    
+#     # Update reallocation request as approved and completed
+#     await request.app.state.mongodb.reallocation_requests.update_one(
+#         {"_id": request_id},
+#         {
+#             "$set": {
+#                 "requested_route_id": optimal_route_id,
+#                 "status": "COMPLETED",
+#                 "reviewed_by": current_user.id,
+#                 "reviewed_at": datetime.utcnow().isoformat(),
+#                 "review_notes": f"AI agent selected optimal route: {optimal_route['name']}"
+#             }
+#         }
+#     )
+
+#     # Send route reallocation notifications
+#     await notification_service.send_route_reallocation_notification(
+#         bus_id=reallocation_request["bus_id"],
+#         old_route_id=reallocation_request["current_route_id"],
+#         new_route_id=optimal_route_id,
+#         reallocated_by_user_id=current_user.id,
+#         app_state=request.app.state
+#     )
+
+#     return {
+#         "message": "Reallocation request processed successfully",
+#         "status": "COMPLETED",
+#         "bus_id": reallocation_request["bus_id"],
+#         "old_route_id": reallocation_request["current_route_id"],
+#         "new_route_id": optimal_route_id,
+#         "route_name": optimal_route["name"]
+#     }
+
+@router.post("/reallocation-requests/{request_id}/review")
+async def review_reallocation_request(
     request: Request,
     request_id: str,
+    review_data: ReviewReallocationRequest,
     current_user: User = Depends(get_current_user)
 ):
-    """Process a reallocation request using AI agent to determine optimal route"""
-    if current_user.role != "CONTROL_CENTER_ADMIN":
+    """Manually review a reallocation request (approve, reject, or keep pending)"""
+    if current_user.role != UserRole.CONTROL_ADMIN:
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
-            detail="Only control center admins can process reallocation requests"
+            detail="Only control center admins can review reallocation requests"
         )
-    
+
     # Get the reallocation request
-    reallocation_request = await request.app.state.mongodb.reallocation_requests.find_one({"_id": request_id})
+    reallocation_request = await request.app.state.mongodb.reallocation_requests.find_one({"id": request_id})
     if not reallocation_request:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
             detail="Reallocation request not found"
         )
-    
-    if reallocation_request.get("status") != "PENDING":
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail="Request has already been processed"
+
+    # Allow re-review of requests in any status
+    # This enables admins to change decisions or re-process requests as needed
+
+    # Handle different actions
+    if review_data.action == ReallocationAction.APPROVE:
+        # Approval requires a route_id
+        if not review_data.route_id:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Route ID is required for approval"
+            )
+
+        # Verify the route exists and is active
+        route = await request.app.state.mongodb.routes.find_one({"id": review_data.route_id})
+        if not route or not route.get("is_active", True):
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Selected route is not available"
+            )
+
+        # Update the bus assignment
+        bus_update_result = await request.app.state.mongodb.buses.update_one(
+            {"id": reallocation_request["bus_id"]},
+            {"$set": {"assigned_route_id": review_data.route_id}}
         )
-    
-    # Use AI agent to determine optimal route if not already set
-    optimal_route_id = reallocation_request.get("requested_route_id")
-    if not optimal_route_id:
-        optimal_route_id = await route_optimization_agent.determine_optimal_route(
-            bus_id=reallocation_request["bus_id"],
-            current_route_id=reallocation_request["current_route_id"],
-            reason=reallocation_request["reason"],
-            priority=reallocation_request.get("priority", "NORMAL"),
-            description=reallocation_request.get("description", ""),
-            mongodb_client=request.app.state.mongodb
-        )
-    
-    if not optimal_route_id:
-        # Update request as rejected if no suitable route found
+
+        if bus_update_result.modified_count == 0:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail="Bus not found or could not be updated"
+            )
+
+        # Update reallocation request as approved and completed
         await request.app.state.mongodb.reallocation_requests.update_one(
-            {"_id": request_id},
+            {"id": request_id},
+            {
+                "$set": {
+                    "requested_route_id": review_data.route_id,
+                    "status": "COMPLETED",
+                    "reviewed_by": current_user.id,
+                    "reviewed_at": datetime.utcnow().isoformat(),
+                    "review_notes": review_data.reason or f"Manually approved - assigned to route: {route['name']}"
+                }
+            }
+        )
+
+        # Send route reallocation notifications - Include requesting regulator ID
+        await notification_service.send_route_reallocation_notification(
+            bus_id=reallocation_request["bus_id"],
+            old_route_id=reallocation_request["current_route_id"],
+            new_route_id=review_data.route_id,
+            reallocated_by_user_id=current_user.id,
+            app_state=request.app.state,
+            requesting_regulator_id=reallocation_request["requested_by_user_id"]  # Add this!
+        )
+
+        return {
+            "message": "Reallocation request approved successfully",
+            "status": "COMPLETED",
+            "bus_id": reallocation_request["bus_id"],
+            "old_route_id": reallocation_request["current_route_id"],
+            "new_route_id": review_data.route_id,
+            "route_name": route["name"]
+        }
+
+    elif review_data.action == ReallocationAction.REJECT:
+        # Update request as rejected
+        await request.app.state.mongodb.reallocation_requests.update_one(
+            {"id": request_id},
             {
                 "$set": {
                     "status": "REJECTED",
                     "reviewed_by": current_user.id,
                     "reviewed_at": datetime.utcnow().isoformat(),
-                    "review_notes": "AI agent could not find suitable alternative route"
+                    "review_notes": review_data.reason or "Manually rejected by admin"
                 }
             }
         )
-        
-        return {"message": "No suitable route found for reallocation", "status": "REJECTED"}
-    
-    # Verify the optimal route exists and is active
-    optimal_route = await request.app.state.mongodb.routes.find_one({"_id": optimal_route_id})
-    if not optimal_route or not optimal_route.get("is_active", True):
+
+        # Send reallocation request discarded notification
+        await notification_service.send_reallocation_request_discarded_notification(
+            request_id=request_id,
+            requesting_regulator_id=reallocation_request["requested_by_user_id"],
+            reason=review_data.reason or "Request rejected by admin",
+            app_state=request.app.state
+        )
+
+        return {
+            "message": "Reallocation request rejected successfully",
+            "status": "REJECTED",
+            "reason": review_data.reason or "Manually rejected by admin"
+        }
+
+    elif review_data.action == ReallocationAction.PENDING:
+        # Keep as pending but update review info
+        await request.app.state.mongodb.reallocation_requests.update_one(
+            {"id": request_id},
+            {
+                "$set": {
+                    "reviewed_by": current_user.id,
+                    "reviewed_at": datetime.utcnow().isoformat(),
+                    "review_notes": review_data.reason or "Under review - kept pending"
+                }
+            }
+        )
+
+        return {
+            "message": "Reallocation request kept pending for further review",
+            "status": "PENDING",
+            "notes": review_data.reason or "Under review - kept pending"
+        }
+
+    else:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
-            detail="Selected route is not available"
+            detail="Invalid action. Must be APPROVE, REJECT, or PENDING"
         )
-    
-    # Update the bus assignment
-    bus_update_result = await request.app.state.mongodb.buses.update_one(
-        {"_id": reallocation_request["bus_id"]},
-        {"$set": {"assigned_route_id": optimal_route_id}}
-    )
-    
-    if bus_update_result.modified_count == 0:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail="Bus not found or could not be updated"
-        )
-    
-    # Update reallocation request as approved and completed
-    await request.app.state.mongodb.reallocation_requests.update_one(
-        {"_id": request_id},
-        {
-            "$set": {
-                "requested_route_id": optimal_route_id,
-                "status": "COMPLETED",
-                "reviewed_by": current_user.id,
-                "reviewed_at": datetime.utcnow().isoformat(),
-                "review_notes": f"AI agent selected optimal route: {optimal_route['name']}"
-            }
-        }
-    )
-    
-    return {
-        "message": "Reallocation request processed successfully",
-        "status": "COMPLETED",
-        "bus_id": reallocation_request["bus_id"],
-        "old_route_id": reallocation_request["current_route_id"],
-        "new_route_id": optimal_route_id,
-        "route_name": optimal_route["name"]
-    }
 
 @router.get("/reallocation-requests/pending")
 async def get_pending_reallocation_requests(
@@ -1176,7 +1344,7 @@ async def get_pending_reallocation_requests(
     current_user: User = Depends(get_current_user)
 ):
     """Get pending reallocation requests that need AI processing"""
-    if current_user.role != "CONTROL_CENTER_ADMIN":
+    if current_user.role != UserRole.CONTROL_ADMIN:
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
             detail="Only control center admins can view reallocation requests"
@@ -1193,6 +1361,63 @@ async def get_pending_reallocation_requests(
     
     return requests
 
+@router.post("/reallocation-requests/{request_id}/discard")
+async def discard_reallocation_request(
+    request: Request,
+    request_id: str,
+    discard_data: dict,
+    current_user: User = Depends(get_current_user)
+):
+    """Manually discard a reallocation request"""
+    if current_user.role != UserRole.CONTROL_ADMIN:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Only control center admins can discard reallocation requests"
+        )
+
+    # Get the reallocation request
+    reallocation_request = await request.app.state.mongodb.reallocation_requests.find_one({"id": request_id})
+    if not reallocation_request:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Reallocation request not found"
+        )
+
+    if reallocation_request.get("status") != "PENDING":
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Request has already been processed"
+        )
+
+    reason = discard_data.get("reason", "Request discarded by admin")
+
+    # Update request as discarded
+    await request.app.state.mongodb.reallocation_requests.update_one(
+        {"id": request_id},
+        {
+            "$set": {
+                "status": "REJECTED",
+                "reviewed_by": current_user.id,
+                "reviewed_at": datetime.utcnow().isoformat(),
+                "review_notes": f"Manually discarded: {reason}"
+            }
+        }
+    )
+
+    # Send reallocation request discarded notification
+    await notification_service.send_reallocation_request_discarded_notification(
+        request_id=request_id,
+        requesting_regulator_id=reallocation_request["requested_by_user_id"],
+        reason=reason,
+        app_state=request.app.state
+    )
+
+    return {
+        "message": "Reallocation request discarded successfully",
+        "status": "REJECTED",
+        "reason": reason
+    }
+
 @router.get("/reallocation-history", response_model=List[ReallocationHistoryResponse])
 async def get_reallocation_history(
     request: Request,
@@ -1206,7 +1431,7 @@ async def get_reallocation_history(
     current_user: User = Depends(get_current_user)
 ):
     """Get comprehensive reallocation history with filtering options"""
-    if current_user.role != "CONTROL_CENTER_ADMIN":
+    if current_user.role != UserRole.CONTROL_ADMIN:
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
             detail="Only control center admins can view reallocation history"

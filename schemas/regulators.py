@@ -38,7 +38,7 @@ class ReallocationRequestResponse(DateTimeModelMixin):
     requested_by_user_id: str
     bus_id: str
     current_route_id: str
-    requested_route_id: str
+    requested_route_id: Optional[str] = None
     reason: ReallocationReason
     description: str
     priority: str
@@ -85,6 +85,16 @@ class ReallocationHistoryResponse(DateTimeModelMixin):
     reviewed_by: Optional[str] = None
     reviewed_by_name: Optional[str] = None
     reviewed_at: Optional[str] = None
+
+class ReallocationAction(str, Enum):
+    APPROVE = "APPROVE"
+    REJECT = "REJECT"
+    PENDING = "PENDING"
+
+class ReviewReallocationRequest(BaseModel):
+    action: ReallocationAction
+    route_id: Optional[str] = None  # Required for APPROVE action
+    reason: Optional[str] = None  # Optional reason/notes for any action
     reallocated_at: Optional[str] = None  # For direct reallocations
     review_notes: Optional[str] = None
     reallocation_type: str  # "FORMAL_REQUEST" or "DIRECT_REALLOCATION"

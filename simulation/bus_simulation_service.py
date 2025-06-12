@@ -23,7 +23,7 @@ class BusSimulationService:
     def __init__(self):
         self.simulator: Optional[BusSimulator] = None
         self.app_state: Optional[Any] = None
-        self.is_running = False
+        self.is_running: bool = False
         self.simulation_task: Optional[asyncio.Task] = None
         
         # Configuration from environment variables
@@ -153,6 +153,10 @@ class BusSimulationService:
 
     async def _assign_routes_to_buses(self):
         """Assign routes to buses that don't have them."""
+        if not self.app_state or not hasattr(self.app_state, 'mongodb'):
+            logger.error("App state or MongoDB not available for route assignment")
+            return
+
         try:
             # Get buses without assigned routes
             unassigned_buses = await self.app_state.mongodb.buses.find({
@@ -213,6 +217,11 @@ class BusSimulationService:
                         logger.info("🚌 Conditions met, attempting to start simulation...")
 
                         try:
+                            # Check app state is available
+                            if not self.app_state or not hasattr(self.app_state, 'mongodb'):
+                                logger.debug("App state or MongoDB not available yet")
+                                continue
+
                             # Initialize simulator if not exists
                             if not self.simulator:
                                 self.simulator = BusSimulator(

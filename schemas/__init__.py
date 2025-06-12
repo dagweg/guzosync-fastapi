@@ -51,7 +51,7 @@ from .regulators import (
     ReallocationReason, ReallocationStatus, OvercrowdingSeverity,
     RequestReallocationRequest, ReallocationRequestResponse,
     ReportOvercrowdingRequest, OvercrowdingReportResponse,
-    ReallocationHistoryResponse
+    ReallocationHistoryResponse, ReallocationAction, ReviewReallocationRequest
 )
 
 __all__ = [

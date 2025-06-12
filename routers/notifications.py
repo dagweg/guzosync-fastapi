@@ -4,6 +4,7 @@ from typing import List, Optional
 
 from core.dependencies import get_current_user
 from models import User, Notification
+from models.user import UserRole
 from schemas.notification import BroadcastNotificationRequest, NotificationResponse
 from core.realtime.notifications import notification_service
 
@@ -54,7 +55,7 @@ async def broadcast_notification(
     current_user: User = Depends(get_current_user)
 ):
     # Check if user has admin privileges
-    if current_user.role not in ["CONTROL_CENTER_ADMIN", "REGULATOR"]:
+    if current_user.role not in [UserRole.CONTROL_ADMIN, UserRole.QUEUE_REGULATOR]:
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
             detail="Only admins can broadcast notifications"

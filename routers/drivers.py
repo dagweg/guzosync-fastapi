@@ -14,6 +14,7 @@ from schemas.route import RouteChangeRequestRequest, RouteChangeResponse
 from schemas.transport import InstructionResponse
 
 from core import transform_mongo_doc
+from core.realtime.notifications import notification_service
 
 router = APIRouter(prefix="/api/drivers", tags=["drivers"])
 
@@ -136,6 +137,15 @@ async def report_driver_incident(
 
     result = await request.app.state.mongodb.incidents.insert_one(incident_data)
     created_incident = await request.app.state.mongodb.incidents.find_one({"_id": result.inserted_id})
+
+    # Send incident reported notification to control center
+    await notification_service.send_incident_reported_notification(
+        incident_id=incident.id,
+        reported_by_user_id=current_user.id,
+        incident_type=incident_request.incident_type.value,
+        severity=incident_request.severity.value,
+        app_state=request.app.state
+    )
 
     return transform_mongo_doc(created_incident, IncidentResponse)
 

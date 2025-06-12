@@ -140,7 +140,11 @@ class WebSocketManager:
 
     def is_user_connected(self, user_id: str) -> bool:
         """Check if user is connected"""
-        return user_id in self.user_connections
+        is_connected = user_id in self.user_connections
+        logger.debug(f"🔍 Checking connection for user {user_id}: {'CONNECTED' if is_connected else 'NOT CONNECTED'}")
+        logger.debug(f"🔍 Currently connected users: {list(self.user_connections.keys())}")
+        logger.debug(f"🔍 Total connections: {len(self.user_connections)}")
+        return is_connected
 
     async def send_personal_message(self, user_id: str, message: Dict[str, Any]) -> bool:
         """Send message to a specific user"""

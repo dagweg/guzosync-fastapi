@@ -26,7 +26,7 @@ async def request_bus_reallocation(
     """Request bus reallocation (regulator only)"""
 
     # Validate that the bus exists
-    bus = await request.app.state.mongodb.buses.find_one({"_id": reallocation_request.bus_id})
+    bus = await request.app.state.mongodb.buses.find_one({"id": reallocation_request.bus_id})
     if not bus:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
@@ -54,11 +54,11 @@ async def request_bus_reallocation(
         priority=reallocation_request.priority if reallocation_request.priority else "NORMAL"
     )
 
-    # Convert model to MongoDB document
-    reallocation_doc = model_to_mongo_doc(reallocation)
+    # Convert model to MongoDB document (include None values for optional fields)
+    reallocation_doc = model_to_mongo_doc(reallocation, exclude_none=False)
     result = await request.app.state.mongodb.reallocation_requests.insert_one(reallocation_doc)
-    created_request = await request.app.state.mongodb.reallocation_requests.find_one({"_id": result.inserted_id})
-    
+    created_request = await request.app.state.mongodb.reallocation_requests.find_one({"id": reallocation.id})
+
     return transform_mongo_doc(created_request, ReallocationRequestResponse)
 
 
@@ -71,7 +71,7 @@ async def report_overcrowding(
     """Report overcrowding at a bus stop (regulator only)"""
 
     # Validate that the bus stop exists
-    bus_stop = await request.app.state.mongodb.bus_stops.find_one({"_id": overcrowding_request.bus_stop_id})
+    bus_stop = await request.app.state.mongodb.bus_stops.find_one({"id": overcrowding_request.bus_stop_id})
     if not bus_stop:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
@@ -80,7 +80,7 @@ async def report_overcrowding(
 
     # Validate bus if provided
     if overcrowding_request.bus_id:
-        bus = await request.app.state.mongodb.buses.find_one({"_id": overcrowding_request.bus_id})
+        bus = await request.app.state.mongodb.buses.find_one({"id": overcrowding_request.bus_id})
         if not bus:
             raise HTTPException(
                 status_code=status.HTTP_404_NOT_FOUND,
@@ -89,7 +89,7 @@ async def report_overcrowding(
 
     # Validate route if provided
     if overcrowding_request.route_id:
-        route = await request.app.state.mongodb.routes.find_one({"_id": overcrowding_request.route_id})
+        route = await request.app.state.mongodb.routes.find_one({"id": overcrowding_request.route_id})
         if not route:
             raise HTTPException(
                 status_code=status.HTTP_404_NOT_FOUND,
@@ -114,7 +114,7 @@ async def report_overcrowding(
     # Convert model to MongoDB document
     overcrowding_doc = model_to_mongo_doc(overcrowding_report)
     result = await request.app.state.mongodb.overcrowding_reports.insert_one(overcrowding_doc)
-    created_report = await request.app.state.mongodb.overcrowding_reports.find_one({"_id": result.inserted_id})
-    
+    created_report = await request.app.state.mongodb.overcrowding_reports.find_one({"id": overcrowding_report.id})
+
     return transform_mongo_doc(created_report, OvercrowdingReportResponse)
 
