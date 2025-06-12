@@ -35,4 +35,8 @@ class NotificationSettings(BaseDBModel):
     email_enabled: bool
     user_id: str
 
-    
+class NotificationSubscription(BaseDBModel):
+    user_id: str
+    notification_type: NotificationType
+    subscribed_at: datetime = datetime.now()
+    is_active: bool = True

@@ -33,6 +33,14 @@ class NotificationService:
             is_connected = websocket_manager.is_user_connected(user_id)
             logger.info(f"🔌 User {user_id} WebSocket connection status: {'CONNECTED' if is_connected else 'NOT CONNECTED'}")
 
+            # Check if user is subscribed to this notification type
+            is_subscribed = websocket_manager.is_user_subscribed_to_notification(user_id, notification_type)
+            logger.info(f"🔔 User {user_id} subscription status for {notification_type}: {'SUBSCRIBED' if is_subscribed else 'NOT SUBSCRIBED'}")
+
+            if not is_subscribed:
+                logger.info(f"⏭️ Skipping notification to user {user_id} - not subscribed to {notification_type}")
+                return
+
             # Save notification to database
             notification_data = {
                 "user_id": user_id,
@@ -130,6 +138,33 @@ class NotificationService:
                 if notifications:
                     await app_state.mongodb.notifications.insert_many(notifications)
             
+            # Filter users based on notification subscriptions
+            subscribed_users = []
+            if target_user_ids:
+                # Filter specific target users by subscription
+                for user_id in target_user_ids:
+                    if websocket_manager.is_user_subscribed_to_notification(str(user_id), notification_type):
+                        subscribed_users.append(str(user_id))
+                    else:
+                        logger.debug(f"⏭️ Skipping user {user_id} - not subscribed to {notification_type}")
+            elif target_users:
+                # Filter database users by subscription
+                for user in target_users:
+                    user_id = str(user["id"])
+                    if websocket_manager.is_user_subscribed_to_notification(user_id, notification_type):
+                        subscribed_users.append(user_id)
+                    else:
+                        logger.debug(f"⏭️ Skipping user {user_id} - not subscribed to {notification_type}")
+            else:
+                # Get all users subscribed to this notification type
+                subscribed_users = websocket_manager.get_subscribed_users_for_notification(notification_type)
+
+            logger.info(f"🔔 Sending {notification_type} notification to {len(subscribed_users)} subscribed users")
+
+            if not subscribed_users:
+                logger.info(f"⏭️ No users subscribed to {notification_type} - skipping notification broadcast")
+                return
+
             # Send real-time notifications via WebSocket
             websocket_message = {
                 "type": "notification",
@@ -141,27 +176,19 @@ class NotificationService:
                     "timestamp": datetime.now(timezone.utc).isoformat(),
                     "is_read": False
                 }            }
-            
+
             # Convert to WebSocket message format
             ws_message = {
                 "type": "notification",
                 **websocket_message
             }
 
-            if target_user_ids:
-                # Send to specific users
-                for user_id in target_user_ids:
-                    await websocket_manager.send_personal_message(str(user_id), ws_message)
-            elif target_users:
-                # Send to users from database query
-                for user in target_users:
-                    await websocket_manager.send_personal_message(str(user["id"]), ws_message)
-            else:
-                # Broadcast to all connected users
-                await websocket_manager.broadcast_message(ws_message)
-            
-            recipient_count = len(target_user_ids) if target_user_ids else len(target_users)
-            logger.info(f"Broadcast notification to {recipient_count} users: {title}")
+            # Send to subscribed users only
+            for user_id in subscribed_users:
+                await websocket_manager.send_personal_message(user_id, ws_message)
+
+            recipient_count = len(subscribed_users)
+            logger.info(f"Broadcast notification to {recipient_count} subscribed users: {title}")
             
         except Exception as e:
             logger.error(f"Error broadcasting notification: {e}")

@@ -105,11 +105,11 @@ class EmailService:
     async def send_password_reset_email(self, email: str, reset_link: str) -> bool:
         """
         Send password reset email to user
-        
+
         Args:
             email: User's email address
             reset_link: Password reset link
-        
+
         Returns:
             bool: True if email sent successfully, False otherwise
         """
@@ -120,14 +120,41 @@ class EmailService:
                 reset_link=reset_link,
                 app_url=self.config.app_url
             )
-            
+
             subject = f"Password Reset - {self.config.app_name}"
-            
+
             return await self._send_email(email, subject, html_content)
-            
+
         except Exception as e:
             logger.error(f"Failed to send password reset email to {email}: {str(e)}")
-            return False    
+            return False
+
+    async def send_password_reset_email_token(self, email: str, reset_token: str) -> bool:
+        """
+        Send password reset email with token only (for mobile/frontend apps)
+
+        Args:
+            email: User's email address
+            reset_token: Password reset token
+
+        Returns:
+            bool: True if email sent successfully, False otherwise
+        """
+        try:
+            template = self.template_env.get_template('password_reset_token.html')
+            html_content = template.render(
+                app_name=self.config.app_name,
+                reset_token=reset_token,
+                app_url=self.config.app_url
+            )
+
+            subject = f"Password Reset Token - {self.config.app_name}"
+
+            return await self._send_email(email, subject, html_content)
+
+        except Exception as e:
+            logger.error(f"Failed to send password reset token email to {email}: {str(e)}")
+            return False
     
     async def send_welcome_email(self, email: str, name: str) -> bool:
         """
@@ -241,6 +268,11 @@ email_service = EmailService()
 async def send_password_reset_email(email: str, reset_link: str) -> bool:
     """Send password reset email to user"""
     return await email_service.send_password_reset_email(email, reset_link)
+
+
+async def send_password_reset_email_token(email: str, reset_token: str) -> bool:
+    """Send password reset email with token only"""
+    return await email_service.send_password_reset_email_token(email, reset_token)
 
 
 async def send_welcome_email(email: str, name: str) -> bool:

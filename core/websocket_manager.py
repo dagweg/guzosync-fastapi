@@ -9,12 +9,12 @@ from uuid import UUID
 from datetime import datetime, timezone
 import asyncio
 
-#logger.= get_logger(__name__)
+logger = get_logger(__name__)
 
 
 class WebSocketManager:
     """Manages WebSocket connections for real-time features"""
-    
+
     def __init__(self) -> None:
         # Store user sessions by connection ID
         self.user_sessions: Dict[str, str] = {}  # connection_id -> user_id
@@ -26,6 +26,8 @@ class WebSocketManager:
         self.rooms: Dict[str, Set[str]] = {}  # room_id -> set of user_ids
         # Store proximity alert preferences
         self.proximity_preferences: Dict[str, Dict[str, Any]] = {}  # user_id -> preferences
+        # Store notification subscriptions
+        self.notification_subscriptions: Dict[str, Set[str]] = {}  # user_id -> set of notification_types
         # Store app state for authentication
         self.app_state: Optional[Any] = None
 
@@ -74,6 +76,9 @@ class WebSocketManager:
             self.user_connections.pop(user_id, None)
             self.user_connection_ids.pop(user_id, None)
             self.proximity_preferences.pop(user_id, None)
+
+            # Clear notification subscriptions
+            self.clear_user_subscriptions(user_id)
 
             remaining_connections = len(self.user_connections)
             #logger.info(f"🔌 User {user_id} disconnected and cleaned up (Remaining connections: {remaining_connections})")
@@ -228,6 +233,69 @@ class WebSocketManager:
     def get_proximity_preferences(self, user_id: str) -> Dict[str, Any]:
         """Get proximity alert preferences for a user"""
         return self.proximity_preferences.get(user_id, {})
+
+    def subscribe_to_notifications(self, user_id: str, notification_types: List[str]) -> bool:
+        """Subscribe user to specific notification types"""
+        try:
+            if user_id not in self.notification_subscriptions:
+                self.notification_subscriptions[user_id] = set()
+
+            # Add new notification types to user's subscriptions
+            self.notification_subscriptions[user_id].update(notification_types)
+
+            logger.info(f"🔔 User {user_id} subscribed to notifications: {notification_types}")
+            logger.debug(f"🔔 User {user_id} total subscriptions: {list(self.notification_subscriptions[user_id])}")
+            return True
+        except Exception as e:
+            logger.error(f"💥 Error subscribing user {user_id} to notifications: {e}")
+            return False
+
+    def unsubscribe_from_notifications(self, user_id: str, notification_types: List[str]) -> bool:
+        """Unsubscribe user from specific notification types"""
+        try:
+            if user_id not in self.notification_subscriptions:
+                return True  # Already unsubscribed
+
+            # Remove notification types from user's subscriptions
+            self.notification_subscriptions[user_id].difference_update(notification_types)
+
+            # Clean up empty subscription sets
+            if not self.notification_subscriptions[user_id]:
+                del self.notification_subscriptions[user_id]
+
+            logger.info(f"🔔 User {user_id} unsubscribed from notifications: {notification_types}")
+            return True
+        except Exception as e:
+            logger.error(f"💥 Error unsubscribing user {user_id} from notifications: {e}")
+            return False
+
+    def get_user_notification_subscriptions(self, user_id: str) -> Set[str]:
+        """Get user's notification subscriptions"""
+        return self.notification_subscriptions.get(user_id, set()).copy()
+
+    def is_user_subscribed_to_notification(self, user_id: str, notification_type: str) -> bool:
+        """Check if user is subscribed to a specific notification type"""
+        user_subscriptions = self.notification_subscriptions.get(user_id, set())
+        is_subscribed = notification_type in user_subscriptions
+
+        logger.debug(f"🔍 Checking subscription for user {user_id}, type {notification_type}: {'SUBSCRIBED' if is_subscribed else 'NOT SUBSCRIBED'}")
+        return is_subscribed
+
+    def get_subscribed_users_for_notification(self, notification_type: str) -> List[str]:
+        """Get all users subscribed to a specific notification type"""
+        subscribed_users = []
+        for user_id, subscriptions in self.notification_subscriptions.items():
+            if notification_type in subscriptions:
+                subscribed_users.append(user_id)
+
+        logger.debug(f"🔍 Found {len(subscribed_users)} users subscribed to {notification_type}")
+        return subscribed_users
+
+    def clear_user_subscriptions(self, user_id: str) -> None:
+        """Clear all subscriptions for a user (called on disconnect)"""
+        if user_id in self.notification_subscriptions:
+            del self.notification_subscriptions[user_id]
+            logger.debug(f"🔔 Cleared all notification subscriptions for user {user_id}")
 
 
 # Global WebSocket manager instance

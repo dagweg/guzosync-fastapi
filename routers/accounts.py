@@ -6,7 +6,7 @@ import secrets
 
 from core.dependencies import get_current_user
 from core.mongo_utils import transform_mongo_doc, model_to_mongo_doc
-from core.email_service import send_password_reset_email, send_welcome_email
+from core.email_service import send_password_reset_email, send_password_reset_email_token, send_welcome_email
 from core.security import get_password_hash, verify_password
 from models import User, ApprovalRequest
 from models.user import UserRole as ModelUserRole
@@ -205,11 +205,20 @@ async def request_password_reset(
                 "password_reset_expires": reset_expires
             }}
         )
-          # Create reset link
-        reset_link = f"{request.base_url}password/reset?token={reset_token}"
+
+        # Get client URL from environment variable
+        client_url = os.getenv("CLIENT_URL", "http://localhost:3000")
+
+        # Create reset link or send token based on user role
+        if user["role"] == "CONTROL_ADMIN" or user["role"] == "CONTROL_STAFF":
+            # For control center users, send reset link to control center frontend
+            reset_link = f"{client_url}/control-center/password/reset?token={reset_token}"
+            email_sent = await send_password_reset_email(reset_data.email, reset_link)
+        else:
+            # For regular users (passengers, drivers, etc.), send token only for mobile/web app
+            email_sent = await send_password_reset_email_token(reset_data.email, reset_token)
         
         # Send password reset email
-        email_sent = await send_password_reset_email(reset_data.email, reset_link)
         if not email_sent:
             logger.warning("Failed to send password reset email", extra={"email": reset_data.email})
         

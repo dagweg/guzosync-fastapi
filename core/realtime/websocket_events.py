@@ -104,6 +104,20 @@ class WebSocketEventHandlers:
                     result = {"success": False, "error": "Conversation ID required"}
                 else:
                     result = await WebSocketEventHandlers.handle_get_conversation_messages(user_id, conversation_id, limit, skip, app_state)
+            elif message_type == "subscribe_notifications":
+                notification_types = data.get("notification_types", [])
+                if not notification_types:
+                    result = {"success": False, "error": "At least one notification type is required"}
+                else:
+                    result = await WebSocketEventHandlers.handle_subscribe_notifications(user_id, notification_types)
+            elif message_type == "unsubscribe_notifications":
+                notification_types = data.get("notification_types", [])
+                if not notification_types:
+                    result = {"success": False, "error": "At least one notification type is required"}
+                else:
+                    result = await WebSocketEventHandlers.handle_unsubscribe_notifications(user_id, notification_types)
+            elif message_type == "get_notification_subscriptions":
+                result = await WebSocketEventHandlers.handle_get_notification_subscriptions(user_id)
             else:
                 logger.warning(f"❓ Unknown WebSocket message type: {message_type} from user {user_id}")
                 result = {"success": False, "error": f"Unknown message type: {message_type}"}
@@ -942,6 +956,103 @@ class WebSocketEventHandlers:
 
         except Exception as e:
             logger.error(f"Error getting conversation messages for user {user_id}: {e}")
+            return {"success": False, "error": str(e)}
+
+    @staticmethod
+    async def handle_subscribe_notifications(user_id: str, notification_types: List[str]) -> Dict[str, Any]:
+        """Handle user subscription to specific notification types"""
+        try:
+            logger.info(f"🔔 Processing notification subscription request from user {user_id}")
+            logger.debug(f"🔔 Requested notification types: {notification_types}")
+
+            # Validate notification types
+            from models.notifications import NotificationType
+            valid_types = [nt.value for nt in NotificationType]
+            invalid_types = [nt for nt in notification_types if nt not in valid_types]
+
+            if invalid_types:
+                logger.warning(f"❌ Invalid notification types requested by user {user_id}: {invalid_types}")
+                return {
+                    "success": False,
+                    "error": f"Invalid notification types: {invalid_types}. Valid types: {valid_types}"
+                }
+
+            # Subscribe user to notification types
+            success = websocket_manager.subscribe_to_notifications(user_id, notification_types)
+
+            if success:
+                current_subscriptions = list(websocket_manager.get_user_notification_subscriptions(user_id))
+                logger.info(f"✅ User {user_id} successfully subscribed to notifications: {notification_types}")
+
+                return {
+                    "success": True,
+                    "message": f"Successfully subscribed to {len(notification_types)} notification types",
+                    "subscribed_types": notification_types,
+                    "total_subscriptions": current_subscriptions,
+                    "timestamp": datetime.now(timezone.utc).isoformat()
+                }
+            else:
+                logger.error(f"❌ Failed to subscribe user {user_id} to notifications")
+                return {"success": False, "error": "Failed to subscribe to notifications"}
+
+        except Exception as e:
+            logger.error(f"Error subscribing user {user_id} to notifications: {e}")
+            return {"success": False, "error": str(e)}
+
+    @staticmethod
+    async def handle_unsubscribe_notifications(user_id: str, notification_types: List[str]) -> Dict[str, Any]:
+        """Handle user unsubscription from specific notification types"""
+        try:
+            logger.info(f"🔔 Processing notification unsubscription request from user {user_id}")
+            logger.debug(f"🔔 Notification types to unsubscribe: {notification_types}")
+
+            # Unsubscribe user from notification types
+            success = websocket_manager.unsubscribe_from_notifications(user_id, notification_types)
+
+            if success:
+                current_subscriptions = list(websocket_manager.get_user_notification_subscriptions(user_id))
+                logger.info(f"✅ User {user_id} successfully unsubscribed from notifications: {notification_types}")
+
+                return {
+                    "success": True,
+                    "message": f"Successfully unsubscribed from {len(notification_types)} notification types",
+                    "unsubscribed_types": notification_types,
+                    "remaining_subscriptions": current_subscriptions,
+                    "timestamp": datetime.now(timezone.utc).isoformat()
+                }
+            else:
+                logger.error(f"❌ Failed to unsubscribe user {user_id} from notifications")
+                return {"success": False, "error": "Failed to unsubscribe from notifications"}
+
+        except Exception as e:
+            logger.error(f"Error unsubscribing user {user_id} from notifications: {e}")
+            return {"success": False, "error": str(e)}
+
+    @staticmethod
+    async def handle_get_notification_subscriptions(user_id: str) -> Dict[str, Any]:
+        """Handle getting user's current notification subscriptions"""
+        try:
+            logger.info(f"🔔 Getting notification subscriptions for user {user_id}")
+
+            # Get user's current subscriptions
+            current_subscriptions = list(websocket_manager.get_user_notification_subscriptions(user_id))
+
+            # Get all available notification types
+            from models.notifications import NotificationType
+            available_types = [nt.value for nt in NotificationType]
+
+            logger.info(f"✅ Retrieved {len(current_subscriptions)} subscriptions for user {user_id}")
+
+            return {
+                "success": True,
+                "current_subscriptions": current_subscriptions,
+                "available_types": available_types,
+                "subscription_count": len(current_subscriptions),
+                "timestamp": datetime.now(timezone.utc).isoformat()
+            }
+
+        except Exception as e:
+            logger.error(f"Error getting notification subscriptions for user {user_id}: {e}")
             return {"success": False, "error": str(e)}
 
 

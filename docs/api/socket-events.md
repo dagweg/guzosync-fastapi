@@ -540,6 +540,113 @@ Service-wide alerts and announcements.
 }
 ```
 
+### 14. Subscribe to Notifications
+
+**Event:** `subscribe_notifications`
+**Role:** ALL
+**Description:** Subscribe to specific notification types to receive real-time notifications
+
+```json
+{
+  "type": "subscribe_notifications",
+  "data": {
+    "notification_types": [
+      "ALERT",
+      "ROUTE_REALLOCATION",
+      "TRIP_UPDATE",
+      "CHAT_MESSAGE"
+    ]
+  }
+}
+```
+
+**Response:**
+
+```json
+{
+  "success": true,
+  "message": "Successfully subscribed to 4 notification types",
+  "subscribed_types": [
+    "ALERT",
+    "ROUTE_REALLOCATION",
+    "TRIP_UPDATE",
+    "CHAT_MESSAGE"
+  ],
+  "total_subscriptions": [
+    "ALERT",
+    "ROUTE_REALLOCATION",
+    "TRIP_UPDATE",
+    "CHAT_MESSAGE",
+    "GENERAL"
+  ],
+  "timestamp": "2024-01-15T10:30:00Z"
+}
+```
+
+### 15. Unsubscribe from Notifications
+
+**Event:** `unsubscribe_notifications`
+**Role:** ALL
+**Description:** Unsubscribe from specific notification types
+
+```json
+{
+  "type": "unsubscribe_notifications",
+  "data": {
+    "notification_types": ["TRIP_UPDATE", "CHAT_MESSAGE"]
+  }
+}
+```
+
+**Response:**
+
+```json
+{
+  "success": true,
+  "message": "Successfully unsubscribed from 2 notification types",
+  "unsubscribed_types": ["TRIP_UPDATE", "CHAT_MESSAGE"],
+  "remaining_subscriptions": ["ALERT", "ROUTE_REALLOCATION", "GENERAL"],
+  "timestamp": "2024-01-15T10:30:00Z"
+}
+```
+
+### 16. Get Notification Subscriptions
+
+**Event:** `get_notification_subscriptions`
+**Role:** ALL
+**Description:** Get current notification subscriptions for the user
+
+```json
+{
+  "type": "get_notification_subscriptions",
+  "data": {}
+}
+```
+
+**Response:**
+
+```json
+{
+  "success": true,
+  "current_subscriptions": ["ALERT", "ROUTE_REALLOCATION", "GENERAL"],
+  "available_types": [
+    "ALERT",
+    "UPDATE",
+    "PROMOTION",
+    "REMINDER",
+    "GENERAL",
+    "TRIP_UPDATE",
+    "SERVICE_ALERT",
+    "ROUTE_REALLOCATION",
+    "REALLOCATION_REQUEST_DISCARDED",
+    "INCIDENT_REPORTED",
+    "CHAT_MESSAGE"
+  ],
+  "subscription_count": 3,
+  "timestamp": "2024-01-15T10:30:00Z"
+}
+```
+
 ## Server → Client Events
 
 ### 1. Bus Location Update (Broadcast)
@@ -613,7 +720,7 @@ Service-wide alerts and announcements.
 ### 4. Notification (General)
 
 **Event Type:** `notification`
-**Sent to:** Specific users or broadcast
+**Sent to:** Users subscribed to the specific notification type
 
 ```json
 {
@@ -887,6 +994,52 @@ ws.onmessage = (event) => {
       `Bus ${message.bus_info.license_plate} approaching!`,
       `Arriving at ${message.bus_stop_name} in ~${message.estimated_arrival_minutes} minutes`
     );
+  }
+};
+```
+
+### For Notification Subscriptions
+
+```javascript
+// Subscribe to specific notification types
+ws.send(
+  JSON.stringify({
+    type: "subscribe_notifications",
+    data: {
+      notification_types: [
+        "ALERT",
+        "ROUTE_REALLOCATION",
+        "TRIP_UPDATE",
+        "PROXIMITY_ALERT",
+      ],
+    },
+  })
+);
+
+// Get current subscriptions
+ws.send(
+  JSON.stringify({
+    type: "get_notification_subscriptions",
+    data: {},
+  })
+);
+
+// Unsubscribe from specific types
+ws.send(
+  JSON.stringify({
+    type: "unsubscribe_notifications",
+    data: {
+      notification_types: ["TRIP_UPDATE"],
+    },
+  })
+);
+
+// Handle notification subscription responses
+ws.onmessage = (event) => {
+  const message = JSON.parse(event.data);
+  if (message.type === "notification") {
+    // Only receive notifications you're subscribed to
+    showNotification(message.notification.title, message.notification.message);
   }
 };
 ```

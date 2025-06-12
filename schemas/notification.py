@@ -46,4 +46,18 @@ class NotificationSettingsResponse(BaseModel):
     user_id: str
     email_enabled: bool
 
-    
+class SubscribeNotificationsRequest(BaseModel):
+    notification_types: List[str]
+
+class UnsubscribeNotificationsRequest(BaseModel):
+    notification_types: List[str]
+
+class NotificationSubscriptionResponse(BaseModel):
+    success: bool
+    message: str
+    subscribed_types: Optional[List[str]] = None
+    unsubscribed_types: Optional[List[str]] = None
+    current_subscriptions: Optional[List[str]] = None
+    available_types: Optional[List[str]] = None
+    subscription_count: Optional[int] = None
+    timestamp: str
