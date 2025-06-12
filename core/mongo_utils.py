@@ -60,8 +60,8 @@ def model_to_mongo_doc(model: BaseModel, exclude_none: bool = True) -> Dict[str,
     Returns:
         A dictionary suitable for MongoDB storage with UUID string as 'id'
     """
-    # Get the model data as dict (no aliases needed since we're not using _id)
-    doc = model.model_dump(exclude_none=exclude_none)
+    # Get the model data as dict using JSON mode to properly serialize dates, enums, etc.
+    doc = model.model_dump(exclude_none=exclude_none, mode='json')
 
     # Ensure id is a string (convert UUID objects to strings if needed)
     if "id" in doc and doc["id"] is not None:

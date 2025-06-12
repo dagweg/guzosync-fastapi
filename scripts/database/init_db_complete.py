@@ -29,6 +29,23 @@ from faker import Faker
 from motor.motor_asyncio import AsyncIOMotorClient
 from passlib.context import CryptContext
 
+# Add the parent directory to the path to import models
+import sys
+import os
+sys.path.append(os.path.join(os.path.dirname(__file__), '..', '..'))
+
+# Import all model classes
+from models import (
+    User, UserRole, Gender, Bus, BusType, BusStatus, BusStop, Route, Location,
+    Trip, TripStatus, Schedule, Notification, NotificationType, NotificationSettings,
+    Feedback, Incident, IncidentSeverity, IncidentType, Payment, PaymentStatus,
+    PaymentMethod, Ticket, TicketStatus, TicketType, ApprovalRequest, ApprovalStatus,
+    Attendance, AttendanceStatus, Message, MessageType, Conversation,
+    ReallocationRequest, ReallocationReason, ReallocationStatus,
+    OvercrowdingReport, OvercrowdingSeverity, Alert, AlertType, AlertSeverity
+)
+from core.mongo_utils import model_to_mongo_doc
+
 # Load environment variables
 load_dotenv()
 
@@ -57,7 +74,7 @@ APPROVAL_STATUS = ["PENDING", "APPROVED", "REJECTED"]
 REALLOCATION_REASONS = ["OVERCROWDING", "ROUTE_DISRUPTION", "MAINTENANCE_REQUIRED", "EMERGENCY", "SCHEDULE_OPTIMIZATION", "OTHER"]
 REALLOCATION_STATUS = ["PENDING", "APPROVED", "REJECTED", "COMPLETED"]
 OVERCROWDING_SEVERITY = ["LOW", "MEDIUM", "HIGH", "CRITICAL"]
-MESSAGE_TYPES = ["TEXT", "IMAGE", "FILE", "SYSTEM"]
+MESSAGE_TYPES = ["TEXT", "SYSTEM"]
 
 # Addis Ababa area coordinates (latitude, longitude bounds)
 ADDIS_ABABA_BOUNDS = {
@@ -88,25 +105,7 @@ def random_datetime(days_min: int, days_max: int) -> datetime:
     delta = random.randint(days_min, days_max)
     return datetime.utcnow() + timedelta(days=delta)
 
-def model_to_mongo_doc(model: Dict[str, Any]) -> Dict[str, Any]:
-    """Convert a model dict to a MongoDB document using UUID-only approach."""
-    if "id" not in model:
-        model["id"] = generate_uuid()
 
-    if "created_at" not in model:
-        model["created_at"] = datetime.utcnow()
-
-    if "updated_at" not in model:
-        model["updated_at"] = datetime.utcnow()
-
-    # Ensure id is a string
-    if "id" in model:
-        model["id"] = str(model["id"])
-
-    # Set _id to the same value as id for MongoDB compatibility
-    model["_id"] = model["id"]
-
-    return model
 
 async def clear_database(db):
     """Clear all collections in the database."""
@@ -172,20 +171,17 @@ async def import_bus_stops_from_geojson(db, file_path: str = "busStops.geojson")
             skipped_count += 1
             continue
         
-        # Create bus stop model
-        bus_stop = {
-            "id": generate_uuid(),
-            "name": name,
-            "location": {
-                "latitude": coordinates[1],  # GeoJSON uses [longitude, latitude]
-                "longitude": coordinates[0]
-            },
-            "capacity": random.randint(20, 100),
-            "is_active": True,
-            "created_at": datetime.utcnow(),
-            "updated_at": datetime.utcnow()
-        }
-        
+        # Create bus stop model using proper Pydantic model
+        bus_stop = BusStop(
+            name=name,
+            location=Location(
+                latitude=coordinates[1],  # GeoJSON uses [longitude, latitude]
+                longitude=coordinates[0]
+            ),
+            capacity=random.randint(20, 100),
+            is_active=True
+        )
+
         bus_stops.append(model_to_mongo_doc(bus_stop))
         imported_count += 1
     
@@ -239,22 +235,16 @@ async def import_bus_stops_from_csv(db, file_path: str = "data/stops.txt") -> Li
             skipped_count += 1
             continue
 
-        # Create bus stop model
-        bus_stop = {
-            "id": generate_uuid(),
-            "name": name,
-            "location": {
-                "latitude": latitude,
-                "longitude": longitude
-            },
-            "capacity": random.randint(20, 100),
-            "is_active": True,
-            "created_at": datetime.utcnow(),
-            "updated_at": datetime.utcnow(),
-            # Store original CSV data for reference
-            "csv_stop_id": row.get('stop_id', ''),
-            "parent_station": row.get('parent_station', '')
-        }
+        # Create bus stop model using proper Pydantic model
+        bus_stop = BusStop(
+            name=name,
+            location=Location(
+                latitude=latitude,
+                longitude=longitude
+            ),
+            capacity=random.randint(20, 100),
+            is_active=True
+        )
 
         bus_stops.append(model_to_mongo_doc(bus_stop))
         imported_count += 1
@@ -315,25 +305,15 @@ async def import_routes_from_csv(db, bus_stops, file_path: str = "data/routes.tx
         num_stops = min(random.randint(4, 12), len(bus_stop_ids)) if bus_stop_ids else 0
         selected_stops = random.sample(bus_stop_ids, num_stops) if num_stops > 0 else []
 
-        # Create route model
-        route = {
-            "id": generate_uuid(),
-            "name": route_name,
-            "description": description,
-            "stop_ids": selected_stops,
-            "total_distance": round(random.uniform(8, 35), 2),  # km - estimated
-            "estimated_duration": round(random.uniform(30, 120), 2),  # minutes - estimated
-            "is_active": True,
-            "created_at": datetime.utcnow(),
-            "updated_at": datetime.utcnow(),
-            # Store original CSV data for reference
-            "csv_route_id": row.get('route_id', ''),
-            "route_short_name": row.get('route_short_name', ''),
-            "route_type": row.get('route_type', ''),
-            "agency_id": row.get('agency_id', ''),
-            "route_color": row.get('route_color', ''),
-            "route_text_color": row.get('route_text_color', '')
-        }
+        # Create route model using proper Pydantic model
+        route = Route(
+            name=route_name,
+            description=description,
+            stop_ids=selected_stops,
+            total_distance=round(random.uniform(8, 35), 2),  # km - estimated
+            estimated_duration=round(random.uniform(30, 120), 2),  # minutes - estimated
+            is_active=True
+        )
 
         routes.append(model_to_mongo_doc(route))
         imported_count += 1
@@ -365,91 +345,68 @@ async def create_users(db, count=25):
         gender = random.choice(["MALE", "FEMALE"])
         portrait_gender = "men" if gender == "MALE" else "women"
 
-        user = {
-            "id": generate_uuid(),
-            "first_name": fake.first_name_male() if gender == "MALE" else fake.first_name_female(),
-            "last_name": fake.last_name(),
-            "email": fake.email(),
-            "password": default_password,
-            "role": role,
-            "phone_number": fake.phone_number(),
-
-            # Profile Information
-            "profile_image": None if random.random() > 0.3 else f"https://randomuser.me/api/portraits/{portrait_gender}/{random.randint(1, 99)}.jpg",
-            "date_of_birth": datetime.combine(fake.date_of_birth(minimum_age=18, maximum_age=70), datetime.min.time()) if random.random() > 0.2 else None,
-            "gender": gender if random.random() > 0.1 else None,
-            "nationality": "Ethiopian" if random.random() > 0.1 else fake.country(),
-            "national_id": fake.bothify(text='##########') if random.random() > 0.3 else None,
-
-            # Address Information
-            "street_address": fake.street_address() if random.random() > 0.4 else None,
-            "city": fake.city() if random.random() > 0.3 else None,
-            "state_region": fake.state() if random.random() > 0.4 else None,
-            "postal_code": fake.postcode() if random.random() > 0.5 else None,
-            "country": "Ethiopia",
-
-            # Contact Information
-            "emergency_contact_name": fake.name() if random.random() > 0.3 else None,
-            "emergency_contact_phone": fake.phone_number() if random.random() > 0.3 else None,
-            "emergency_contact_relationship": random.choice(["Parent", "Spouse", "Sibling", "Friend", "Other"]) if random.random() > 0.3 else None,
-            "secondary_phone": fake.phone_number() if random.random() > 0.7 else None,
-            "work_phone": fake.phone_number() if random.random() > 0.8 else None,
-
-            # Preferences and Settings
-            "preferred_language": random.choice(["en", "am"]),
-            "is_active": True,
-            "is_verified": random.random() > 0.3,
-
-            # Payment and Discounts
-            "preferred_payment_method": random.choice(["cash", "card", "mobile", None]) if random.random() > 0.4 else None,
-            "monthly_pass_active": random.random() > 0.7,
-            "student_discount_eligible": random.random() > 0.8,
-            "senior_discount_eligible": random.random() > 0.9,
-            "disability_discount_eligible": random.random() > 0.95,
-
-            # Analytics
-            "total_trips": random.randint(0, 500) if role == "PASSENGER" else 0,
-            "total_distance_traveled": round(random.uniform(0, 10000), 2) if role == "PASSENGER" else 0.0,
-
-            # Timestamps
-            "created_at": random_datetime(-90, -1),
-            "updated_at": random_datetime(-30, 0),
-        }
+        # Create user using proper Pydantic model
+        user = User(
+            first_name=fake.first_name_male() if gender == "MALE" else fake.first_name_female(),
+            last_name=fake.last_name(),
+            email=fake.email(),
+            password=default_password,
+            role=UserRole(role),
+            phone_number=fake.phone_number(),
+            profile_image=None if random.random() > 0.3 else f"https://randomuser.me/api/portraits/{portrait_gender}/{random.randint(1, 99)}.jpg",
+            date_of_birth=datetime.combine(fake.date_of_birth(minimum_age=18, maximum_age=70), datetime.min.time()) if random.random() > 0.2 else None,
+            gender=Gender(gender) if random.random() > 0.1 else None,
+            nationality="Ethiopian" if random.random() > 0.1 else fake.country(),
+            national_id=fake.bothify(text='##########') if random.random() > 0.3 else None,
+            street_address=fake.street_address() if random.random() > 0.4 else None,
+            city=fake.city() if random.random() > 0.3 else None,
+            state_region=fake.state() if random.random() > 0.4 else None,
+            postal_code=fake.postcode() if random.random() > 0.5 else None,
+            country="Ethiopia",
+            emergency_contact_name=fake.name() if random.random() > 0.3 else None,
+            emergency_contact_phone=fake.phone_number() if random.random() > 0.3 else None,
+            emergency_contact_relationship=random.choice(["Parent", "Spouse", "Sibling", "Friend", "Other"]) if random.random() > 0.3 else None,
+            secondary_phone=fake.phone_number() if random.random() > 0.7 else None,
+            work_phone=fake.phone_number() if random.random() > 0.8 else None,
+            preferred_language=random.choice(["en", "am"]),
+            is_active=True,
+            is_verified=random.random() > 0.3,
+            preferred_payment_method=random.choice(["cash", "card", "mobile", None]) if random.random() > 0.4 else None,
+            monthly_pass_active=random.random() > 0.7,
+            student_discount_eligible=random.random() > 0.8,
+            senior_discount_eligible=random.random() > 0.9,
+            disability_discount_eligible=random.random() > 0.95,
+            total_trips=random.randint(0, 500) if role == "PASSENGER" else 0,
+            total_distance_traveled=round(random.uniform(0, 10000), 2) if role == "PASSENGER" else 0.0,
+            created_at=random_datetime(-90, -1),
+            updated_at=random_datetime(-30, 0)
+        )
         users.append(model_to_mongo_doc(user))
 
     # Ensure at least one of each role exists
     for role in USER_ROLES:
-        if not any(u['role'] == role for u in users):
+        if not any(u.get('role') == role for u in users):
             gender = random.choice(["MALE", "FEMALE"])
-            user = {
-                "id": generate_uuid(),
-                "first_name": fake.first_name_male() if gender == "MALE" else fake.first_name_female(),
-                "last_name": fake.last_name(),
-                "email": f"{role.lower()}@example.com",
-                "password": default_password,
-                "role": role,
-                "phone_number": fake.phone_number(),
-                "profile_image": None,
-
-                # Profile Information
-                "date_of_birth": datetime.combine(fake.date_of_birth(minimum_age=25, maximum_age=60), datetime.min.time()),
-                "gender": gender,
-                "nationality": "Ethiopian",
-                "country": "Ethiopia",
-
-                # Preferences and Settings
-                "preferred_language": "en",
-                "is_active": True,
-                "is_verified": True,
-
-                # Analytics
-                "total_trips": 0,
-                "total_distance_traveled": 0.0,
-
-                # Timestamps
-                "created_at": random_datetime(-90, -1),
-                "updated_at": random_datetime(-30, 0),
-            }
+            user = User(
+                first_name=fake.first_name_male() if gender == "MALE" else fake.first_name_female(),
+                last_name=fake.last_name(),
+                email=f"{role.lower()}@example.com",
+                password=default_password,
+                role=UserRole(role),
+                phone_number=fake.phone_number(),
+                profile_image=None,
+                date_of_birth=fake.date_of_birth(minimum_age=25, maximum_age=60),
+                gender=Gender(gender),
+                nationality="Ethiopian",
+                country="Ethiopia",
+                preferred_language="en",
+                is_active=True,
+                is_verified=True,
+                total_trips=0,
+                total_distance_traveled=0.0,
+                created_at=random_datetime(-90, -1),
+                updated_at=random_datetime(-30, 0)
+            )
             users.append(model_to_mongo_doc(user))
 
     # Add test users for each role with predictable credentials
@@ -461,35 +418,24 @@ async def create_users(db, count=25):
             print(f"⏭️ Test {role} user already exists")
             continue
 
-        test_user = {
-            "id": generate_uuid(),
-            "first_name": f"Test",
-            "last_name": f"{role.capitalize()}",
-            "email": f"test_{role.lower()}@guzosync.com",
-            "password": hash_password("Test123!"),
-            "role": role,
-            "phone_number": "123456789",
-            "profile_image": None,
-
-            # Profile Information
-            "date_of_birth": datetime.combine(fake.date_of_birth(minimum_age=25, maximum_age=45), datetime.min.time()),
-            "gender": "MALE",
-            "nationality": "Ethiopian",
-            "country": "Ethiopia",
-
-            # Preferences and Settings
-            "preferred_language": "en",
-            "is_active": True,
-            "is_verified": True,
-
-            # Analytics
-            "total_trips": 0,
-            "total_distance_traveled": 0.0,
-
-            # Timestamps
-            "created_at": datetime.utcnow(),
-            "updated_at": datetime.utcnow(),
-        }
+        test_user = User(
+            first_name="Test",
+            last_name=role.capitalize(),
+            email=f"test_{role.lower()}@guzosync.com",
+            password=hash_password("Test123!"),
+            role=UserRole(role),
+            phone_number="123456789",
+            profile_image=None,
+            date_of_birth=fake.date_of_birth(minimum_age=25, maximum_age=45),
+            gender=Gender.MALE,
+            nationality="Ethiopian",
+            country="Ethiopia",
+            preferred_language="en",
+            is_active=True,
+            is_verified=True,
+            total_trips=0,
+            total_distance_traveled=0.0
+        )
         test_users.append(model_to_mongo_doc(test_user))
 
         # Print temporary password for debugging (as per user preference)
@@ -520,25 +466,29 @@ async def create_buses(db, count=15):
         else:  # MINIBUS
             capacity = random.randint(12, 20)
 
-        bus = {
-            "id": generate_uuid(),
-            "license_plate": f"AA-{random.randint(1000, 9999)}",
-            "bus_type": bus_type,
-            "capacity": capacity,
-            "current_location": random_location(),  # Always give buses locations for broadcasting
-            "last_location_update": datetime.utcnow() - timedelta(minutes=random.randint(1, 120)),
-            "heading": random.uniform(0, 359),
-            "speed": random.uniform(0, 80),
-            "location_accuracy": random.uniform(3, 15),
-            "current_address": fake.street_address(),
-            "assigned_route_id": None,  # Will be assigned later
-            "assigned_driver_id": None,  # Will be assigned later
-            "bus_status": random.choices(BUS_STATUS, weights=[0.6, 0.2, 0.15, 0.05], k=1)[0],  # More OPERATIONAL buses
-            "manufacture_year": random.randint(2010, 2023),
-            "bus_model": random.choice(["Volvo 7900", "Mercedes-Benz Citaro", "MAN Lion's City", "Scania Citywide"]),
-            "created_at": random_datetime(-180, -30),
-            "updated_at": random_datetime(-30, -1)
-        }
+        # Create bus using proper Pydantic model
+        location_dict = random_location()
+        bus = Bus(
+            license_plate=f"AA-{random.randint(1000, 9999)}",
+            bus_type=BusType(bus_type),
+            capacity=capacity,
+            current_location=Location(
+                latitude=location_dict["latitude"],
+                longitude=location_dict["longitude"]
+            ),
+            last_location_update=datetime.utcnow() - timedelta(minutes=random.randint(1, 120)),
+            heading=random.uniform(0, 359),
+            speed=random.uniform(0, 80),
+            location_accuracy=random.uniform(3, 15),
+            current_address=fake.street_address(),
+            assigned_route_id=None,  # Will be assigned later
+            assigned_driver_id=None,  # Will be assigned later
+            bus_status=BusStatus(random.choices(BUS_STATUS, weights=[0.6, 0.2, 0.15, 0.05], k=1)[0]),
+            manufacture_year=random.randint(2010, 2023),
+            bus_model=random.choice(["Volvo 7900", "Mercedes-Benz Citaro", "MAN Lion's City", "Scania Citywide"]),
+            created_at=random_datetime(-180, -30),
+            updated_at=random_datetime(-30, -1)
+        )
         buses.append(model_to_mongo_doc(bus))
 
     if buses:
@@ -633,17 +583,17 @@ async def create_routes(db, bus_stops, count=10):
         if i >= len(route_names):
             route_name = f"Route {i + 1}"
 
-        route = {
-            "id": generate_uuid(),
-            "name": route_name,
-            "description": f"Route connecting {num_stops} destinations",
-            "stop_ids": selected_stops,
-            "total_distance": round(random.uniform(5, 30), 2),  # km
-            "estimated_duration": round(random.uniform(20, 90), 2),  # minutes
-            "is_active": random.random() > 0.1,
-            "created_at": random_datetime(-180, -30),
-            "updated_at": random_datetime(-30, -1)
-        }
+        # Create route using proper Pydantic model
+        route = Route(
+            name=route_name,
+            description=f"Route connecting {num_stops} destinations",
+            stop_ids=selected_stops,
+            total_distance=round(random.uniform(5, 30), 2),  # km
+            estimated_duration=round(random.uniform(20, 90), 2),  # minutes
+            is_active=random.random() > 0.1,
+            created_at=random_datetime(-180, -30),
+            updated_at=random_datetime(-30, -1)
+        )
         routes.append(model_to_mongo_doc(route))
 
     if routes:
@@ -685,19 +635,19 @@ async def create_schedules(db, routes, buses, drivers, count=20):
             departure_times.append(f"{hours:02d}:{minutes:02d}")
             current_time += interval
 
-        schedule = {
-            "id": generate_uuid(),
-            "route_id": random.choice(route_ids),
-            "schedule_pattern": pattern,
-            "departure_times": departure_times,
-            "assigned_bus_id": random.choice(bus_ids) if random.random() > 0.2 else None,
-            "assigned_driver_id": random.choice(driver_ids) if driver_ids and random.random() > 0.3 else None,
-            "valid_from": random_datetime(-30, -7),
-            "valid_until": random_datetime(30, 90) if random.random() > 0.3 else None,
-            "is_active": random.random() > 0.1,
-            "created_at": random_datetime(-90, -30),
-            "updated_at": random_datetime(-30, -1)
-        }
+        # Create schedule using proper Pydantic model
+        schedule = Schedule(
+            route_id=random.choice(route_ids),
+            schedule_pattern=pattern,
+            departure_times=departure_times,
+            assigned_bus_id=random.choice(bus_ids) if random.random() > 0.2 else None,
+            assigned_driver_id=random.choice(driver_ids) if driver_ids and random.random() > 0.3 else None,
+            valid_from=random_datetime(-30, -7),
+            valid_until=random_datetime(30, 90) if random.random() > 0.3 else None,
+            is_active=random.random() > 0.1,
+            created_at=random_datetime(-90, -30),
+            updated_at=random_datetime(-30, -1)
+        )
         schedules.append(model_to_mongo_doc(schedule))
 
     if schedules:
@@ -739,21 +689,21 @@ async def create_trips(db, buses, routes, drivers, schedules, count=35):
 
         estimated_arrival = base_time + timedelta(minutes=random.randint(30, 120))
 
-        trip = {
-            "id": generate_uuid(),
-            "bus_id": random.choice(bus_ids),
-            "route_id": random.choice(route_ids),
-            "driver_id": random.choice(driver_ids) if driver_ids and random.random() > 0.1 else None,
-            "schedule_id": random.choice(schedule_ids) if schedule_ids and random.random() > 0.3 else None,
-            "actual_departure_time": actual_departure,
-            "actual_arrival_time": actual_arrival,
-            "estimated_arrival_time": estimated_arrival,
-            "status": status,
-            "passenger_ids": [],  # Will be populated later
-            "feedback_ids": [],   # Will be populated later
-            "created_at": random_datetime(-30, -1),
-            "updated_at": random_datetime(-7, 0)
-        }
+        # Create trip using proper Pydantic model
+        trip = Trip(
+            bus_id=random.choice(bus_ids),
+            route_id=random.choice(route_ids),
+            driver_id=random.choice(driver_ids) if driver_ids and random.random() > 0.1 else None,
+            schedule_id=random.choice(schedule_ids) if schedule_ids and random.random() > 0.3 else None,
+            actual_departure_time=actual_departure,
+            actual_arrival_time=actual_arrival,
+            estimated_arrival_time=estimated_arrival,
+            status=TripStatus(status),
+            passenger_ids=[],  # Will be populated later
+            feedback_ids=[],   # Will be populated later
+            created_at=random_datetime(-30, -1),
+            updated_at=random_datetime(-7, 0)
+        )
         trips.append(model_to_mongo_doc(trip))
 
     if trips:
@@ -785,25 +735,25 @@ async def create_payments(db, users, count=25):
         status_weights = [0.1, 0.75, 0.08, 0.02, 0.05]  # Most payments are completed
         status = random.choices(status_options, weights=status_weights, k=1)[0]
 
-        payment = {
-            "id": generate_uuid(),
-            "tx_ref": f"GS-{str(uuid4())[:8].upper()}",
-            "amount": amount,
-            "currency": "ETB",
-            "payment_method": random.choice(PAYMENT_METHODS),
-            "mobile_number": passenger["phone_number"],
-            "customer_id": passenger["id"],
-            "customer_email": passenger["email"],
-            "customer_first_name": passenger["first_name"],
-            "customer_last_name": passenger["last_name"],
-            "status": status,
-            "chapa_tx_ref": f"CHAPA-{str(uuid4())[:8].upper()}",
-            "description": f"Payment for bus ticket - {random.choice(['Single Trip', 'Round Trip', 'Daily Pass'])}",
-            "paid_at": datetime.utcnow() - timedelta(minutes=random.randint(1, 1440)) if status == "COMPLETED" else None,
-            "failed_reason": "Network timeout" if status == "FAILED" else None,
-            "created_at": random_datetime(-30, -1),
-            "updated_at": random_datetime(-7, 0)
-        }
+        # Create payment using proper Pydantic model
+        payment = Payment(
+            tx_ref=f"GS-{str(uuid4())[:8].upper()}",
+            amount=amount,
+            currency="ETB",
+            payment_method=PaymentMethod(random.choice(PAYMENT_METHODS)),
+            mobile_number=passenger["phone_number"],
+            customer_id=passenger["id"],
+            customer_email=passenger["email"],
+            customer_first_name=passenger["first_name"],
+            customer_last_name=passenger["last_name"],
+            status=PaymentStatus(status),
+            chapa_tx_ref=f"CHAPA-{str(uuid4())[:8].upper()}",
+            description=f"Payment for bus ticket - {random.choice(['Single Trip', 'Round Trip', 'Daily Pass'])}",
+            paid_at=datetime.utcnow() - timedelta(minutes=random.randint(1, 1440)) if status == "COMPLETED" else None,
+            failed_reason="Network timeout" if status == "FAILED" else None,
+            created_at=random_datetime(-30, -1),
+            updated_at=random_datetime(-7, 0)
+        )
         payments.append(model_to_mongo_doc(payment))
 
     if payments:
@@ -850,31 +800,31 @@ async def create_tickets(db, payments, routes, bus_stops, count=30):
         is_used = random.random() > 0.3
         status = random.choice(TICKET_STATUS) if is_used else "ACTIVE"
 
-        ticket = {
-            "id": generate_uuid(),
-            "ticket_number": f"TKT-{str(uuid4())[:8].upper()}",
-            "customer_id": payment["customer_id"],
-            "payment_id": payment["id"],
-            "ticket_type": ticket_type,
-            "origin_stop_id": random.choice(bus_stop_ids) if bus_stop_ids else None,
-            "destination_stop_id": random.choice(bus_stop_ids) if bus_stop_ids else None,
-            "route_id": random.choice(route_ids) if route_ids else None,
-            "trip_id": None,  # Will be populated when trips are created
-            "status": status,
-            "price": payment["amount"],
-            "currency": "ETB",
-            "valid_from": valid_from,
-            "valid_until": valid_until,
-            "used_at": datetime.utcnow() - timedelta(hours=random.randint(1, 48)) if status == "USED" else None,
-            "used_trip_id": None,
-            "qr_code": f"QR-{str(uuid4())[:12].upper()}",
-            "metadata": {
+        # Create ticket using proper Pydantic model
+        ticket = Ticket(
+            ticket_number=f"TKT-{str(uuid4())[:8].upper()}",
+            customer_id=payment["customer_id"],
+            payment_id=payment["id"],
+            ticket_type=TicketType(ticket_type),
+            origin_stop_id=random.choice(bus_stop_ids) if bus_stop_ids else None,
+            destination_stop_id=random.choice(bus_stop_ids) if bus_stop_ids else None,
+            route_id=random.choice(route_ids) if route_ids else None,
+            trip_id=None,  # Will be populated when trips are created
+            status=TicketStatus(status),
+            price=payment["amount"],
+            currency="ETB",
+            valid_from=valid_from,
+            valid_until=valid_until,
+            used_at=datetime.utcnow() - timedelta(hours=random.randint(1, 48)) if status == "USED" else None,
+            used_trip_id=None,
+            qr_code=f"QR-{str(uuid4())[:12].upper()}",
+            metadata={
                 "purchase_location": "Mobile App",
                 "device_id": f"device_{random.randint(1000, 9999)}"
             },
-            "created_at": valid_from,
-            "updated_at": datetime.utcnow()
-        }
+            created_at=valid_from,
+            updated_at=datetime.utcnow()
+        )
         tickets.append(model_to_mongo_doc(ticket))
 
     if tickets:
@@ -918,16 +868,16 @@ async def create_feedback(db, users, trips, buses, count=20):
     for i in range(count):
         passenger = random.choice(passengers)
 
-        feedback = {
-            "id": generate_uuid(),
-            "submitted_by_user_id": passenger["id"],
-            "content": random.choice(feedback_content),
-            "rating": round(random.uniform(2.5, 5.0), 1),
-            "related_trip_id": random.choice(trip_ids) if trip_ids and random.random() > 0.3 else None,
-            "related_bus_id": random.choice(bus_ids) if bus_ids and random.random() > 0.5 else None,
-            "created_at": random_datetime(-30, -1),
-            "updated_at": random_datetime(-7, 0)
-        }
+        # Create feedback using proper Pydantic model
+        feedback = Feedback(
+            submitted_by_user_id=passenger["id"],
+            content=random.choice(feedback_content),
+            rating=round(random.uniform(2.5, 5.0), 1),
+            related_trip_id=random.choice(trip_ids) if trip_ids and random.random() > 0.3 else None,
+            related_bus_id=random.choice(bus_ids) if bus_ids and random.random() > 0.5 else None,
+            created_at=random_datetime(-30, -1),
+            updated_at=random_datetime(-7, 0)
+        )
         feedback_records.append(model_to_mongo_doc(feedback))
 
     if feedback_records:
@@ -971,20 +921,21 @@ async def create_incidents(db, users, buses, routes, bus_stops, count=12):
         incident_type = random.choice(INCIDENT_TYPES)
         is_resolved = random.random() > 0.4
 
-        incident = {
-            "id": generate_uuid(),
-            "reported_by_user_id": reporter["id"],
-            "description": random.choice(incident_descriptions),
-            "incident_type": incident_type,
-            "location": random_location() if random.random() > 0.3 else None,
-            "related_bus_id": random.choice(bus_ids) if bus_ids and random.random() > 0.4 else None,
-            "related_route_id": random.choice(route_ids) if route_ids and random.random() > 0.3 else None,
-            "is_resolved": is_resolved,
-            "resolution_notes": "Issue resolved by maintenance team" if is_resolved else None,
-            "severity": severity,
-            "created_at": random_datetime(-15, -1),
-            "updated_at": random_datetime(-7, 0) if is_resolved else random_datetime(-3, 0)
-        }
+        # Create incident using proper Pydantic model
+        location_dict = random_location() if random.random() > 0.3 else None
+        incident = Incident(
+            reported_by_user_id=reporter["id"],
+            description=random.choice(incident_descriptions),
+            incident_type=IncidentType(incident_type),
+            location=Location(latitude=location_dict["latitude"], longitude=location_dict["longitude"]) if location_dict else None,
+            related_bus_id=random.choice(bus_ids) if bus_ids and random.random() > 0.4 else None,
+            related_route_id=random.choice(route_ids) if route_ids and random.random() > 0.3 else None,
+            is_resolved=is_resolved,
+            resolution_notes="Issue resolved by maintenance team" if is_resolved else None,
+            severity=IncidentSeverity(severity),
+            created_at=random_datetime(-15, -1),
+            updated_at=random_datetime(-7, 0) if is_resolved else random_datetime(-3, 0)
+        )
         incidents.append(model_to_mongo_doc(incident))
 
     if incidents:
@@ -1019,20 +970,25 @@ async def create_notifications(db, users, count=30):
         user = random.choice(users)
         template = random.choice(notification_templates)
 
-        notification = {
-            "id": generate_uuid(),
-            "user_id": user["id"],
-            "title": template["title"],
-            "message": template["message"],
-            "type": template["type"],
-            "is_read": random.random() > 0.4,
-            "related_entity": {
-                "entity_type": random.choice(["trip", "route", "bus", "payment"]),
-                "entity_id": generate_uuid()
-            } if random.random() > 0.5 else None,
-            "created_at": random_datetime(-30, -1),
-            "updated_at": random_datetime(-7, 0)
-        }
+        # Create notification using proper Pydantic model
+        related_entity = None
+        if random.random() > 0.5:
+            from models.notifications import RelatedEntity
+            related_entity = RelatedEntity(
+                entity_type=random.choice(["trip", "route", "bus", "payment"]),
+                entity_id=generate_uuid()
+            )
+
+        notification = Notification(
+            user_id=user["id"],
+            title=template["title"],
+            message=template["message"],
+            type=NotificationType(template["type"]),
+            is_read=random.random() > 0.4,
+            related_entity=related_entity,
+            created_at=random_datetime(-30, -1),
+            updated_at=random_datetime(-7, 0)
+        )
         notifications.append(model_to_mongo_doc(notification))
 
     if notifications:
@@ -1047,13 +1003,13 @@ async def create_notification_settings(db, users):
     settings = []
 
     for user in users:
-        setting = {
-            "id": generate_uuid(),
-            "user_id": user["id"],
-            "email_enabled": random.random() > 0.3,
-            "created_at": user["created_at"],
-            "updated_at": random_datetime(-30, 0)
-        }
+        # Create notification settings using proper Pydantic model
+        setting = NotificationSettings(
+            user_id=user["id"],
+            email_enabled=random.random() > 0.3,
+            created_at=user["created_at"],
+            updated_at=random_datetime(-30, 0)
+        )
         settings.append(model_to_mongo_doc(setting))
 
     if settings:
@@ -1186,19 +1142,20 @@ async def create_attendance(db, users, months=2):
                         second=0, microsecond=0
                     )
 
-                record = {
-                    "id": generate_uuid(),
-                    "user_id": user_id,
-                    "date": base_datetime,  # Store as datetime for MongoDB compatibility
-                    "status": status_choice,
-                    "check_in_time": check_in_time,
-                    "check_out_time": check_out_time,
-                    "location": random_location() if random.random() > 0.4 else None,
-                    "notes": notes,
-                    "marked_at": marked_at,
-                    "created_at": base_datetime,
-                    "updated_at": marked_at
-                }
+                # Create attendance using proper Pydantic model
+                location_dict = random_location() if random.random() > 0.4 else None
+                record = Attendance(
+                    user_id=user_id,
+                    date=base_datetime,  # Store as datetime for MongoDB compatibility
+                    status=AttendanceStatus(status_choice),
+                    check_in_time=check_in_time,
+                    check_out_time=check_out_time,
+                    location=Location(latitude=location_dict["latitude"], longitude=location_dict["longitude"]) if location_dict else None,
+                    notes=notes,
+                    marked_at=marked_at,
+                    created_at=base_datetime,
+                    updated_at=marked_at
+                )
 
                 attendance_records.append(model_to_mongo_doc(record))
                 existing_records.add(record_key)
@@ -1246,22 +1203,22 @@ async def create_approval_requests(db, count=8):
                 "Background check completed successfully"
             ])
 
-        request = {
-            "id": generate_uuid(),
-            "first_name": fake.first_name(),
-            "last_name": fake.last_name(),
-            "email": fake.email(),
-            "phone_number": fake.phone_number(),
-            "profile_image": None,
-            "role": "CONTROL_STAFF",
-            "status": status,
-            "requested_at": requested_at,
-            "reviewed_by": reviewed_by,
-            "reviewed_at": reviewed_at,
-            "review_notes": review_notes,
-            "created_at": requested_at,
-            "updated_at": reviewed_at if reviewed_at else requested_at
-        }
+        # Create approval request using proper Pydantic model
+        request = ApprovalRequest(
+            first_name=fake.first_name(),
+            last_name=fake.last_name(),
+            email=fake.email(),
+            phone_number=fake.phone_number(),
+            profile_image=None,
+            role=UserRole.CONTROL_STAFF,
+            status=ApprovalStatus(status),
+            requested_at=requested_at,
+            reviewed_by=reviewed_by,
+            reviewed_at=reviewed_at,
+            review_notes=review_notes,
+            created_at=requested_at,
+            updated_at=reviewed_at if reviewed_at else requested_at
+        )
         approval_requests.append(model_to_mongo_doc(request))
 
     if approval_requests:
@@ -1288,13 +1245,17 @@ async def create_conversations_and_messages(db, users, count=15):
         conversation_id = generate_uuid()
         last_message_time = random_datetime(-30, -1)
 
-        conversation = {
-            "id": conversation_id,
-            "participants": participants,
-            "last_message_at": last_message_time,
-            "created_at": random_datetime(-30, -7),
-            "updated_at": last_message_time
-        }
+        # Create conversation using proper Pydantic model
+        conversation = Conversation(
+            participants=participants,
+            title=f"Conversation {len(conversations) + 1}",  # Add required title field
+            created_by=participants[0],  # Add required created_by field
+            last_message_at=last_message_time,
+            created_at=random_datetime(-30, -7),
+            updated_at=last_message_time
+        )
+        # Override the ID to use our generated one
+        conversation.id = conversation_id
         conversations.append(model_to_mongo_doc(conversation))
 
         # Create 3-10 messages for each conversation
@@ -1316,16 +1277,16 @@ async def create_conversations_and_messages(db, users, count=15):
             sender = random.choice(participants)
             sent_time = last_message_time - timedelta(hours=random.randint(0, 24 * 7))
 
-            message = {
-                "id": generate_uuid(),
-                "conversation_id": conversation_id,
-                "sender_id": sender,
-                "content": random.choice(message_contents),
-                "message_type": random.choice(MESSAGE_TYPES),
-                "sent_at": sent_time,
-                "created_at": sent_time,
-                "updated_at": sent_time
-            }
+            # Create message using proper Pydantic model
+            message = Message(
+                conversation_id=conversation_id,
+                sender_id=sender,
+                content=random.choice(message_contents),
+                message_type=MessageType(random.choice(MESSAGE_TYPES)),
+                sent_at=sent_time,
+                created_at=sent_time,
+                updated_at=sent_time
+            )
             messages.append(model_to_mongo_doc(message))
 
     if conversations:
@@ -1356,28 +1317,28 @@ async def create_reallocation_requests(db, users, buses, routes, count=10):
         regulator = random.choice(regulators)
         status = random.choice(REALLOCATION_STATUS)
 
-        request = {
-            "id": generate_uuid(),
-            "requested_by_user_id": regulator["id"],
-            "bus_id": random.choice(bus_ids),
-            "current_route_id": random.choice(route_ids),
-            "requested_route_id": random.choice(route_ids),
-            "reason": random.choice(REALLOCATION_REASONS),
-            "description": random.choice([
+        # Create reallocation request using proper Pydantic model
+        request = ReallocationRequest(
+            requested_by_user_id=regulator["id"],
+            bus_id=random.choice(bus_ids),
+            current_route_id=random.choice(route_ids),
+            requested_route_id=random.choice(route_ids),
+            reason=ReallocationReason(random.choice(REALLOCATION_REASONS)),
+            description=random.choice([
                 "Bus overcrowding reported on current route",
                 "Route disruption due to construction",
                 "Emergency reallocation needed",
                 "Schedule optimization request",
                 "Maintenance required on current route"
             ]),
-            "priority": random.choice(["NORMAL", "HIGH", "URGENT"]),
-            "status": status,
-            "reviewed_by": random.choice([user["id"] for user in users if user["role"] in ["CONTROL_STAFF", "CONTROL_ADMIN"]]) if status != "PENDING" else None,
-            "reviewed_at": random_datetime(-7, -1) if status != "PENDING" else None,
-            "review_notes": "Request approved for implementation" if status == "APPROVED" else None,
-            "created_at": random_datetime(-15, -1),
-            "updated_at": random_datetime(-7, 0)
-        }
+            priority=random.choice(["NORMAL", "HIGH", "URGENT"]),
+            status=ReallocationStatus(status),
+            reviewed_by=random.choice([user["id"] for user in users if user["role"] in ["CONTROL_STAFF", "CONTROL_ADMIN"]]) if status != "PENDING" else None,
+            reviewed_at=str(random_datetime(-7, -1)) if status != "PENDING" else None,
+            review_notes="Request approved for implementation" if status == "APPROVED" else None,
+            created_at=random_datetime(-15, -1),
+            updated_at=random_datetime(-7, 0)
+        )
         reallocation_requests.append(model_to_mongo_doc(request))
 
     if reallocation_requests:
@@ -1406,29 +1367,30 @@ async def create_overcrowding_reports(db, users, buses, routes, bus_stops, count
         severity = random.choice(OVERCROWDING_SEVERITY)
         is_resolved = random.random() > 0.5
 
-        report = {
-            "id": generate_uuid(),
-            "reported_by_user_id": reporter["id"],
-            "bus_stop_id": random.choice(bus_stop_ids),
-            "bus_id": random.choice(bus_ids) if bus_ids and random.random() > 0.3 else None,
-            "route_id": random.choice(route_ids) if route_ids and random.random() > 0.4 else None,
-            "severity": severity,
-            "passenger_count": random.randint(50, 200) if random.random() > 0.3 else None,
-            "description": random.choice([
+        # Create overcrowding report using proper Pydantic model
+        location_dict = random_location()
+        report = OvercrowdingReport(
+            reported_by_user_id=reporter["id"],
+            bus_stop_id=random.choice(bus_stop_ids),
+            bus_id=random.choice(bus_ids) if bus_ids and random.random() > 0.3 else None,
+            route_id=random.choice(route_ids) if route_ids and random.random() > 0.4 else None,
+            severity=OvercrowdingSeverity(severity),
+            passenger_count=random.randint(50, 200) if random.random() > 0.3 else None,
+            description=random.choice([
                 "Extremely crowded bus stop during rush hour",
                 "Passengers unable to board due to overcrowding",
                 "Safety concern due to excessive crowding",
                 "Need additional buses on this route",
                 "Long queues forming at bus stop"
             ]),
-            "location": random_location(),
-            "is_resolved": is_resolved,
-            "resolution_notes": "Additional buses deployed to route" if is_resolved else None,
-            "resolved_by": random.choice([user["id"] for user in users if user["role"] in ["CONTROL_STAFF", "CONTROL_ADMIN"]]) if is_resolved else None,
-            "resolved_at": random_datetime(-3, -1) if is_resolved else None,
-            "created_at": random_datetime(-10, -1),
-            "updated_at": random_datetime(-3, 0)
-        }
+            location=Location(latitude=location_dict["latitude"], longitude=location_dict["longitude"]),
+            is_resolved=is_resolved,
+            resolution_notes="Additional buses deployed to route" if is_resolved else None,
+            resolved_by=random.choice([user["id"] for user in users if user["role"] in ["CONTROL_STAFF", "CONTROL_ADMIN"]]) if is_resolved else None,
+            resolved_at=str(random_datetime(-3, -1)) if is_resolved else None,
+            created_at=random_datetime(-10, -1),
+            updated_at=random_datetime(-3, 0)
+        )
         overcrowding_reports.append(model_to_mongo_doc(report))
 
     if overcrowding_reports:

@@ -1,6 +1,6 @@
 from typing import Literal, Optional
 from pydantic import BaseModel, EmailStr
-from datetime import date
+from datetime import date, datetime
 
 from enum import Enum
 from .base import DateTimeModelMixin
@@ -147,3 +147,18 @@ class UserResponse(DateTimeModelMixin):
     # Analytics
     total_trips: Optional[int] = None
     total_distance_traveled: Optional[float] = None
+
+class AssignedBusInfo(BaseModel):
+    """Simplified bus information for driver responses"""
+    id: str
+    license_plate: str
+    bus_type: str
+    capacity: int
+    bus_status: str
+    assigned_route_id: Optional[str] = None
+    current_location: Optional[dict] = None
+    last_location_update: Optional[datetime] = None
+
+class DriverWithBusResponse(UserResponse):
+    """Driver response with associated bus information"""
+    assigned_bus: Optional[AssignedBusInfo] = None

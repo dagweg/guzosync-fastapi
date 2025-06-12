@@ -11,7 +11,7 @@ from core import get_logger
 from core.security import generate_secure_password, get_password_hash
 from models import User, BusStop, Route, Location
 from models.approval import ApprovalRequest, ApprovalStatus
-from schemas.user import RegisterUserRequest, UserResponse
+from schemas.user import RegisterUserRequest, UserResponse, DriverWithBusResponse, AssignedBusInfo
 from schemas.transport import (
     CreateBusStopRequest, UpdateBusStopRequest, BusStopResponse,
     CreateBusRequest, UpdateBusRequest, BusResponse
@@ -375,51 +375,103 @@ async def assign_regulator_to_bus_stop(
     return {"message": "Regulator assigned to bus stop successfully"}
 
 # Bus Drivers Management
-@router.get("/personnel/bus-drivers", response_model=List[UserResponse])
+@router.get("/personnel/bus-drivers", response_model=List[DriverWithBusResponse])
 async def get_bus_drivers(
     request: Request,
     skip: int = Query(0, ge=0),
     limit: int = Query(10, ge=1),
     current_user: User = Depends(get_current_user)
 ):
-    """Get all bus drivers"""
+    """Get all bus drivers with their assigned bus information"""
     if current_user.role != UserRole.CONTROL_ADMIN:
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
             detail="Only control center admins can view personnel"
         )
-    
+
+    # Get drivers
     drivers = await request.app.state.mongodb.users.find(
         {"role": "BUS_DRIVER"}
     ).skip(skip).limit(limit).to_list(length=limit)
-    
-    return [transform_mongo_doc(driver, UserResponse) for driver in drivers]
 
-@router.get("/personnel/bus-drivers/{driver_id}", response_model=UserResponse)
+    # For each driver, find their assigned bus
+    drivers_with_buses = []
+    for driver in drivers:
+        driver_response = transform_mongo_doc(driver, UserResponse)
+
+        # Find bus assigned to this driver
+        assigned_bus = await request.app.state.mongodb.buses.find_one(
+            {"assigned_driver_id": driver["id"]}
+        )
+
+        # Create DriverWithBusResponse
+        driver_with_bus = DriverWithBusResponse(**driver_response.model_dump())
+
+        if assigned_bus:
+            # Transform bus info to AssignedBusInfo
+            driver_with_bus.assigned_bus = AssignedBusInfo(
+                id=assigned_bus["id"],
+                license_plate=assigned_bus["license_plate"],
+                bus_type=assigned_bus["bus_type"],
+                capacity=assigned_bus["capacity"],
+                bus_status=assigned_bus["bus_status"],
+                assigned_route_id=assigned_bus.get("assigned_route_id"),
+                current_location=assigned_bus.get("current_location"),
+                last_location_update=assigned_bus.get("last_location_update")
+            )
+
+        drivers_with_buses.append(driver_with_bus)
+
+    return drivers_with_buses
+
+@router.get("/personnel/bus-drivers/{driver_id}", response_model=DriverWithBusResponse)
 async def get_bus_driver(
     request: Request,
     driver_id: str,
     current_user: User = Depends(get_current_user)
 ):
-    """Get specific bus driver"""
+    """Get specific bus driver with assigned bus information"""
     if current_user.role != UserRole.CONTROL_ADMIN:
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
             detail="Only control center admins can view personnel"
         )
-    
+
     driver = await request.app.state.mongodb.users.find_one({
         "id": driver_id,
         "role": "BUS_DRIVER"
     })
-    
+
     if not driver:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
             detail="Driver not found"
         )
-    
-    return transform_mongo_doc(driver, UserResponse)
+
+    driver_response = transform_mongo_doc(driver, UserResponse)
+
+    # Find bus assigned to this driver
+    assigned_bus = await request.app.state.mongodb.buses.find_one(
+        {"assigned_driver_id": driver_id}
+    )
+
+    # Create DriverWithBusResponse
+    driver_with_bus = DriverWithBusResponse(**driver_response.model_dump())
+
+    if assigned_bus:
+        # Transform bus info to AssignedBusInfo
+        driver_with_bus.assigned_bus = AssignedBusInfo(
+            id=assigned_bus["id"],
+            license_plate=assigned_bus["license_plate"],
+            bus_type=assigned_bus["bus_type"],
+            capacity=assigned_bus["capacity"],
+            bus_status=assigned_bus["bus_status"],
+            assigned_route_id=assigned_bus.get("assigned_route_id"),
+            current_location=assigned_bus.get("current_location"),
+            last_location_update=assigned_bus.get("last_location_update")
+        )
+
+    return driver_with_bus
 
 @router.put("/personnel/bus-drivers/{driver_id}", response_model=UserResponse)
 async def update_bus_driver(
