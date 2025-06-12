@@ -42,16 +42,15 @@ async def request_bus_reallocation(
 
     # Create reallocation request - control center will decide route later
     # The regulator just reports the issue, control center handles the solution
-    requested_route_id = None  # Control center will determine optimal route
-    
+
     # Create ReallocationRequest model instance
     reallocation = ReallocationRequest(
         requested_by_user_id=current_user.id,
         bus_id=reallocation_request.bus_id,
         current_route_id=current_route_id,
-        requested_route_id=requested_route_id,  # Control center will decide
         reason=ReallocationReason(reallocation_request.reason.value),
         description=reallocation_request.description,
+        estimated_people_count=reallocation_request.estimated_people_count,
         priority=reallocation_request.priority if reallocation_request.priority else "NORMAL"
     )
 

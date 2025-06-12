@@ -6,7 +6,7 @@ from datetime import datetime
 from core.dependencies import get_current_user
 from models import User, Message, MessageType, Conversation, UserRole
 from models.conversation import ConversationStatus
-from schemas.conversation import MessageResponse, ConversationResponse, SendMessageRequest, CreateConversationRequest
+from schemas.conversation import MessageResponse, ConversationResponse, SendMessageRequest, CreateConversationRequest, CreateSupportConversationRequest
 from core.realtime.chat import chat_service
 
 from core import transform_mongo_doc
@@ -58,14 +58,110 @@ async def create_conversation(
     conversation_request: CreateConversationRequest,
     current_user: User = Depends(get_current_user)
 ):
-    """Create a new conversation (only for field staff to contact control center)"""
+    """Create a new conversation between two users"""
     # Check if user can use chat
     if not can_use_chat(current_user.role):
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
             detail="Your role is not authorized to use the chat system"
         )
-    
+
+    # Verify the other participant exists and is active
+    other_user = await request.app.state.mongodb.users.find_one({
+        "id": conversation_request.participant_id,
+        "is_active": True
+    })
+
+    if not other_user:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="User not found or inactive"
+        )
+
+    # Check if other user can use chat
+    other_user_role = UserRole(other_user["role"])
+    if not can_use_chat(other_user_role):
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Target user is not authorized to use the chat system"
+        )
+
+    # Check if conversation already exists between these users
+    existing_conversation = await request.app.state.mongodb.conversations.find_one({
+        "participants": {"$all": [current_user.id, conversation_request.participant_id]},
+        "status": "ACTIVE"
+    })
+
+    if existing_conversation:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Active conversation already exists between these users"
+        )
+
+    # Generate title if not provided
+    title = conversation_request.title
+    if not title:
+        other_user_name = f"{other_user.get('first_name', '')} {other_user.get('last_name', '')}".strip()
+        title = f"Conversation with {other_user_name}"
+
+    # Create conversation
+    participants = [current_user.id, conversation_request.participant_id]
+    conversation = Conversation(
+        participants=participants,
+        title=title,
+        status=ConversationStatus.ACTIVE,
+        created_by=current_user.id,
+        last_message_at=datetime.utcnow()
+    )
+
+    conversation_doc = model_to_mongo_doc(conversation)
+    result = await request.app.state.mongodb.conversations.insert_one(conversation_doc)
+
+    # Get the conversation ID from the created document
+    conversation_id = conversation_doc["id"]  # Use UUID string, not ObjectId
+
+    # Create initial message
+    initial_message = Message(
+        conversation_id=conversation_id,
+        sender_id=current_user.id,
+        content=conversation_request.initial_message,
+        message_type=MessageType.TEXT,
+        sent_at=datetime.utcnow()
+    )
+
+    message_doc = model_to_mongo_doc(initial_message)
+    await request.app.state.mongodb.messages.insert_one(message_doc)
+
+    # Get created conversation using UUID string
+    created_conversation = await request.app.state.mongodb.conversations.find_one({"id": conversation_id})
+
+    # Send real-time notification to the other participant
+    await chat_service.send_real_time_message(
+        conversation_id=conversation_id,
+        sender_id=current_user.id,
+        content=conversation_request.initial_message,
+        message_id=message_doc["id"],  # Use UUID string
+        message_type="TEXT",
+        app_state=request.app.state
+    )
+
+    return transform_mongo_doc(created_conversation, ConversationResponse)
+
+
+@router.post("/create-support", response_model=ConversationResponse, status_code=status.HTTP_201_CREATED)
+async def create_support_conversation(
+    request: Request,
+    conversation_request: CreateSupportConversationRequest,
+    current_user: User = Depends(get_current_user)
+):
+    """Create a new support conversation (only for field staff to contact control center)"""
+    # Check if user can use chat
+    if not can_use_chat(current_user.role):
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Your role is not authorized to use the chat system"
+        )
+
     # Field staff (drivers/regulators) can only create conversations with control center
     if current_user.role in [UserRole.BUS_DRIVER, UserRole.QUEUE_REGULATOR]:
         # Get all control center users and add them to conversation
@@ -75,7 +171,7 @@ async def create_conversation(
                 status_code=status.HTTP_400_BAD_REQUEST,
                 detail="No control center staff available"
             )
-        
+
         participants = [current_user.id] + [user.get("id", str(user["_id"])) for user in control_users]
     else:
         # Control staff cannot create new conversations, only respond to existing ones
@@ -83,7 +179,7 @@ async def create_conversation(
             status_code=status.HTTP_403_FORBIDDEN,
             detail="Control center staff can only respond to existing conversations"
         )
-    
+
     # Create conversation
     conversation = Conversation(
         participants=participants,
@@ -92,10 +188,10 @@ async def create_conversation(
         created_by=current_user.id,
         last_message_at=datetime.utcnow()
     )
-    
+
     conversation_doc = model_to_mongo_doc(conversation)
     result = await request.app.state.mongodb.conversations.insert_one(conversation_doc)
-    
+
     # Get the conversation ID from the created document
     conversation_id = conversation_doc["id"]  # Use UUID string, not ObjectId
 
@@ -113,7 +209,7 @@ async def create_conversation(
 
     # Get created conversation using UUID string
     created_conversation = await request.app.state.mongodb.conversations.find_one({"id": conversation_id})
-    
+
     # Send real-time notification to control center
     await chat_service.send_real_time_message(
         conversation_id=conversation_id,
@@ -123,7 +219,7 @@ async def create_conversation(
         message_type="TEXT",
         app_state=request.app.state
     )
-    
+
     return transform_mongo_doc(created_conversation, ConversationResponse)
 
 

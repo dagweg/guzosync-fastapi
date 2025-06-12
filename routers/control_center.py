@@ -1307,7 +1307,6 @@ async def review_reallocation_request(
             {"id": request_id},
             {
                 "$set": {
-                    "requested_route_id": review_data.route_id,
                     "status": "COMPLETED",
                     "reviewed_by": current_user.id,
                     "reviewed_at": datetime.utcnow().isoformat(),
@@ -1402,13 +1401,9 @@ async def get_pending_reallocation_requests(
             detail="Only control center admins can view reallocation requests"
         )
     
-    # Get pending requests (those without requested_route_id or with PENDING status)
+    # Get pending requests (those with PENDING status)
     requests = await request.app.state.mongodb.reallocation_requests.find({
-        "$or": [
-            {"status": "PENDING"},
-            {"requested_route_id": {"$in": [None, ""]}},
-            {"requested_route_id": {"$exists": False}}
-        ]
+        "status": "PENDING"
     }).sort("created_at", -1).skip(skip).limit(limit).to_list(length=limit)
     
     return requests
@@ -1498,7 +1493,6 @@ async def get_reallocation_history(
     if route_id:
         match_query["$or"] = [
             {"current_route_id": route_id},
-            {"requested_route_id": route_id},
             {"old_route_id": route_id},
             {"new_route_id": route_id}
         ]
@@ -1569,14 +1563,7 @@ async def get_reallocation_history(
             }
         },
         # Lookup new/requested route information
-        {
-            "$lookup": {
-                "from": "routes",
-                "localField": "requested_route_id",
-                "foreignField": "_id",
-                "as": "new_route_data"
-            }
-        },
+
         {
             "$lookup": {
                 "from": "routes",
@@ -1688,7 +1675,7 @@ async def get_reallocation_history(
                     "$cond": {
                         "if": {"$ifNull": ["$new_route_id", False]},
                         "then": "$new_route_id",
-                        "else": "$requested_route_id"
+                        "else": None
                     }
                 }
             }

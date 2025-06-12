@@ -24,7 +24,17 @@ class ConversationResponse(DateTimeModelMixin):
 
 
 class CreateConversationRequest(BaseModel):
-    title: str = Field(..., min_length=1, max_length=200, description="Brief title for the conversation")
+    # Option 1: For general user-to-user conversations
+    participant_id: str = Field(..., description="ID of the user to start conversation with")
+    initial_message: str = Field(..., min_length=1, max_length=1000, description="Initial message content")
+
+    # Optional: conversation title (can be auto-generated if not provided)
+    title: Optional[str] = Field(None, max_length=200, description="Optional conversation title")
+
+
+class CreateSupportConversationRequest(BaseModel):
+    # Option 2: For field staff to contact control center (current system)
+    title: str = Field(..., min_length=1, max_length=200, description="Brief title for the support request")
     content: str = Field(..., min_length=1, max_length=1000, description="Initial message content")
 
 

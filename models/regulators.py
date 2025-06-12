@@ -28,9 +28,9 @@ class ReallocationRequest(BaseDBModel):
     requested_by_user_id: str
     bus_id: str
     current_route_id: str
-    requested_route_id: Optional[str] = None  # AI agent will determine optimal route
     reason: ReallocationReason
     description: str
+    estimated_people_count: Optional[int] = None
     priority: str = "NORMAL"  # NORMAL, HIGH, URGENT
     status: ReallocationStatus = ReallocationStatus.PENDING
     reviewed_by: Optional[str] = None  # Admin user ID who reviewed

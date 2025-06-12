@@ -1322,7 +1322,6 @@ async def create_reallocation_requests(db, users, buses, routes, count=10):
             requested_by_user_id=regulator["id"],
             bus_id=random.choice(bus_ids),
             current_route_id=random.choice(route_ids),
-            requested_route_id=random.choice(route_ids),
             reason=ReallocationReason(random.choice(REALLOCATION_REASONS)),
             description=random.choice([
                 "Bus overcrowding reported on current route",
@@ -1331,6 +1330,7 @@ async def create_reallocation_requests(db, users, buses, routes, count=10):
                 "Schedule optimization request",
                 "Maintenance required on current route"
             ]),
+            estimated_people_count=random.randint(50, 200) if random.random() > 0.3 else None,
             priority=random.choice(["NORMAL", "HIGH", "URGENT"]),
             status=ReallocationStatus(status),
             reviewed_by=random.choice([user["id"] for user in users if user["role"] in ["CONTROL_STAFF", "CONTROL_ADMIN"]]) if status != "PENDING" else None,
