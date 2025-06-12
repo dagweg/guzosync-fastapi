@@ -4,6 +4,7 @@ import hashlib
 import base64
 import qrcode
 import requests
+import json
 from io import BytesIO
 from typing import Optional, Dict, Any
 from datetime import datetime, timedelta
@@ -44,6 +45,100 @@ class ChapaPaymentService:
     def generate_tx_ref(self) -> str:
         """Generate unique transaction reference"""
         return f"guzosync-{uuid4().hex[:12]}-{int(datetime.utcnow().timestamp())}"
+
+    @property
+    def is_test_mode(self) -> bool:
+        """Check if we're in test mode based on secret key"""
+        return bool(self.secret_key and 'TEST' in self.secret_key.upper())
+
+    async def initiate_payment_simple(
+        self,
+        amount: float,
+        phone_number: str,
+        booking_id: str,
+        callback_url: Optional[str] = None
+    ) -> Dict[str, Any]:
+        """
+        Python equivalent of the JavaScript initiatePayment function.
+
+        This function matches the JavaScript implementation exactly:
+        - Uses the /transaction/initialize endpoint
+        - Takes amount, phone_number, booking_id, and callback_url
+        - Returns checkoutUrl and amount on success
+
+        Args:
+            amount: Payment amount in ETB
+            phone_number: Customer's phone number
+            booking_id: Unique booking/transaction reference
+            callback_url: Optional callback URL for payment completion
+
+        Returns:
+            Dict containing checkoutUrl and amount on success
+
+        Raises:
+            Exception: If payment initialization fails
+        """
+        try:
+            # Chapa API endpoint - matches JavaScript implementation
+            url = f"{self.base_url}/transaction/initialize"
+
+            # Prepare payload - matches JavaScript structure exactly
+            payload = {
+                "amount": str(amount),
+                "currency": "ETB",
+                "phone_number": phone_number,
+                "tx_ref": booking_id,
+                "customization": {
+                    "title": "Payment for Bus Ride",
+                    "description": "Bus Ride payment",
+                }
+            }
+
+            # Add callback_url if provided
+            if callback_url:
+                payload["callback_url"] = callback_url
+
+            # Prepare headers - matches JavaScript implementation
+            headers = {
+                "Authorization": f"Bearer {self.secret_key}",
+                "Content-Type": "application/json"
+            }
+
+            # Make the API request
+            response = requests.post(url, json=payload, headers=headers)
+
+            # Handle non-200 responses
+            if not response.ok:
+                error_text = response.text
+                logger.error(
+                    f"Chapa API Error: {response.status_code} : {response.reason} : {error_text}"
+                )
+                raise Exception("Failed to initialize payment")
+
+            # Parse response
+            data = response.json()
+
+            # Validate response structure - matches JavaScript validation
+            if data and data.get("data") and data["data"].get("checkout_url"):
+                logger.info(f"Payment initialized with Chapa for booking ID {booking_id}")
+                return {
+                    "checkoutUrl": data["data"]["checkout_url"],
+                    "amount": amount
+                }
+            else:
+                logger.error("Chapa API Error: Response does not have checkout_url")
+                raise Exception("Failed to initialize payment")
+
+        except requests.exceptions.RequestException as e:
+            logger.error(
+                f"Failed to initialize payment for booking ID: {booking_id}, Error: {str(e)}"
+            )
+            raise Exception("Failed to initialize payment")
+        except Exception as e:
+            logger.error(
+                f"Failed to initialize payment for booking ID: {booking_id}, Error: {str(e)}"
+            )
+            raise Exception("Failed to initialize payment")
 
     async def initiate_payment(
         self,

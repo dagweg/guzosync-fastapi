@@ -12,7 +12,7 @@ async def assign_route_to_bus():
     mongodb_url = os.getenv("MONGODB_URL", "mongodb://localhost:27017")
     database_name = os.getenv("DATABASE_NAME", "guzosync")
     
-    client = AsyncIOMotorClient(mongodb_url)
+    client: AsyncIOMotorClient = AsyncIOMotorClient(mongodb_url)
     db = client[database_name]
     
     try:

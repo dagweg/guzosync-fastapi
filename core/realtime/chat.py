@@ -82,13 +82,14 @@ class ChatService:
     @staticmethod
     async def join_conversation(user_id: str, conversation_id: str, app_state=None):
         """Join user to a conversation room"""
-        try:            # Verify user is participant in conversation
+        try:
+            # Verify user is participant in conversation
             if app_state and app_state.mongodb:
                 conversation = await app_state.mongodb.conversations.find_one({
                     "id": conversation_id,
                     "participants": {"$in": [str(user_id)]}
                 })
-                
+
                 if not conversation:
                     logger.warning(f"User {user_id} not authorized for conversation {conversation_id}")
                     return False
@@ -171,6 +172,102 @@ class ChatService:
             
         except Exception as e:
             logger.error(f"Error sending message read notification: {e}")
+
+    @staticmethod
+    async def broadcast_to_support_room(room_type: str, message: dict, exclude_user: str = ""):
+        """Broadcast message to a specific support room"""
+        try:
+            room_id = f"support:{room_type}"
+            await websocket_manager.send_room_message(room_id, message, exclude_user)
+            logger.info(f"Broadcasted message to support room: {room_type}")
+        except Exception as e:
+            logger.error(f"Error broadcasting to support room {room_type}: {e}")
+
+    @staticmethod
+    async def notify_control_center_new_conversation(conversation_id: str, title: str, creator_id: str, app_state=None):
+        """Notify control center staff about new support conversations"""
+        try:
+            # Get creator details
+            creator_name = "Field Staff"
+            creator_role = "UNKNOWN"
+
+            if app_state and app_state.mongodb:
+                creator = await app_state.mongodb.users.find_one({"id": creator_id})
+                if creator:
+                    creator_name = f"{creator.get('first_name', '')} {creator.get('last_name', '')}".strip()
+                    if not creator_name:
+                        creator_name = creator.get('email', 'Field Staff')
+                    creator_role = creator.get('role', 'UNKNOWN')
+
+            # Create notification message
+            notification = {
+                "type": "new_support_conversation",
+                "conversation_id": conversation_id,
+                "title": title,
+                "creator_id": creator_id,
+                "creator_name": creator_name,
+                "creator_role": creator_role,
+                "message": f"New support request from {creator_name} ({creator_role}): {title}",
+                "timestamp": datetime.now(timezone.utc).isoformat()
+            }
+
+            # Broadcast to general support room
+            await ChatService.broadcast_to_support_room("general_support", notification)
+
+            # Also send to role-specific support room
+            if creator_role == "BUS_DRIVER":
+                await ChatService.broadcast_to_support_room("driver_support", notification)
+            elif creator_role == "QUEUE_REGULATOR":
+                await ChatService.broadcast_to_support_room("regulator_support", notification)
+
+            logger.info(f"Notified control center about new conversation: {conversation_id}")
+
+        except Exception as e:
+            logger.error(f"Error notifying control center about new conversation: {e}")
+
+    @staticmethod
+    async def get_conversation_messages(conversation_id: str, user_id: str, limit: int = 50, skip: int = 0, app_state=None):
+        """Get messages from a conversation with real-time delivery"""
+        try:
+            messages = []
+
+            if app_state and app_state.mongodb:
+                # Verify user has access to conversation
+                conversation = await app_state.mongodb.conversations.find_one({
+                    "id": conversation_id,
+                    "participants": {"$in": [user_id]}
+                })
+
+                if not conversation:
+                    logger.warning(f"User {user_id} not authorized for conversation {conversation_id}")
+                    return {"success": False, "error": "Conversation not found or access denied"}
+
+                # Get messages
+                message_docs = await app_state.mongodb.messages.find({
+                    "conversation_id": conversation_id
+                }).sort("sent_at", -1).skip(skip).limit(limit).to_list(length=limit)
+
+                # Transform messages
+                for msg_doc in reversed(message_docs):  # Reverse to get chronological order
+                    messages.append({
+                        "id": msg_doc.get("id", str(msg_doc.get("_id", ""))),
+                        "conversation_id": msg_doc.get("conversation_id", ""),
+                        "sender_id": msg_doc.get("sender_id", ""),
+                        "content": msg_doc.get("content", ""),
+                        "message_type": msg_doc.get("message_type", "TEXT"),
+                        "sent_at": msg_doc.get("sent_at", "").isoformat() if msg_doc.get("sent_at") else None
+                    })
+
+            return {
+                "success": True,
+                "messages": messages,
+                "count": len(messages),
+                "conversation_id": conversation_id
+            }
+
+        except Exception as e:
+            logger.error(f"Error getting conversation messages: {e}")
+            return {"success": False, "error": str(e)}
 
 
 # Global chat service instance

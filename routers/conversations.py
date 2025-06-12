@@ -76,7 +76,7 @@ async def create_conversation(
                 detail="No control center staff available"
             )
         
-        participants = [current_user.id] + [user["_id"] for user in control_users]
+        participants = [current_user.id] + [user.get("id", str(user["_id"])) for user in control_users]
     else:
         # Control staff cannot create new conversations, only respond to existing ones
         raise HTTPException(
@@ -96,27 +96,30 @@ async def create_conversation(
     conversation_doc = model_to_mongo_doc(conversation)
     result = await request.app.state.mongodb.conversations.insert_one(conversation_doc)
     
+    # Get the conversation ID from the created document
+    conversation_id = conversation_doc["id"]  # Use UUID string, not ObjectId
+
     # Create initial message
     initial_message = Message(
-        conversation_id=str(result.inserted_id),
+        conversation_id=conversation_id,
         sender_id=current_user.id,
         content=conversation_request.content,
         message_type=MessageType.TEXT,
         sent_at=datetime.utcnow()
     )
-    
+
     message_doc = model_to_mongo_doc(initial_message)
     await request.app.state.mongodb.messages.insert_one(message_doc)
-    
-    # Get created conversation
-    created_conversation = await request.app.state.mongodb.conversations.find_one({"_id": result.inserted_id})
+
+    # Get created conversation using UUID string
+    created_conversation = await request.app.state.mongodb.conversations.find_one({"id": conversation_id})
     
     # Send real-time notification to control center
     await chat_service.send_real_time_message(
-        conversation_id=str(result.inserted_id),
+        conversation_id=conversation_id,
         sender_id=current_user.id,
         content=conversation_request.content,
-        message_id=str(message_doc["_id"]),
+        message_id=message_doc["id"],  # Use UUID string
         message_type="TEXT",
         app_state=request.app.state
     )
@@ -163,7 +166,7 @@ async def get_conversation_messages(
     
     # Check if user is part of the conversation
     conversation = await request.app.state.mongodb.conversations.find_one({
-        "_id": conversation_id,
+        "id": conversation_id,
         "participants": current_user.id
     })
     
@@ -196,7 +199,7 @@ async def send_message(
     
     # Check if user is part of the conversation
     conversation = await request.app.state.mongodb.conversations.find_one({
-        "_id": conversation_id,
+        "id": conversation_id,
         "participants": current_user.id
     })
     
@@ -228,11 +231,11 @@ async def send_message(
     
     # Update conversation's last message timestamp
     await request.app.state.mongodb.conversations.update_one(
-        {"_id": conversation_id},
+        {"id": conversation_id},
         {"$set": {"last_message_at": datetime.utcnow()}}
     )
-    
-    created_message = await request.app.state.mongodb.messages.find_one({"_id": result.inserted_id})
+
+    created_message = await request.app.state.mongodb.messages.find_one({"id": message_doc["id"]})
     response_message = transform_mongo_doc(created_message, MessageResponse)
     
     # Send real-time message to conversation participants
@@ -241,8 +244,9 @@ async def send_message(
         sender_id=current_user.id,
         content=message_request.content,
         message_type="TEXT",
-        message_id=str(result.inserted_id),
-        app_state=request.app.state    )
+        message_id=message_doc["id"],  # Use UUID string
+        app_state=request.app.state
+    )
     
     return response_message
 
@@ -262,7 +266,7 @@ async def close_conversation(
     
     # Check if conversation exists and user is participant
     conversation = await request.app.state.mongodb.conversations.find_one({
-        "_id": conversation_id,
+        "id": conversation_id,
         "participants": current_user.id
     })
     
@@ -274,7 +278,7 @@ async def close_conversation(
     
     # Update conversation status
     await request.app.state.mongodb.conversations.update_one(
-        {"_id": conversation_id},
+        {"id": conversation_id},
         {"$set": {"status": "CLOSED", "updated_at": datetime.utcnow()}}
     )
     

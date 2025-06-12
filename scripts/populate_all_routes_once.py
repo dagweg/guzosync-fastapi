@@ -16,7 +16,7 @@ import logging
 import os
 import sys
 from datetime import datetime, timezone
-from typing import List, Dict, Any
+from typing import List, Dict, Any, Optional
 
 # Add project root to path
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
@@ -50,7 +50,7 @@ async def check_population_status():
     mongodb_url = os.getenv("MONGODB_URL", "mongodb://localhost:27017")
     database_name = os.getenv("DATABASE_NAME", "guzosync")
     
-    client = AsyncIOMotorClient(mongodb_url)
+    client: AsyncIOMotorClient = AsyncIOMotorClient(mongodb_url)
     db = client[database_name]
     
     try:
@@ -89,7 +89,7 @@ async def check_population_status():
         client.close()
 
 
-async def populate_all_routes(batch_size: int = None):
+async def populate_all_routes(batch_size: Optional[int] = None):
     """Populate route geometry for all routes (one-time operation)"""
     
     # Check if Mapbox token is configured
@@ -106,7 +106,7 @@ async def populate_all_routes(batch_size: int = None):
     mongodb_url = os.getenv("MONGODB_URL", "mongodb://localhost:27017")
     database_name = os.getenv("DATABASE_NAME", "guzosync")
     
-    client = AsyncIOMotorClient(mongodb_url)
+    client: AsyncIOMotorClient = AsyncIOMotorClient(mongodb_url)
     db = client[database_name]
     app_state = AppState(db)
     

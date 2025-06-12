@@ -9,7 +9,7 @@ from uuid import UUID
 from datetime import datetime, timezone
 import asyncio
 
-logger = get_logger(__name__)
+#logger.= get_logger(__name__)
 
 
 class WebSocketManager:
@@ -32,7 +32,7 @@ class WebSocketManager:
     def set_app_state(self, app_state: Any) -> None:
         """Set the app state for authentication"""
         self.app_state = app_state
-        logger.info("WebSocket manager app state set")
+        #logger.info("WebSocket manager app state set")
 
     async def connect_user(self, websocket: WebSocket, user_id: str) -> str:
         """Connect a user and return connection ID"""
@@ -44,9 +44,9 @@ class WebSocketManager:
         self.user_sessions[connection_id] = user_id
 
         total_connections = len(self.user_connections)
-        logger.info(f"🔌 User {user_id} connected via WebSocket with connection {connection_id} (Total connections: {total_connections})")
-        logger.debug(f"🔌 Connection stored: user_connections[{user_id}] = {websocket}")
-        logger.debug(f"🔌 All connected users: {list(self.user_connections.keys())}")
+        #logger.info(f"🔌 User {user_id} connected via WebSocket with connection {connection_id} (Total connections: {total_connections})")
+        #logger.debug(f"🔌 Connection stored: user_connections[{user_id}] = {websocket}")
+        #logger.debug(f"🔌 All connected users: {list(self.user_connections.keys())}")
         return connection_id
 
     async def disconnect_user(self, user_id: str) -> None:
@@ -76,43 +76,43 @@ class WebSocketManager:
             self.proximity_preferences.pop(user_id, None)
 
             remaining_connections = len(self.user_connections)
-            logger.info(f"🔌 User {user_id} disconnected and cleaned up (Remaining connections: {remaining_connections})")
-            if rooms_left:
-                logger.debug(f"🔌 User {user_id} was removed from rooms: {rooms_left}")
-            if rooms_to_clean:
-                logger.debug(f"🔌 Cleaned up empty rooms: {rooms_to_clean}")
+            #logger.info(f"🔌 User {user_id} disconnected and cleaned up (Remaining connections: {remaining_connections})")
+            # if rooms_left:
+                #logger.debug(f"🔌 User {user_id} was removed from rooms: {rooms_left}")
+            # if rooms_to_clean:
+                #logger.debug(f"🔌 Cleaned up empty rooms: {rooms_to_clean}")
 
     async def join_room_user(self, user_id: str, room_id: str) -> bool:
         """Add user to a room for group communications"""
         # Debug: Check connection state
-        logger.debug(f"🔍 Checking connection for user {user_id} to join room {room_id}")
-        logger.debug(f"🔍 Connected users: {list(self.user_connections.keys())}")
-        logger.debug(f"🔍 User {user_id} in connections: {user_id in self.user_connections}")
+        #logger.debug(f"🔍 Checking connection for user {user_id} to join room {room_id}")
+        #logger.debug(f"🔍 Connected users: {list(self.user_connections.keys())}")
+        #logger.debug(f"🔍 User {user_id} in connections: {user_id in self.user_connections}")
 
         if user_id not in self.user_connections:
-            logger.warning(f"🔌 User {user_id} not connected, cannot join room {room_id}")
-            logger.warning(f"🔌 Currently connected users: {list(self.user_connections.keys())}")
+            #logger.warning(f"🔌 User {user_id} not connected, cannot join room {room_id}")
+            #logger.warning(f"🔌 Currently connected users: {list(self.user_connections.keys())}")
             return False
 
         try:
             # Track in our room management
             if room_id not in self.rooms:
                 self.rooms[room_id] = set()
-                logger.debug(f"🏠 Created new room: {room_id}")
+                #logger.debug(f"🏠 Created new room: {room_id}")
 
             self.rooms[room_id].add(user_id)
             room_size = len(self.rooms[room_id])
 
-            logger.info(f"🏠 User {user_id} joined room {room_id} (Room size: {room_size})")
+            #logger.info(f"🏠 User {user_id} joined room {room_id} (Room size: {room_size})")
             return True
         except Exception as e:
-            logger.error(f"💥 Error joining room {room_id} for user {user_id}: {e}")
+            #logger.error(f"💥 Error joining room {room_id} for user {user_id}: {e}")
             return False
 
     async def leave_room_user(self, user_id: str, room_id: str) -> bool:
         """Remove user from a room"""
         if room_id not in self.rooms:
-            logger.debug(f"🏠 Room {room_id} doesn't exist, cannot remove user {user_id}")
+            #logger.debug(f"🏠 Room {room_id} doesn't exist, cannot remove user {user_id}")
             return False
 
         self.rooms[room_id].discard(user_id)
@@ -120,9 +120,9 @@ class WebSocketManager:
 
         if remaining_users == 0:
             del self.rooms[room_id]
-            logger.info(f"🏠 User {user_id} left room {room_id} (Room deleted - was empty)")
-        else:
-            logger.info(f"🏠 User {user_id} left room {room_id} (Room size: {remaining_users})")
+            #logger.info(f"🏠 User {user_id} left room {room_id} (Room deleted - was empty)")
+        # else:
+            #logger.info(f"🏠 User {user_id} left room {room_id} (Room size: {remaining_users})")
 
         return True
 
@@ -141,15 +141,15 @@ class WebSocketManager:
     def is_user_connected(self, user_id: str) -> bool:
         """Check if user is connected"""
         is_connected = user_id in self.user_connections
-        logger.debug(f"🔍 Checking connection for user {user_id}: {'CONNECTED' if is_connected else 'NOT CONNECTED'}")
-        logger.debug(f"🔍 Currently connected users: {list(self.user_connections.keys())}")
-        logger.debug(f"🔍 Total connections: {len(self.user_connections)}")
+        #logger.debug(f"🔍 Checking connection for user {user_id}: {'CONNECTED' if is_connected else 'NOT CONNECTED'}")
+        #logger.debug(f"🔍 Currently connected users: {list(self.user_connections.keys())}")
+        #logger.debug(f"🔍 Total connections: {len(self.user_connections)}")
         return is_connected
 
     async def send_personal_message(self, user_id: str, message: Dict[str, Any]) -> bool:
         """Send message to a specific user"""
         if user_id not in self.user_connections:
-            logger.warning(f"🔌 User {user_id} not connected, cannot send message")
+            #logger.warning(f"🔌 User {user_id} not connected, cannot send message")
             return False
 
         websocket = self.user_connections[user_id]
@@ -160,12 +160,12 @@ class WebSocketManager:
             await websocket.send_text(message_json)
 
             # Log successful message send
-            logger.info(f"📤 SENT WebSocket Message: {message_type} to user {user_id}")
-            logger.debug(f"📤 Message Data: {message}")
+            #logger.info(f"📤 SENT WebSocket Message: {message_type} to user {user_id}")
+            #logger.debug(f"📤 Message Data: {message}")
 
             return True
         except Exception as e:
-            logger.error(f"💥 Error sending WebSocket message {message_type} to user {user_id}: {e}")
+            #logger.error(f"💥 Error sending WebSocket message {message_type} to user {user_id}: {e}")
             # Remove disconnected connection
             await self.disconnect_user(user_id)
             return False
@@ -173,7 +173,7 @@ class WebSocketManager:
     async def send_room_message(self, room_id: str, message: Dict[str, Any], exclude_user: str = "") -> bool:
         """Send message to all users in a room"""
         if room_id not in self.rooms:
-            logger.warning(f"🏠 Room {room_id} does not exist")
+            #logger.warning(f"🏠 Room {room_id} does not exist")
             return False
 
         users_to_notify = self.rooms[room_id].copy()
@@ -181,19 +181,19 @@ class WebSocketManager:
             users_to_notify.discard(exclude_user)
 
         message_type = message.get('type', 'unknown')
-        logger.info(f"📡 BROADCASTING to room {room_id}: {message_type} to {len(users_to_notify)} users")
-        if exclude_user:
-            logger.debug(f"📡 Excluding user {exclude_user} from broadcast")
+        #logger.info(f"📡 BROADCASTING to room {room_id}: {message_type} to {len(users_to_notify)} users")
+        # if exclude_user:
+            #logger.debug(f"📡 Excluding user {exclude_user} from broadcast")
 
         success_count = 0
         for user_id in users_to_notify:
             if await self.send_personal_message(user_id, message):
                 success_count += 1
 
-        if success_count > 0:
-            logger.info(f"✅ Successfully broadcasted {message_type} to {success_count}/{len(users_to_notify)} users in room {room_id}")
-        else:
-            logger.warning(f"❌ Failed to broadcast {message_type} to any users in room {room_id}")
+        # if success_count > 0:
+            #logger.info(f"✅ Successfully broadcasted {message_type} to {success_count}/{len(users_to_notify)} users in room {room_id}")
+        # else:
+            #logger.warning(f"❌ Failed to broadcast {message_type} to any users in room {room_id}")
 
         return success_count > 0
 
@@ -202,17 +202,17 @@ class WebSocketManager:
         message_type = message.get('type', 'unknown')
         total_users = len(self.user_connections)
 
-        logger.info(f"🌐 GLOBAL BROADCAST: {message_type} to {total_users} connected users")
+        #logger.info(f"🌐 GLOBAL BROADCAST: {message_type} to {total_users} connected users")
 
         success_count = 0
         for user_id in list(self.user_connections.keys()):
             if await self.send_personal_message(user_id, message):
                 success_count += 1
 
-        if success_count > 0:
-            logger.info(f"✅ Global broadcast {message_type} successful: {success_count}/{total_users} users")
-        else:
-            logger.warning(f"❌ Global broadcast {message_type} failed: 0/{total_users} users")
+        # if success_count > 0:
+            #logger.info(f"✅ Global broadcast {message_type} successful: {success_count}/{total_users} users")
+        # else:
+            #logger.warning(f"❌ Global broadcast {message_type} failed: 0/{total_users} users")
 
         return success_count > 0
 
@@ -223,7 +223,7 @@ class WebSocketManager:
     def set_proximity_preferences(self, user_id: str, preferences: Dict[str, Any]) -> None:
         """Set proximity alert preferences for a user"""
         self.proximity_preferences[user_id] = preferences
-        logger.debug(f"Set proximity preferences for user {user_id}")
+        #logger.debug(f"Set proximity preferences for user {user_id}")
 
     def get_proximity_preferences(self, user_id: str) -> Dict[str, Any]:
         """Get proximity alert preferences for a user"""

@@ -78,6 +78,32 @@ class WebSocketEventHandlers:
                     result = await WebSocketEventHandlers.handle_mark_message_read(user_id, conversation_id, message_id)
             elif message_type == "send_notification":
                 result = await WebSocketEventHandlers.handle_send_notification(user_id, data, app_state)
+            elif message_type == "send_chat_message":
+                conversation_id = data.get("conversation_id")
+                content = data.get("content")
+                if not conversation_id or not content:
+                    result = {"success": False, "error": "Conversation ID and content required"}
+                else:
+                    result = await WebSocketEventHandlers.handle_send_chat_message(user_id, conversation_id, content, app_state)
+            elif message_type == "create_support_conversation":
+                title = data.get("title")
+                content = data.get("content")
+                if not title or not content:
+                    result = {"success": False, "error": "Title and content required"}
+                else:
+                    result = await WebSocketEventHandlers.handle_create_support_conversation(user_id, title, content, app_state)
+            elif message_type == "get_active_conversations":
+                result = await WebSocketEventHandlers.handle_get_active_conversations(user_id, app_state)
+            elif message_type == "join_support_room":
+                result = await WebSocketEventHandlers.handle_join_support_room(user_id, data, app_state)
+            elif message_type == "get_conversation_messages":
+                conversation_id = data.get("conversation_id")
+                limit = data.get("limit", 50)
+                skip = data.get("skip", 0)
+                if not conversation_id:
+                    result = {"success": False, "error": "Conversation ID required"}
+                else:
+                    result = await WebSocketEventHandlers.handle_get_conversation_messages(user_id, conversation_id, limit, skip, app_state)
             else:
                 logger.warning(f"❓ Unknown WebSocket message type: {message_type} from user {user_id}")
                 result = {"success": False, "error": f"Unknown message type: {message_type}"}
@@ -580,6 +606,342 @@ class WebSocketEventHandlers:
 
         except Exception as e:
             logger.error(f"Error sending notification from user {user_id}: {e}")
+            return {"success": False, "error": str(e)}
+
+    @staticmethod
+    async def handle_send_chat_message(user_id: str, conversation_id: str, content: str, app_state=None) -> Dict[str, Any]:
+        """Handle sending a chat message via WebSocket"""
+        try:
+            logger.info(f"💬 Processing chat message from user {user_id} to conversation {conversation_id}")
+
+            # Verify user has access to conversation
+            if app_state is not None and app_state.mongodb is not None:
+                conversation = await app_state.mongodb.conversations.find_one({
+                    "id": conversation_id,
+                    "participants": {"$in": [user_id]}
+                })
+
+                if not conversation:
+                    logger.warning(f"❌ User {user_id} not authorized for conversation {conversation_id}")
+                    return {"success": False, "error": "Conversation not found or access denied"}
+
+                # Verify user role can use chat
+                user = await app_state.mongodb.users.find_one({"id": user_id})
+                if not user:
+                    return {"success": False, "error": "User not found"}
+
+                allowed_roles = ["BUS_DRIVER", "QUEUE_REGULATOR", "CONTROL_STAFF", "CONTROL_ADMIN"]
+                if user.get("role") not in allowed_roles:
+                    return {"success": False, "error": "Your role is not authorized to use the chat system"}
+
+            # Create message
+            from models.conversation import Message, MessageType
+            from core.mongo_utils import model_to_mongo_doc
+
+            message = Message(
+                conversation_id=conversation_id,
+                sender_id=user_id,
+                content=content,
+                message_type=MessageType.TEXT,
+                sent_at=datetime.now(timezone.utc)
+            )
+
+            # Save message to database
+            if app_state is not None and app_state.mongodb is not None:
+                message_doc = model_to_mongo_doc(message)
+                result = await app_state.mongodb.messages.insert_one(message_doc)
+                message_id = str(result.inserted_id)
+
+                # Update conversation's last message timestamp
+                await app_state.mongodb.conversations.update_one(
+                    {"id": conversation_id},
+                    {"$set": {"last_message_at": datetime.now(timezone.utc)}}
+                )
+            else:
+                message_id = str(datetime.now().timestamp())
+
+            # Send real-time message to conversation participants
+            await chat_service.send_real_time_message(
+                conversation_id=conversation_id,
+                sender_id=user_id,
+                content=content,
+                message_id=message_id,
+                message_type="TEXT",
+                app_state=app_state
+            )
+
+            logger.info(f"✅ Chat message sent successfully from user {user_id}")
+
+            return {
+                "success": True,
+                "message": "Message sent successfully",
+                "message_id": message_id,
+                "conversation_id": conversation_id,
+                "timestamp": datetime.now(timezone.utc).isoformat()
+            }
+
+        except Exception as e:
+            logger.error(f"Error sending chat message from user {user_id}: {e}")
+            return {"success": False, "error": str(e)}
+
+    @staticmethod
+    async def handle_create_support_conversation(user_id: str, title: str, content: str, app_state=None) -> Dict[str, Any]:
+        """Handle creating a new support conversation between field staff and control center"""
+        try:
+            logger.info(f"💬 Creating support conversation from user {user_id}: {title}")
+
+            # Verify user role can create support conversations
+            if app_state is not None and app_state.mongodb is not None:
+                user = await app_state.mongodb.users.find_one({"id": user_id})
+                if not user:
+                    return {"success": False, "error": "User not found"}
+
+                # Only field staff can create support conversations
+                field_staff_roles = ["BUS_DRIVER", "QUEUE_REGULATOR"]
+                if user.get("role") not in field_staff_roles:
+                    return {"success": False, "error": "Only bus drivers and queue regulators can create support conversations"}
+
+                # Get all control center users (staff and admin)
+                control_users = await app_state.mongodb.users.find({
+                    "role": {"$in": ["CONTROL_STAFF", "CONTROL_ADMIN"]},
+                    "is_active": True
+                }).to_list(length=None)
+
+                if not control_users:
+                    return {"success": False, "error": "No control center staff available"}
+
+                # Create participants list (user + all control center staff)
+                participants = [user_id] + [str(control_user["id"]) for control_user in control_users]
+            else:
+                participants = [user_id]
+
+            # Create conversation
+            from models.conversation import Conversation, ConversationStatus
+            from core.mongo_utils import model_to_mongo_doc
+
+            conversation = Conversation(
+                participants=participants,
+                title=f"Support: {title}",
+                status=ConversationStatus.ACTIVE,
+                created_by=user_id,
+                last_message_at=datetime.now(timezone.utc)
+            )
+
+            # Save conversation to database
+            if app_state is not None and app_state.mongodb is not None:
+                conversation_doc = model_to_mongo_doc(conversation)
+                result = await app_state.mongodb.conversations.insert_one(conversation_doc)
+                conversation_id = str(result.inserted_id)
+
+                # Create initial message
+                from models.conversation import Message, MessageType
+
+                initial_message = Message(
+                    conversation_id=conversation_id,
+                    sender_id=user_id,
+                    content=content,
+                    message_type=MessageType.TEXT,
+                    sent_at=datetime.now(timezone.utc)
+                )
+
+                message_doc = model_to_mongo_doc(initial_message)
+                message_result = await app_state.mongodb.messages.insert_one(message_doc)
+                message_id = str(message_result.inserted_id)
+            else:
+                conversation_id = str(datetime.now().timestamp())
+                message_id = str(datetime.now().timestamp())
+
+            # Join conversation room for real-time messaging
+            await chat_service.join_conversation(user_id, conversation_id, app_state)
+
+            # Send real-time notification to control center
+            await chat_service.send_real_time_message(
+                conversation_id=conversation_id,
+                sender_id=user_id,
+                content=content,
+                message_id=message_id,
+                message_type="TEXT",
+                app_state=app_state
+            )
+
+            # Notify control center about new support conversation
+            await chat_service.notify_control_center_new_conversation(
+                conversation_id=conversation_id,
+                title=title,
+                creator_id=user_id,
+                app_state=app_state
+            )
+
+            logger.info(f"✅ Support conversation created successfully: {conversation_id}")
+
+            return {
+                "success": True,
+                "message": "Support conversation created successfully",
+                "conversation_id": conversation_id,
+                "title": f"Support: {title}",
+                "participants": participants,
+                "timestamp": datetime.now(timezone.utc).isoformat()
+            }
+
+        except Exception as e:
+            logger.error(f"Error creating support conversation from user {user_id}: {e}")
+            return {"success": False, "error": str(e)}
+
+    @staticmethod
+    async def handle_get_active_conversations(user_id: str, app_state=None) -> Dict[str, Any]:
+        """Handle getting active conversations for a user"""
+        try:
+            logger.info(f"💬 Getting active conversations for user {user_id}")
+
+            conversations = []
+
+            if app_state is not None and app_state.mongodb is not None:
+                # Get conversations where user is a participant
+                conversation_docs = await app_state.mongodb.conversations.find({
+                    "participants": {"$in": [user_id]},
+                    "status": "ACTIVE"
+                }).sort("last_message_at", -1).to_list(length=50)
+
+                # Transform conversations and get participant details
+                for conv_doc in conversation_docs:
+                    # Get participant details
+                    participant_ids = conv_doc.get("participants", [])
+                    participants = []
+
+                    for participant_id in participant_ids:
+                        user_doc = await app_state.mongodb.users.find_one({"id": participant_id})
+                        if user_doc:
+                            participants.append({
+                                "id": participant_id,
+                                "email": user_doc.get("email", ""),
+                                "role": user_doc.get("role", ""),
+                                "first_name": user_doc.get("first_name", ""),
+                                "last_name": user_doc.get("last_name", "")
+                            })
+
+                    # Get last message using conversation UUID
+                    last_message = None
+                    conversation_id = conv_doc.get("id", str(conv_doc.get("_id", "")))
+                    last_message_doc = await app_state.mongodb.messages.find_one(
+                        {"conversation_id": conversation_id},
+                        sort=[("sent_at", -1)]
+                    )
+
+                    if last_message_doc:
+                        last_message = {
+                            "id": last_message_doc.get("id", str(last_message_doc.get("_id", ""))),
+                            "content": last_message_doc.get("content", ""),
+                            "sender_id": last_message_doc.get("sender_id", ""),
+                            "sent_at": last_message_doc.get("sent_at", "").isoformat() if last_message_doc.get("sent_at") else None
+                        }
+
+                    conversations.append({
+                        "id": conversation_id,
+                        "title": conv_doc.get("title", ""),
+                        "status": conv_doc.get("status", "ACTIVE"),
+                        "created_by": conv_doc.get("created_by", ""),
+                        "last_message_at": conv_doc.get("last_message_at", "").isoformat() if conv_doc.get("last_message_at") else None,
+                        "participants": participants,
+                        "last_message": last_message
+                    })
+
+            logger.info(f"✅ Retrieved {len(conversations)} active conversations for user {user_id}")
+
+            return {
+                "success": True,
+                "conversations": conversations,
+                "count": len(conversations),
+                "timestamp": datetime.now(timezone.utc).isoformat()
+            }
+
+        except Exception as e:
+            logger.error(f"Error getting active conversations for user {user_id}: {e}")
+            return {"success": False, "error": str(e)}
+
+    @staticmethod
+    async def handle_join_support_room(user_id: str, data: Dict[str, Any], app_state=None) -> Dict[str, Any]:
+        """Handle joining support rooms for control staff"""
+        try:
+            logger.info(f"💬 Processing join support room request from user {user_id}")
+
+            # Verify user role can join support rooms
+            if app_state is not None and app_state.mongodb is not None:
+                user = await app_state.mongodb.users.find_one({"id": user_id})
+                if not user:
+                    return {"success": False, "error": "User not found"}
+
+                # Only control staff can join general support rooms
+                control_roles = ["CONTROL_STAFF", "CONTROL_ADMIN"]
+                if user.get("role") not in control_roles:
+                    return {"success": False, "error": "Only control staff can join support rooms"}
+
+            # Define support room types
+            room_type = data.get("room_type", "general_support")
+            valid_room_types = ["general_support", "emergency_support", "driver_support", "regulator_support"]
+
+            if room_type not in valid_room_types:
+                return {"success": False, "error": f"Invalid room type. Valid types: {valid_room_types}"}
+
+            # Join the support room
+            room_id = f"support:{room_type}"
+            success = await websocket_manager.join_room_user(user_id, room_id)
+
+            if success:
+                logger.info(f"✅ User {user_id} joined support room: {room_id}")
+
+                # Send welcome message to room
+                welcome_message = {
+                    "type": "room_notification",
+                    "room_id": room_id,
+                    "message": f"Control staff member joined {room_type.replace('_', ' ')} room",
+                    "user_id": user_id,
+                    "timestamp": datetime.now(timezone.utc).isoformat()
+                }
+
+                await websocket_manager.send_room_message(
+                    room_id,
+                    welcome_message,
+                    exclude_user=user_id
+                )
+
+                return {
+                    "success": True,
+                    "message": f"Joined {room_type.replace('_', ' ')} room successfully",
+                    "room_id": room_id,
+                    "room_type": room_type,
+                    "timestamp": datetime.now(timezone.utc).isoformat()
+                }
+            else:
+                logger.error(f"❌ Failed to join user {user_id} to support room: {room_id}")
+                return {"success": False, "error": "Failed to join support room"}
+
+        except Exception as e:
+            logger.error(f"Error joining support room for user {user_id}: {e}")
+            return {"success": False, "error": str(e)}
+
+    @staticmethod
+    async def handle_get_conversation_messages(user_id: str, conversation_id: str, limit: int, skip: int, app_state=None) -> Dict[str, Any]:
+        """Handle getting messages from a conversation"""
+        try:
+            logger.info(f"💬 Getting messages for conversation {conversation_id} from user {user_id}")
+
+            result = await chat_service.get_conversation_messages(
+                conversation_id=conversation_id,
+                user_id=user_id,
+                limit=limit,
+                skip=skip,
+                app_state=app_state
+            )
+
+            if result.get("success"):
+                logger.info(f"✅ Retrieved {result.get('count', 0)} messages for conversation {conversation_id}")
+            else:
+                logger.warning(f"❌ Failed to get messages for conversation {conversation_id}: {result.get('error')}")
+
+            return result
+
+        except Exception as e:
+            logger.error(f"Error getting conversation messages for user {user_id}: {e}")
             return {"success": False, "error": str(e)}
 
 

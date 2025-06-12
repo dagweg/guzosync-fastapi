@@ -254,11 +254,11 @@ class NotificationService:
                 logger.warning("No database connection for route reallocation notification")
                 return
 
-            # Get bus and route information - Fix database queries to use _id
-            bus = await app_state.mongodb.buses.find_one({"_id": bus_id})
-            old_route = await app_state.mongodb.routes.find_one({"_id": old_route_id}) if old_route_id else None
-            new_route = await app_state.mongodb.routes.find_one({"_id": new_route_id})
-            reallocated_by = await app_state.mongodb.users.find_one({"_id": reallocated_by_user_id})
+            # Get bus and route information - Use id field for queries
+            bus = await app_state.mongodb.buses.find_one({"id": bus_id})
+            old_route = await app_state.mongodb.routes.find_one({"id": old_route_id}) if old_route_id else None
+            new_route = await app_state.mongodb.routes.find_one({"id": new_route_id})
+            reallocated_by = await app_state.mongodb.users.find_one({"id": reallocated_by_user_id})
 
             if not bus or not new_route:
                 logger.warning(f"Bus {bus_id} or new route {new_route_id} not found for reallocation notification")
@@ -317,16 +317,16 @@ class NotificationService:
 
                 for regulator in old_route_regulators:
                     # Don't double-notify the requesting regulator
-                    if regulator.get("_id") != requesting_regulator_id:
+                    if regulator.get("id") != requesting_regulator_id:
                         await NotificationService.send_real_time_notification(
-                            user_id=regulator["_id"],  # Fix: use _id instead of id
+                            user_id=regulator["id"],  # Use id field
                             title="Bus Removed from Route",
                             message=f"Bus {bus.get('license_plate', bus_id)} has been reallocated from your route {old_route_name} to {new_route_name}",
                             notification_type="ROUTE_REALLOCATION",
                             related_entity=related_entity,
                             app_state=app_state
                         )
-                        logger.info(f"Sent route reallocation notification to old route regulator {regulator['_id']}")
+                        logger.info(f"Sent route reallocation notification to old route regulator {regulator['id']}")
 
             # 4. Notify the queue regulator of the new route
             new_route_regulators = await app_state.mongodb.users.find({
@@ -336,16 +336,16 @@ class NotificationService:
 
             for regulator in new_route_regulators:
                 # Don't double-notify the requesting regulator
-                if regulator.get("_id") != requesting_regulator_id:
+                if regulator.get("id") != requesting_regulator_id:
                     await NotificationService.send_real_time_notification(
-                        user_id=regulator["_id"],  # Fix: use _id instead of id
+                        user_id=regulator["id"],  # Use id field
                         title="Bus Added to Route",
                         message=f"Bus {bus.get('license_plate', bus_id)} has been allocated to your route {new_route_name}",
                         notification_type="ROUTE_REALLOCATION",
                         related_entity=related_entity,
                         app_state=app_state
                     )
-                    logger.info(f"Sent route reallocation notification to new route regulator {regulator['_id']}")
+                    logger.info(f"Sent route reallocation notification to new route regulator {regulator['id']}")
 
             logger.info(f"Route reallocation notifications sent for bus {bus_id}")
 
@@ -368,9 +368,9 @@ class NotificationService:
                 logger.warning("No database connection for reallocation request discarded notification")
                 return
 
-            # Get the reallocation request details - Fix database query to use _id
+            # Get the reallocation request details - Use id field for query
             logger.debug(f"🔍 Looking up reallocation request {request_id} in database")
-            request = await app_state.mongodb.reallocation_requests.find_one({"_id": request_id})
+            request = await app_state.mongodb.reallocation_requests.find_one({"id": request_id})
             if not request:
                 logger.warning(f"⚠️ Reallocation request {request_id} not found in database")
                 return
@@ -414,9 +414,9 @@ class NotificationService:
                 logger.warning("No database connection for incident reported notification")
                 return
 
-            # Get incident details - Fix database queries to use _id
-            incident = await app_state.mongodb.incidents.find_one({"_id": incident_id})
-            reporter = await app_state.mongodb.users.find_one({"_id": reported_by_user_id})
+            # Get incident details - Use id field for queries
+            incident = await app_state.mongodb.incidents.find_one({"id": incident_id})
+            reporter = await app_state.mongodb.users.find_one({"id": reported_by_user_id})
 
             if not incident:
                 logger.warning(f"Incident {incident_id} not found")
@@ -438,7 +438,7 @@ class NotificationService:
             if incident.get("related_bus_id"):
                 message += f" involving bus {incident['related_bus_id']}"
             if incident.get("related_route_id"):
-                route = await app_state.mongodb.routes.find_one({"_id": incident["related_route_id"]})
+                route = await app_state.mongodb.routes.find_one({"id": incident["related_route_id"]})
                 route_name = route.get("name", incident["related_route_id"]) if route else incident["related_route_id"]
                 message += f" on route {route_name}"
 
@@ -456,6 +456,67 @@ class NotificationService:
 
         except Exception as e:
             logger.error(f"Error sending incident reported notification: {e}")
+
+    @staticmethod
+    async def send_reallocation_request_submitted_notification(
+        request_id: str,
+        requesting_regulator_id: str,
+        bus_id: str,
+        current_route_id: str,
+        reason: str,
+        priority: str,
+        description: str,
+        app_state=None
+    ):
+        """Send notification to control center when a new reallocation request is submitted"""
+        try:
+            logger.info(f"📝 STARTING reallocation request submission notification for request {request_id}")
+            logger.info(f"📝 Request details: bus={bus_id}, reason={reason}, priority={priority}")
+
+            if not app_state or app_state.mongodb is None:
+                logger.warning("No database connection for reallocation request submitted notification")
+                return
+
+            # Get request details
+            regulator = await app_state.mongodb.users.find_one({"id": requesting_regulator_id})
+            bus = await app_state.mongodb.buses.find_one({"id": bus_id})
+            current_route = await app_state.mongodb.routes.find_one({"id": current_route_id}) if current_route_id else None
+
+            regulator_name = regulator.get("full_name", "Unknown Regulator") if regulator else "Unknown Regulator"
+            bus_info = bus.get("license_plate", bus_id) if bus else bus_id
+            current_route_name = current_route.get("name", current_route_id) if current_route else current_route_id
+
+            related_entity = {
+                "entity_type": "reallocation_request",
+                "request_id": request_id,
+                "bus_id": bus_id,
+                "current_route_id": current_route_id,
+                "requesting_regulator_id": requesting_regulator_id,
+                "reason": reason,
+                "priority": priority
+            }
+
+            # Prepare notification message
+            priority_text = f" ({priority.lower()} priority)" if priority != "NORMAL" else ""
+            message = f"New{priority_text} reallocation request submitted by {regulator_name} for bus {bus_info} on route {current_route_name}. Reason: {reason.replace('_', ' ').lower()}"
+            if description:
+                message += f". Details: {description[:100]}{'...' if len(description) > 100 else ''}"
+
+            # Send to control center staff
+            logger.info(f"🎯 CRITICAL: Sending reallocation request notification to control center")
+            await NotificationService.broadcast_notification(
+                title="New Reallocation Request",
+                message=message,
+                notification_type="REALLOCATION_REQUEST_SUBMITTED",
+                target_roles=["CONTROL_ADMIN", "CONTROL_STAFF"],
+                related_entity=related_entity,
+                app_state=app_state
+            )
+
+            logger.info(f"✅ Completed sending reallocation request submitted notification for request {request_id}")
+
+        except Exception as e:
+            logger.error(f"💥 Error sending reallocation request submitted notification: {e}", exc_info=True)
 
 
 # Global notification service instance

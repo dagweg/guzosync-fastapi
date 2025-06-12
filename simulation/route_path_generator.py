@@ -12,7 +12,7 @@ import logging
 
 from models.base import Location
 
-logger = logging.getLogger(__name__)
+#logger = logging.getLogger(__name__)
 
 
 class RoutePathGenerator:
@@ -38,7 +38,7 @@ class RoutePathGenerator:
             List of waypoints with coordinates and metadata
         """
         if len(bus_stops) < 2:
-            logger.warning("Route needs at least 2 stops to generate path")
+            #logger.warning("Route needs at least 2 stops to generate path")
             return []
         
         waypoints = []
@@ -62,10 +62,10 @@ class RoutePathGenerator:
         coordinates = geometry.get('coordinates', [])
 
         if not coordinates:
-            logger.warning("No coordinates in geometry, falling back to simple path")
+            #logger.warning("No coordinates in geometry, falling back to simple path")
             return self._generate_simple_path(bus_stops)
 
-        logger.info(f"🗺️ Generating waypoints from Mapbox geometry with {len(coordinates)} coordinate points")
+        #logger.info(f"🗺️ Generating waypoints from Mapbox geometry with {len(coordinates)} coordinate points")
 
         # Convert coordinates to waypoints with enhanced metadata
         for i, coord in enumerate(coordinates):
@@ -90,12 +90,12 @@ class RoutePathGenerator:
         # Add intermediate waypoints if segments are too long
         waypoints = self._densify_long_segments(waypoints)
 
-        logger.info(f"✅ Generated {len(waypoints)} waypoints from Mapbox geometry")
+        #logger.info(f"✅ Generated {len(waypoints)} waypoints from Mapbox geometry")
         return waypoints
     
     def _generate_simple_path(self, bus_stops: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
         """Generate a simple path between bus stops."""
-        waypoints = []
+        waypoints: List[Dict[str, Any]] = []
         
         for i in range(len(bus_stops)):
             stop = bus_stops[i]
@@ -348,5 +348,5 @@ class RoutePathGenerator:
                         }
                         densified_waypoints.append(intermediate_waypoint)
 
-        logger.debug(f"🔄 Densified waypoints from {len(waypoints)} to {len(densified_waypoints)}")
+        #logger.debug(f"🔄 Densified waypoints from {len(waypoints)} to {len(densified_waypoints)}")
         return densified_waypoints

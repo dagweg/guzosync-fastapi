@@ -18,7 +18,7 @@ import os
 import shutil
 import logging
 from pathlib import Path
-from typing import List, Dict, Tuple
+from typing import List, Dict, Tuple, Optional
 
 # Configure logging
 logging.basicConfig(level=logging.INFO, format='%(levelname)s: %(message)s')
@@ -27,9 +27,9 @@ logger = logging.getLogger(__name__)
 class CodebaseCleanup:
     def __init__(self, root_dir: str = "."):
         self.root = Path(root_dir).resolve()
-        self.changes = []
-        
-    def log_change(self, action: str, source: str, target: str = None):
+        self.changes: List[str] = []
+
+    def log_change(self, action: str, source: str, target: Optional[str] = None):
         """Log a planned change"""
         if target:
             self.changes.append(f"{action}: {source} -> {target}")

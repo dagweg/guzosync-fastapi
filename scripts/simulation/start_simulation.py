@@ -19,6 +19,7 @@ import signal
 import sys
 import os
 from datetime import datetime
+from typing import Optional
 
 from dotenv import load_dotenv
 from motor.motor_asyncio import AsyncIOMotorClient
@@ -45,7 +46,7 @@ mongodb_url = os.getenv("MONGODB_URL", "mongodb://localhost:27017")
 database_name = os.getenv("DATABASE_NAME", "guzosync")
 
 # Global simulation instance
-simulator: BusSimulator = None
+simulator: Optional[BusSimulator] = None
 
 
 async def seed_database_if_needed():
@@ -179,7 +180,7 @@ async def main():
     logger.info(f"🚌 Max buses: {args.max_buses}")
     
     # Connect to MongoDB
-    client = AsyncIOMotorClient(mongodb_url)
+    client: AsyncIOMotorClient = AsyncIOMotorClient(mongodb_url)
     db = client[database_name]
     
     try:

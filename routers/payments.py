@@ -19,6 +19,8 @@ from schemas.payment import (
     ChapaWebhookEvent, PaymentCallbackResponse,
     PaymentStatus, TicketStatus, PaymentMethod, TicketType
 )
+from pydantic import BaseModel, field_validator, HttpUrl
+import re
 
 
 from core import transform_mongo_doc
@@ -29,6 +31,43 @@ from core.logger import get_logger
 logger = get_logger(__name__)
 
 router = APIRouter(prefix="/api", tags=["payments"])
+
+
+# Simple payment request/response models (matching JavaScript function)
+class SimplePaymentRequest(BaseModel):
+    amount: float
+    phone_number: str
+    booking_id: str
+    callback_url: Optional[str] = None
+
+    @field_validator('amount')
+    @classmethod
+    def validate_amount(cls, v):
+        if v <= 0:
+            raise ValueError('Amount must be greater than 0')
+        return v
+
+    @field_validator('phone_number')
+    @classmethod
+    def validate_phone_number(cls, v):
+        # Chapa accepts numbers and + as prefix, length between 10-15 characters
+        if not re.match(r'^\+?[0-9]{10,15}$', v):
+            raise ValueError('Invalid phone number format. We only accept numbers and a + as prefix. The length should be between 10 and 15 characters.')
+        return v
+
+    @field_validator('callback_url')
+    @classmethod
+    def validate_callback_url(cls, v):
+        if v is not None and v.strip():
+            # Basic URL validation
+            if not re.match(r'^https?://.+', v):
+                raise ValueError('The callback url must be a valid URL.')
+        return v
+
+
+class SimplePaymentResponse(BaseModel):
+    checkoutUrl: str
+    amount: float
 
 # Payment endpoints
 @router.post("/payments/initiate", response_model=InitiatePaymentResponse, status_code=status.HTTP_201_CREATED)
@@ -137,6 +176,47 @@ async def initiate_payment(
         
     except Exception as e:
         logger.error(f"Payment initiation failed: {str(e)}")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Payment initiation failed: {str(e)}"
+        )
+
+
+@router.post("/payments/initiate-simple", response_model=SimplePaymentResponse, status_code=status.HTTP_201_CREATED)
+async def initiate_payment_simple(
+    payment_request: SimplePaymentRequest,
+    current_user: User = Depends(get_current_user)
+):
+    """
+    Simple payment initiation endpoint
+    """
+
+    try:
+        # Additional validation logging for debugging
+        logger.info(f"Processing simple payment request: amount={payment_request.amount}, phone={payment_request.phone_number}, booking_id={payment_request.booking_id}")
+
+        # Use the new simple payment initiation method
+        result = await chapa_service.initiate_payment_simple(
+            amount=payment_request.amount,
+            phone_number=payment_request.phone_number,
+            booking_id=payment_request.booking_id,
+            callback_url=payment_request.callback_url
+        )
+
+        return SimplePaymentResponse(
+            checkoutUrl=result["checkoutUrl"],
+            amount=result["amount"]
+        )
+
+    except ValueError as e:
+        # Handle validation errors specifically
+        logger.error(f"Validation error in simple payment: {str(e)}")
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=str(e)
+        )
+    except Exception as e:
+        logger.error(f"Simple payment initiation failed: {str(e)}")
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=f"Payment initiation failed: {str(e)}"

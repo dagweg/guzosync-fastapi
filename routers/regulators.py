@@ -14,6 +14,7 @@ from schemas.regulators import (
 
 from core import transform_mongo_doc
 from core.mongo_utils import model_to_mongo_doc
+from core.realtime.notifications import notification_service
 
 router = APIRouter(prefix="/api/regulators", tags=["regulators"])
 
@@ -58,6 +59,18 @@ async def request_bus_reallocation(
     reallocation_doc = model_to_mongo_doc(reallocation, exclude_none=False)
     result = await request.app.state.mongodb.reallocation_requests.insert_one(reallocation_doc)
     created_request = await request.app.state.mongodb.reallocation_requests.find_one({"id": reallocation.id})
+
+    # Send notification to control center about new reallocation request
+    await notification_service.send_reallocation_request_submitted_notification(
+        request_id=reallocation.id,
+        requesting_regulator_id=current_user.id,
+        bus_id=reallocation_request.bus_id,
+        current_route_id=current_route_id,
+        reason=reallocation_request.reason.value,
+        priority=reallocation_request.priority if reallocation_request.priority else "NORMAL",
+        description=reallocation_request.description,
+        app_state=request.app.state
+    )
 
     return transform_mongo_doc(created_request, ReallocationRequestResponse)
 

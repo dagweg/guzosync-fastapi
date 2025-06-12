@@ -27,7 +27,7 @@ class BusTrackingService:
     ):
         """Update bus location and broadcast to subscribers"""
         try:
-            logger.info(f"🚌 Updating bus {bus_id} location: {latitude}, {longitude}")
+            #logger.info(f"🚌 Updating bus {bus_id} location: {latitude}, {longitude}")
 
             # Update bus location in database
             # Create Location model instance
@@ -54,7 +54,7 @@ class BusTrackingService:
                     {"id": bus_id},
                     {"$set": update_data}
                 )
-                logger.debug(f"🚌 Bus {bus_id} location updated in database")
+                #logger.debug(f"🚌 Bus {bus_id} location updated in database")
             
             # Broadcast location update to subscribers
             room_id = f"bus_tracking:{bus_id}"
@@ -76,12 +76,12 @@ class BusTrackingService:
                 **message
             }
 
-            logger.info(f"📡 Broadcasting bus {bus_id} location to room {room_id}")
+            #logger.info(f"📡 Broadcasting bus {bus_id} location to room {room_id}")
             await websocket_manager.send_room_message(room_id, ws_message)
 
             # Also broadcast to global bus tracking room (all subscribers)
             global_room_id = "all_bus_tracking"
-            logger.debug(f"📡 Broadcasting bus {bus_id} location to global room {global_room_id}")
+            #logger.debug(f"📡 Broadcasting bus {bus_id} location to global room {global_room_id}")
             await websocket_manager.send_room_message(global_room_id, ws_message)
 
             # Also broadcast to route subscribers if bus is on a route
@@ -89,10 +89,10 @@ class BusTrackingService:
                 bus = await app_state.mongodb.buses.find_one({"id": bus_id})
                 if bus and bus.get("assigned_route_id"):
                     route_room_id = f"route_tracking:{bus['assigned_route_id']}"
-                    logger.info(f"📡 Broadcasting bus {bus_id} location to route room {route_room_id}")
+                    #logger.info(f"📡 Broadcasting bus {bus_id} location to route room {route_room_id}")
                     await websocket_manager.send_room_message(route_room_id, ws_message)
 
-            logger.info(f"✅ Bus {bus_id} location broadcast completed")
+            #logger.info(f"✅ Bus {bus_id} location broadcast completed")
             
         except Exception as e:
             logger.error(f"Error updating bus location for {bus_id}: {e}")
@@ -112,7 +112,7 @@ class BusTrackingService:
         }
 
         await websocket_manager.send_personal_message(user_id, message)
-        logger.info(f"User {user_id} subscribed to bus {bus_id} tracking")
+        #logger.info(f"User {user_id} subscribed to bus {bus_id} tracking")
     
     @staticmethod
     async def subscribe_to_route(user_id: str, route_id: str):
@@ -128,21 +128,21 @@ class BusTrackingService:
         }
 
         await websocket_manager.send_personal_message(user_id, message)
-        logger.info(f"User {user_id} subscribed to route {route_id} tracking")
+        #logger.info(f"User {user_id} subscribed to route {route_id} tracking")
     
     @staticmethod
     async def unsubscribe_from_bus(user_id: str, bus_id: str):
         """Unsubscribe user from bus tracking"""
         room_id = f"bus_tracking:{bus_id}"
         await websocket_manager.leave_room_user(user_id, room_id)
-        logger.info(f"User {user_id} unsubscribed from bus {bus_id} tracking")
+        #logger.info(f"User {user_id} unsubscribed from bus {bus_id} tracking")
 
     @staticmethod
     async def unsubscribe_from_route(user_id: str, route_id: str):
         """Unsubscribe user from route tracking"""
         room_id = f"route_tracking:{route_id}"
         await websocket_manager.leave_room_user(user_id, room_id)
-        logger.info(f"User {user_id} unsubscribed from route {route_id} tracking")
+        #logger.info(f"User {user_id} unsubscribed from route {route_id} tracking")
 
     @staticmethod
     async def broadcast_all_bus_locations(app_state=None):
@@ -208,9 +208,9 @@ class BusTrackingService:
 
             if room_size > 0:
                 await websocket_manager.send_room_message(room_id, ws_message)
-                logger.info(f"📡 Broadcasted {len(bus_locations)} bus locations to {room_size} subscribers in {room_id} room")
-            else:
-                logger.debug(f"📡 No subscribers in {room_id} room, skipping broadcast of {len(bus_locations)} bus locations")
+                #logger.info(f"📡 Broadcasted {len(bus_locations)} bus locations to {room_size} subscribers in {room_id} room")
+            # else:
+                #logger.debug(f"📡 No subscribers in {room_id} room, skipping broadcast of {len(bus_locations)} bus locations")
 
         except Exception as e:
             logger.error(f"Error broadcasting all bus locations: {e}")
@@ -263,61 +263,61 @@ class BusTrackingService:
             return route_data
 
         except Exception as e:
-            logger.error(f"Error getting route shape with buses for route {route_id}: {e}")
+            #logger.error(f"Error getting route shape with buses for route {route_id}: {e}")
             return None
 
     @staticmethod
     async def calculate_eta_for_bus(bus_id: str, target_stop_id: str, app_state=None) -> Optional[Dict[str, Any]]:
         """Calculate ETA for a bus to reach a specific stop"""
         try:
-            logger.info(f"🧮 Starting ETA calculation for bus {bus_id} to stop {target_stop_id}")
+            #logger.info(f"🧮 Starting ETA calculation for bus {bus_id} to stop {target_stop_id}")
 
             if app_state is None or app_state.mongodb is None:
-                logger.error("❌ No app_state or mongodb available for ETA calculation")
+                #logger.error("❌ No app_state or mongodb available for ETA calculation")
                 return None
 
             # Get bus details
             bus = await app_state.mongodb.buses.find_one({"id": bus_id})
             if not bus:
-                logger.error(f"❌ Bus {bus_id} not found in database")
+                #logger.error(f"❌ Bus {bus_id} not found in database")
                 return None
 
             if not bus.get("current_location"):
-                logger.error(f"❌ Bus {bus_id} has no current_location set")
+                #logger.error(f"❌ Bus {bus_id} has no current_location set")
                 return None
 
-            logger.info(f"✅ Found bus {bus_id} with location: {bus.get('current_location')}")
+            #logger.info(f"✅ Found bus {bus_id} with location: {bus.get('current_location')}")
 
             # Get target bus stop
             bus_stop = await app_state.mongodb.bus_stops.find_one({"id": target_stop_id})
             if not bus_stop:
-                logger.error(f"❌ Bus stop {target_stop_id} not found in database")
+                #logger.error(f"❌ Bus stop {target_stop_id} not found in database")
                 return None
 
             if not bus_stop.get("location"):
-                logger.error(f"❌ Bus stop {target_stop_id} has no location set")
+                #logger.error(f"❌ Bus stop {target_stop_id} has no location set")
                 return None
 
-            logger.info(f"✅ Found bus stop {target_stop_id}: {bus_stop.get('name')} at {bus_stop.get('location')}")
+            #logger.info(f"✅ Found bus stop {target_stop_id}: {bus_stop.get('name')} at {bus_stop.get('location')}")
 
             # Get route information if bus is on a route
             route_id = bus.get("assigned_route_id")
-            if not route_id:
-                logger.warning(f"⚠️ Bus {bus_id} has no assigned_route_id - using direct distance calculation")
+            # if not route_id:
+                #logger.warning(f"⚠️ Bus {bus_id} has no assigned_route_id - using direct distance calculation")
                 # Continue without route - we can still calculate direct distance
-            else:
-                route = await app_state.mongodb.routes.find_one({"id": route_id})
-                if not route:
-                    logger.warning(f"⚠️ Route {route_id} not found - using direct distance calculation")
-                else:
-                    logger.info(f"✅ Found route {route_id}: {route.get('name')}")
+            # else:
+            route = await app_state.mongodb.routes.find_one({"id": route_id})
+                # if not route:
+                    #logger.warning(f"⚠️ Route {route_id} not found - using direct distance calculation")
+                # else:
+                    #logger.info(f"✅ Found route {route_id}: {route.get('name')}")
 
             # Simple distance-based ETA calculation
             # In a real implementation, you'd use route service with traffic data
             bus_location = bus["current_location"]
             stop_location = bus_stop["location"]
 
-            logger.info(f"🧮 Calculating distance from bus at ({bus_location['latitude']}, {bus_location['longitude']}) to stop at ({stop_location['latitude']}, {stop_location['longitude']})")
+            #logger.info(f"🧮 Calculating distance from bus at ({bus_location['latitude']}, {bus_location['longitude']}) to stop at ({stop_location['latitude']}, {stop_location['longitude']})")
 
             # Calculate straight-line distance
             distance_km = BusTrackingService._calculate_distance(
@@ -325,19 +325,19 @@ class BusTrackingService:
                 stop_location["latitude"], stop_location["longitude"]
             ) / 1000
 
-            logger.info(f"📏 Distance calculated: {distance_km:.2f} km")
+            #logger.info(f"📏 Distance calculated: {distance_km:.2f} km")
 
             # Estimate speed (use current speed or default to 30 km/h in city)
             current_speed = bus.get("speed", 30)  # km/h
             if current_speed < 5:  # If bus is stopped or moving very slowly
                 current_speed = 25  # Use average city speed
 
-            logger.info(f"🚗 Using speed: {current_speed} km/h")
+            #logger.info(f"🚗 Using speed: {current_speed} km/h")
 
             # Calculate ETA in minutes
             eta_minutes = max(1, round((distance_km / current_speed) * 60))
 
-            logger.info(f"⏰ Calculated ETA: {eta_minutes} minutes")
+            #logger.info(f"⏰ Calculated ETA: {eta_minutes} minutes")
 
             eta_data = {
                 "bus_id": bus_id,
@@ -348,11 +348,11 @@ class BusTrackingService:
                 "calculated_at": datetime.now(timezone.utc).isoformat()
             }
 
-            logger.info(f"✅ ETA calculation completed successfully: {eta_data}")
+            #logger.info(f"✅ ETA calculation completed successfully: {eta_data}")
             return eta_data
 
         except Exception as e:
-            logger.error(f"Error calculating ETA for bus {bus_id} to stop {target_stop_id}: {e}")
+            #logger.error(f"Error calculating ETA for bus {bus_id} to stop {target_stop_id}: {e}")
             return None
 
     @staticmethod
@@ -382,10 +382,10 @@ class BusTrackingService:
     ):
         """Check for passengers within 500m of bus stops when bus approaches and notify them"""
         try:
-            logger.info(f"🔔 Checking proximity notifications for bus {bus_id} at {latitude}, {longitude}")
+            #logger.info(f"🔔 Checking proximity notifications for bus {bus_id} at {latitude}, {longitude}")
 
             if app_state is None or app_state.mongodb is None:
-                logger.warning("❌ No app_state or mongodb available for proximity checks")
+                #logger.warning("❌ No app_state or mongodb available for proximity checks")
                 return
 
             # Get all active bus stops
@@ -393,7 +393,7 @@ class BusTrackingService:
                 "is_active": True
             }).to_list(length=None)
 
-            logger.info(f"🔔 Found {len(bus_stops)} active bus stops to check")
+            #logger.info(f"🔔 Found {len(bus_stops)} active bus stops to check")
             proximity_threshold = 500  # 500 meters as requested
             nearby_stops = 0
 
@@ -412,7 +412,7 @@ class BusTrackingService:
                 if bus_to_stop_distance <= proximity_threshold:
                     nearby_stops += 1
                     stop_name = bus_stop.get("name", "Unknown Stop")
-                    logger.info(f"🔔 Bus {bus_id} is {bus_to_stop_distance:.1f}m from stop '{stop_name}' - checking for nearby passengers")
+                    #logger.info(f"🔔 Bus {bus_id} is {bus_to_stop_distance:.1f}m from stop '{stop_name}' - checking for nearby passengers")
 
                     await BusTrackingService._notify_passengers_near_bus_stop(
                         bus_id=bus_id,
@@ -423,10 +423,10 @@ class BusTrackingService:
                         app_state=app_state
                     )
 
-            if nearby_stops == 0:
-                logger.debug(f"🔔 Bus {bus_id} is not near any bus stops (>500m)")
-            else:
-                logger.info(f"🔔 Proximity check completed for bus {bus_id}: {nearby_stops} nearby stops")
+            # if nearby_stops == 0:
+                #logger.debug(f"🔔 Bus {bus_id} is not near any bus stops (>500m)")
+            # else:
+                #logger.info(f"🔔 Proximity check completed for bus {bus_id}: {nearby_stops} nearby stops")
 
         except Exception as e:
             logger.error(f"💥 Error checking proximity notifications for bus {bus_id}: {e}")
@@ -446,15 +446,15 @@ class BusTrackingService:
             bus_stop_name = bus_stop.get("name", "Unknown Stop")
             stop_location = bus_stop.get("location")
 
-            logger.info(f"👥 Checking passengers near bus stop '{bus_stop_name}' for bus {bus_id}")
+            #logger.info(f"👥 Checking passengers near bus stop '{bus_stop_name}' for bus {bus_id}")
 
             if not stop_location:
-                logger.warning(f"❌ Bus stop '{bus_stop_name}' has no location data")
+                #logger.warning(f"❌ Bus stop '{bus_stop_name}' has no location data")
                 return
 
             # Get all passengers with location sharing enabled and current location
             if app_state is None or app_state.mongodb is None:
-                logger.warning("❌ No app_state or mongodb available for passenger lookup")
+                #logger.warning("❌ No app_state or mongodb available for passenger lookup")
                 return
 
             passengers = await app_state.mongodb.users.find({
@@ -463,7 +463,7 @@ class BusTrackingService:
                 "current_location": {"$exists": True, "$ne": None}
             }).to_list(length=None)
 
-            logger.info(f"👥 Found {len(passengers)} passengers with location sharing enabled")
+            #logger.info(f"👥 Found {len(passengers)} passengers with location sharing enabled")
 
             proximity_threshold = 500  # 500 meters for passenger-to-bus-stop distance
             notified_passengers = []
@@ -480,11 +480,11 @@ class BusTrackingService:
                     stop_location["latitude"], stop_location["longitude"]
                 )
 
-                logger.debug(f"👤 Passenger {passenger['id']} is {passenger_to_stop_distance:.1f}m from stop '{bus_stop_name}'")
+                #logger.debug(f"👤 Passenger {passenger['id']} is {passenger_to_stop_distance:.1f}m from stop '{bus_stop_name}'")
 
                 # If passenger is within 500m of the bus stop, notify them
                 if passenger_to_stop_distance <= proximity_threshold:
-                    logger.info(f"🔔 Notifying passenger {passenger['id']} - within {passenger_to_stop_distance:.1f}m of stop '{bus_stop_name}'")
+                    #logger.info(f"🔔 Notifying passenger {passenger['id']} - within {passenger_to_stop_distance:.1f}m of stop '{bus_stop_name}'")
 
                     await BusTrackingService._send_passenger_proximity_notification(
                         passenger_id=passenger["id"],
@@ -496,10 +496,10 @@ class BusTrackingService:
                     )
                     notified_passengers.append(passenger["id"])
 
-            if len(notified_passengers) > 0:
-                logger.info(f"✅ Notified {len(notified_passengers)} passengers near bus stop '{bus_stop_name}' about approaching bus {bus_id}")
-            else:
-                logger.debug(f"👥 No passengers within 500m of bus stop '{bus_stop_name}'")
+            # if len(notified_passengers) > 0:
+                #logger.info(f"✅ Notified {len(notified_passengers)} passengers near bus stop '{bus_stop_name}' about approaching bus {bus_id}")
+            # else:
+                #logger.debug(f"👥 No passengers within 500m of bus stop '{bus_stop_name}'")
 
         except Exception as e:
             logger.error(f"💥 Error notifying passengers near bus stop for bus {bus_id}: {e}")
@@ -520,7 +520,7 @@ class BusTrackingService:
             bus_stop_id = bus_stop["id"]
             bus_stop_name = bus_stop.get("name", "Unknown Stop")
 
-            logger.info(f"📤 Sending proximity alert to passenger {passenger_id} for bus {bus_id} approaching '{bus_stop_name}'")
+            #logger.info(f"📤 Sending proximity alert to passenger {passenger_id} for bus {bus_id} approaching '{bus_stop_name}'")
 
             # Calculate estimated arrival time based on bus distance to stop
             # Assume average city speed of 25 km/h when approaching stops
@@ -550,7 +550,7 @@ class BusTrackingService:
             }
 
             # Send WebSocket message to passenger
-            logger.info(f"📤 Sending WebSocket proximity alert to passenger {passenger_id}")
+            #logger.info(f"📤 Sending WebSocket proximity alert to passenger {passenger_id}")
             await websocket_manager.send_personal_message(passenger_id, proximity_message)
 
             # Also send database notification
@@ -558,7 +558,7 @@ class BusTrackingService:
             bus_identifier = bus_info.get('license_plate', bus_id) if bus_info else bus_id
             notification_message = f"Bus {bus_identifier} is approaching {bus_stop_name} ({round(bus_to_stop_distance)}m away, ~{estimated_arrival_minutes} min). You are {round(passenger_to_stop_distance)}m from the stop."
 
-            logger.info(f"📤 Saving proximity notification to database for passenger {passenger_id}")
+            #logger.info(f"📤 Saving proximity notification to database for passenger {passenger_id}")
             await notification_service.send_real_time_notification(
                 user_id=passenger_id,
                 title=notification_title,
@@ -574,7 +574,7 @@ class BusTrackingService:
                 app_state=app_state
             )
 
-            logger.info(f"✅ Proximity notification sent successfully to passenger {passenger_id} for bus {bus_id}")
+            #logger.info(f"✅ Proximity notification sent successfully to passenger {passenger_id} for bus {bus_id}")
 
         except Exception as e:
             logger.error(f"💥 Error sending proximity notification to passenger {passenger_id}: {e}")

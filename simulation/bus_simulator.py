@@ -80,7 +80,7 @@ class BusSimulator:
         
     async def initialize(self):
         """Initialize the simulation by loading buses and routes."""
-        logger.info("🚌 Initializing bus simulation...")
+        #logger.info("🚌 Initializing bus simulation...")
         
         try:
             # Load active buses with assigned routes
@@ -90,7 +90,7 @@ class BusSimulator:
             }).limit(self.max_buses_to_simulate)
             
             buses = await buses_cursor.to_list(length=None)
-            logger.info(f"📊 Found {len(buses)} operational buses with assigned routes")
+            #logger.info(f"📊 Found {len(buses)} operational buses with assigned routes")
             
             # Initialize bus states
             for bus_data in buses:
@@ -113,13 +113,13 @@ class BusSimulator:
                                 bus_state.longitude = first_waypoint['longitude']
                             
                             self.buses[bus_state.bus_id] = bus_state
-                            logger.debug(f"✅ Initialized bus {bus_state.license_plate} on route {route_data.get('name')}")
-                        else:
-                            logger.warning(f"⚠️ No waypoints generated for bus {bus_state.license_plate}")
-                    else:
-                        logger.warning(f"⚠️ Route data not found for bus {bus_state.license_plate}")
+                            #logger.debug(f"✅ Initialized bus {bus_state.license_plate} on route {route_data.get('name')}")
+                        # else:
+                            #logger.warning(f"⚠️ No waypoints generated for bus {bus_state.license_plate}")
+                    # else:
+                        #logger.warning(f"⚠️ Route data not found for bus {bus_state.license_plate}")
             
-            logger.info(f"✅ Initialized {len(self.buses)} buses for simulation")
+            #logger.info(f"✅ Initialized {len(self.buses)} buses for simulation")
             
         except Exception as e:
             logger.error(f"❌ Failed to initialize simulation: {e}")
@@ -160,7 +160,7 @@ class BusSimulator:
                         break
 
             if len(bus_stops) < 2:
-                logger.warning(f"Route {route_data.get('name')} has insufficient stops")
+                #logger.warning(f"Route {route_data.get('name')} has insufficient stops")
                 return []
 
             # Check if we have Mapbox route geometry
@@ -168,10 +168,10 @@ class BusSimulator:
             route_name = route_data.get('name', 'Unknown')
 
             if route_geometry and route_geometry.get('type') == 'LineString':
-                logger.info(f"🗺️ Using Mapbox geometry for route {route_name} (real roads)")
+                #logger.info(f"🗺️ Using Mapbox geometry for route {route_name} (real roads)")
                 waypoints = self.path_generator.generate_route_path(bus_stops, route_geometry)
             else:
-                logger.info(f"📍 Using simple path for route {route_name} (no Mapbox geometry)")
+                #logger.info(f"📍 Using simple path for route {route_name} (no Mapbox geometry)")
                 waypoints = self.path_generator.generate_route_path(bus_stops, None)
 
             # Make route circular for continuous simulation
@@ -181,37 +181,37 @@ class BusSimulator:
             road_points = sum(1 for wp in waypoints if wp.get('source') == 'mapbox')
             total_points = len(waypoints)
 
-            if road_points > 0:
-                logger.info(f"✅ Route {route_name}: {total_points} waypoints ({road_points} from real roads)")
-            else:
-                logger.info(f"📍 Route {route_name}: {total_points} waypoints (simple path)")
+            # if road_points > 0:
+                #logger.info(f"✅ Route {route_name}: {total_points} waypoints ({road_points} from real roads)")
+            # else:
+                #logger.info(f"📍 Route {route_name}: {total_points} waypoints (simple path)")
 
             return waypoints
 
         except Exception as e:
-            logger.error(f"Error generating waypoints for route {route_data.get('id')}: {e}")
+            #logger.error(f"Error generating waypoints for route {route_data.get('id')}: {e}")
             return []
     
     async def start_simulation(self):
         """Start the bus simulation."""
         if self.is_running:
-            logger.warning("Simulation is already running")
+            #logger.warning("Simulation is already running")
             return
         
-        logger.info("🚀 Starting bus simulation...")
+        #logger.info("🚀 Starting bus simulation...")
         self.is_running = True
         
         # Start simulation loop
         self.simulation_task = asyncio.create_task(self._simulation_loop())
         
-        logger.info("✅ Bus simulation started successfully")
+        #logger.info("✅ Bus simulation started successfully")
     
     async def stop_simulation(self):
         """Stop the bus simulation."""
         if not self.is_running:
             return
         
-        logger.info("🛑 Stopping bus simulation...")
+        #logger.info("🛑 Stopping bus simulation...")
         self.is_running = False
         
         if self.simulation_task:
@@ -221,11 +221,11 @@ class BusSimulator:
             except asyncio.CancelledError:
                 pass
         
-        logger.info("✅ Bus simulation stopped")
+        #logger.info("✅ Bus simulation stopped")
     
     async def _simulation_loop(self):
         """Main simulation loop."""
-        logger.info(f"🔄 Starting simulation loop with {len(self.buses)} buses")
+        #logger.info(f"🔄 Starting simulation loop with {len(self.buses)} buses")
         
         try:
             while self.is_running:
@@ -271,7 +271,7 @@ class BusSimulator:
                         bus_state.stop_start_time = None
                         bus_state.current_waypoint_index = (bus_state.current_waypoint_index + 1) % len(bus_state.route_waypoints)
                         bus_state.target_waypoint = bus_state.route_waypoints[bus_state.current_waypoint_index]
-                        logger.debug(f"🚌 Bus {bus_state.license_plate} finished stop, moving to next waypoint")
+                        #logger.debug(f"🚌 Bus {bus_state.license_plate} finished stop, moving to next waypoint")
                 return
             
             # Check if we have a target waypoint
@@ -319,7 +319,7 @@ class BusSimulator:
                     bus_state.stop_start_time = current_time
                     bus_state.stop_duration = self.movement_calc.calculate_stop_duration()
                     bus_state.speed = 0.0
-                    logger.debug(f"🚏 Bus {bus_state.license_plate} arrived at stop {bus_state.target_waypoint.get('stop_name', 'Unknown')}")
+                    #logger.debug(f"🚏 Bus {bus_state.license_plate} arrived at stop {bus_state.target_waypoint.get('stop_name', 'Unknown')}")
                 else:
                     # Move to next waypoint
                     bus_state.current_waypoint_index = (bus_state.current_waypoint_index + 1) % len(bus_state.route_waypoints)
