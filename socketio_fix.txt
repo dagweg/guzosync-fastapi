@@ -1,9 +1,0 @@
-# Socket.IO Fix - Version Update
-# Run these commands to fix the Socket.IO compatibility issue:
-
-pip install --upgrade python-socketio python-engineio
-# or
-pip install python-socketio==5.11.0 python-engineio==4.9.0
-
-# Alternative: Use newer versions
-pip install python-socketio>=5.11.0 python-engineio>=4.9.0
