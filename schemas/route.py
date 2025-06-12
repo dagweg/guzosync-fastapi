@@ -3,6 +3,7 @@ from pydantic import BaseModel
 
 from datetime import datetime
 from .base import DateTimeModelMixin
+from .transport import BusStopResponse
 
 class CreateRouteRequest(BaseModel):
     name: str
@@ -29,6 +30,21 @@ class RouteResponse(DateTimeModelMixin):
     name: str
     description: Optional[str] = None
     stop_ids: List[str]
+    total_distance: Optional[float] = None
+    estimated_duration: Optional[float] = None
+    is_active: bool
+
+    # Mapbox integration fields
+    route_geometry: Optional[Dict[str, Any]] = None  # GeoJSON LineString
+    route_shape_data: Optional[Dict[str, Any]] = None  # Full Mapbox route response
+    last_shape_update: Optional[datetime] = None
+
+class RouteWithStopsResponse(DateTimeModelMixin):
+    id: str
+    name: str
+    description: Optional[str] = None
+    stop_ids: List[str]
+    stops: List[BusStopResponse] = []  # Populated bus stops
     total_distance: Optional[float] = None
     estimated_duration: Optional[float] = None
     is_active: bool

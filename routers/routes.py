@@ -1,5 +1,5 @@
 from fastapi import APIRouter, Depends, HTTPException, status, Request, Query
-from typing import List, Optional
+from typing import List, Optional, Union
 from datetime import datetime
 
 from core.dependencies import get_current_user
@@ -8,8 +8,9 @@ from models.user import UserRole
 from models.base import Location
 from schemas.route import (
     RouteResponse, CreateRouteRequest, UpdateRouteRequest,
-    ETAResponse, RouteShapeResponse, BusETAResponse
+    ETAResponse, RouteShapeResponse, BusETAResponse, RouteWithStopsResponse
 )
+from schemas.transport import BusStopResponse
 from core.realtime.bus_tracking import bus_tracking_service
 
 from core import transform_mongo_doc, generate_uuid
@@ -18,6 +19,83 @@ from core.services.route_service import route_service
 from core.services.mapbox_service import mapbox_service
 
 router = APIRouter(prefix="/api/routes", tags=["routes"])
+
+# Helper functions for populating bus stops in routes
+def build_route_aggregation_pipeline(match_query: Optional[dict] = None) -> List[dict]:
+    """Build aggregation pipeline to populate bus stops in routes"""
+    pipeline = []
+
+    # Match stage
+    if match_query:
+        pipeline.append({"$match": match_query})
+
+    # Lookup stage for bus stops
+    pipeline.extend([
+        {
+            "$lookup": {
+                "from": "bus_stops",
+                "localField": "stop_ids",
+                "foreignField": "id",
+                "as": "stops_data"
+            }
+        },
+        {
+            "$addFields": {
+                "stops": {
+                    "$map": {
+                        "input": "$stop_ids",
+                        "as": "stop_id",
+                        "in": {
+                            "$arrayElemAt": [
+                                {
+                                    "$filter": {
+                                        "input": "$stops_data",
+                                        "cond": {"$eq": ["$$this.id", "$$stop_id"]}
+                                    }
+                                },
+                                0
+                            ]
+                        }
+                    }
+                }
+            }
+        },
+        {
+            "$project": {
+                "stops_data": 0  # Remove the temporary field
+            }
+        }
+    ])
+
+    return pipeline
+
+def transform_route_with_stops(route_doc: dict) -> RouteWithStopsResponse:
+    """Transform route document with populated stops to RouteWithStopsResponse"""
+    # Transform bus stops
+    stops = []
+    if route_doc.get("stops"):
+        for stop_doc in route_doc["stops"]:
+            if stop_doc:  # Check if stop exists (not None)
+                stops.append(transform_mongo_doc(stop_doc, BusStopResponse))
+
+    # Create route response
+    route_response = RouteWithStopsResponse(
+        id=route_doc["id"],
+        name=route_doc["name"],
+        description=route_doc.get("description"),
+        stop_ids=route_doc["stop_ids"],
+        stops=stops,
+        total_distance=route_doc.get("total_distance"),
+        estimated_duration=route_doc.get("estimated_duration"),
+        is_active=route_doc.get("is_active", True),
+        route_geometry=route_doc.get("route_geometry"),
+        route_shape_data=route_doc.get("route_shape_data"),
+        last_shape_update=route_doc.get("last_shape_update"),
+        created_at=route_doc.get("created_at") or datetime.utcnow(),
+        updated_at=route_doc.get("updated_at") or datetime.utcnow()
+    )
+
+    return route_response
 
 # Debug endpoint to check database content
 @router.get("/debug/count")
@@ -74,56 +152,83 @@ async def create_route(
     
     return transform_mongo_doc(created_route, RouteResponse)
 
-@router.get("/", response_model=List[RouteResponse])
+@router.get("/", response_model=List[Union[RouteResponse, RouteWithStopsResponse]])
 async def get_all_routes(
     request: Request,
     search: Optional[str] = Query(None, description="Search routes by name or description"),
     page: int = Query(1, ge=1, description="Page number"),
     limit: int = Query(10, ge=1, description="Number of routes per page"),
     is_active: Optional[bool] = Query(None, description="Filter by active status"),
+    populate: bool = Query(False, description="Populate bus stops data"),
     current_user: User = Depends(get_current_user)
 ):
     """Get all routes with search, filtering, and pagination"""
     skip = (page - 1) * limit
-    
+
     # Build search query
     query_filter: dict = {}
-    
+
     # Add search functionality
     if search:
         query_filter["$or"] = [
             {"name": {"$regex": search, "$options": "i"}},
             {"description": {"$regex": search, "$options": "i"}}
         ]
-    
+
     # Add active status filter
     if is_active is not None:
         query_filter["is_active"] = is_active
+
+    if populate:
+        # Use aggregation pipeline to populate bus stops
+        pipeline = build_route_aggregation_pipeline(query_filter)
+        pipeline.extend([
+            {"$skip": skip},
+            {"$limit": limit}
+        ])
+
+        routes = await request.app.state.mongodb.routes.aggregate(pipeline).to_list(length=None)
+        return [transform_route_with_stops(route) for route in routes]
+    else:
+        # Get paginated routes with search (without population)
+        routes_cursor = request.app.state.mongodb.routes.find(query_filter).skip(skip).limit(limit)
+        routes = await routes_cursor.to_list(length=limit)
+
+        # Transform routes
+        return [transform_mongo_doc(route, RouteResponse) for route in routes]
     
-    # Get paginated routes with search
-    routes_cursor = request.app.state.mongodb.routes.find(query_filter).skip(skip).limit(limit)
-    routes = await routes_cursor.to_list(length=limit)
     
-    # Transform routes
-    return [transform_mongo_doc(route, RouteResponse) for route in routes]
-    
-    
-@router.get("/{route_id}", response_model=RouteResponse)
+@router.get("/{route_id}", response_model=Union[RouteResponse, RouteWithStopsResponse])
 async def get_route(
     request: Request,
-    route_id: str, 
+    route_id: str,
+    populate: bool = Query(False, description="Populate bus stops data"),
     current_user: User = Depends(get_current_user)
 ):
-    
-    
-    route = await request.app.state.mongodb.routes.find_one({"id": route_id})
-    if not route:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail="Route not found"
-        )
-    
-    return transform_mongo_doc(route, RouteResponse)
+    """Get a specific route by ID with optional population"""
+
+    if populate:
+        # Use aggregation pipeline to populate bus stops
+        pipeline = build_route_aggregation_pipeline({"id": route_id})
+        routes = await request.app.state.mongodb.routes.aggregate(pipeline).to_list(length=1)
+
+        if not routes:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail="Route not found"
+            )
+
+        return transform_route_with_stops(routes[0])
+    else:
+        # Get route without population
+        route = await request.app.state.mongodb.routes.find_one({"id": route_id})
+        if not route:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail="Route not found"
+            )
+
+        return transform_mongo_doc(route, RouteResponse)
 
 @router.put("/{route_id}", response_model=RouteResponse)
 async def update_route(

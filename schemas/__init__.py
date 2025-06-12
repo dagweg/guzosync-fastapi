@@ -15,7 +15,7 @@ from .transport import (
 from .route import (
     CreateRouteRequest, UpdateRouteRequest, RouteResponse, ScheduleResponse,
     RouteChangeRequestRequest, RouteChangeResponse, ETAResponse,
-    RouteShapeResponse, BusETAResponse
+    RouteShapeResponse, BusETAResponse, RouteWithStopsResponse
 )
 from .trip import TripStatus, SimplifiedTripResponse, TripResponse
 from .notification import (

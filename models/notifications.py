@@ -30,3 +30,5 @@ class Notification(BaseDBModel):
 class NotificationSettings(BaseDBModel):
     email_enabled: bool
     user_id: str
+
+    

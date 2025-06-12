@@ -34,3 +34,6 @@ class Schedule(BaseDBModel):
     valid_from: datetime
     valid_until: Optional[datetime] = None
     is_active: bool = True
+
+
+    

@@ -33,3 +33,5 @@ class Incident(BaseDBModel):
     is_resolved: bool = False
     resolution_notes: Optional[str] = None
     severity: IncidentSeverity
+
+    
