@@ -40,7 +40,6 @@ class AttendanceResponse(BaseModel):
     check_out_time: Optional[datetime] = None
     location: Optional[Location] = None
     notes: Optional[str] = None
-    marked_by: Optional[str] = None
     marked_at: datetime
 
 

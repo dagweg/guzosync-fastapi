@@ -177,7 +177,6 @@ class TestAttendanceRouter:
                 "date": today,
                 "status": "PRESENT",
                 "check_in_time": datetime.combine(today, time(8, 30)),
-                "marked_by": test_fixtures.passenger_user["_id"],
                 "marked_at": datetime.now()
             },
             {
@@ -186,7 +185,6 @@ class TestAttendanceRouter:
                 "date": today - timedelta(days=1),
                 "status": "LATE",
                 "check_in_time": datetime.combine(today - timedelta(days=1), time(9, 30)),
-                "marked_by": test_fixtures.passenger_user["_id"],
                 "marked_at": datetime.now()
             },
             {
@@ -194,7 +192,6 @@ class TestAttendanceRouter:
                 "user_id": test_fixtures.passenger_user["_id"],
                 "date": today - timedelta(days=2),
                 "status": "ABSENT",
-                "marked_by": test_fixtures.admin_user["_id"],
                 "marked_at": datetime.now()
             }
         ]

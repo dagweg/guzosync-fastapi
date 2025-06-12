@@ -20,5 +20,5 @@ class Attendance(BaseDBModel):
     check_out_time: Optional[datetime] = None
     location: Optional[Location] = None
     notes: Optional[str] = None
-    marked_by: Optional[str] = None  # ID of person who marked attendance (for admin marking)
     marked_at: datetime  # When the attendance was recorded
+

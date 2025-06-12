@@ -58,7 +58,6 @@ async def mark_driver_attendance(
             longitude=attendance_request.location.longitude
         ) if attendance_request.location else None,
         notes=attendance_request.notes,
-        marked_by=str(current_user.id),
         marked_at=datetime.utcnow()
     )
 

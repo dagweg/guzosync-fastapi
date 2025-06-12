@@ -29,7 +29,6 @@ def test_attendance_model():
         check_in_time=datetime.now().replace(hour=8, minute=30),
         check_out_time=datetime.now().replace(hour=17, minute=0),
         notes="Test attendance record",
-        marked_by="test-admin-456",
         marked_at=datetime.now()
     )
     
@@ -63,7 +62,6 @@ def test_attendance_schemas():
         date=date.today(),
         status=AttendanceStatus.PRESENT,
         check_in_time=datetime.now().replace(hour=8, minute=30),
-        marked_by="test-admin-456",
         marked_at=datetime.now()
     )
     

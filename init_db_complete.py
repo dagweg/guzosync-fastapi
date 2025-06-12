@@ -1114,11 +1114,7 @@ async def create_attendance(db, users, months=2):
                 notes_list = notes_options.get(status_choice, [None])
                 notes: Optional[str] = random.choice(notes_list)
 
-                # Determine who marked the attendance
-                marked_by = None
-                control_staff = [u["id"] for u in users if u["role"] in ["CONTROL_STAFF", "CONTROL_ADMIN"]]
-                if control_staff and random.random() > 0.3:  # 70% chance of being marked by control staff
-                    marked_by = random.choice(control_staff)
+                # Note: marked_by field has been removed for self-service attendance
 
                 # Set marked_at time
                 if check_in_time:
@@ -1140,7 +1136,6 @@ async def create_attendance(db, users, months=2):
                     "check_out_time": check_out_time,
                     "location": random_location() if random.random() > 0.4 else None,
                     "notes": notes,
-                    "marked_by": marked_by,
                     "marked_at": marked_at,
                     "created_at": base_datetime,
                     "updated_at": marked_at

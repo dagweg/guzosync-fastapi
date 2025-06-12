@@ -55,7 +55,6 @@ async def mark_attendance(
             longitude=attendance_request.location.longitude
         ) if attendance_request.location else None,
         notes=attendance_request.notes,
-        marked_by=str(current_user.id),
         marked_at=datetime.utcnow()
     )
 
@@ -212,7 +211,6 @@ async def update_attendance(
     # Update the record
     update_data = {
         "status": update_request.status,
-        "marked_by": str(current_user.id),
         "marked_at": datetime.utcnow()
     }
 
@@ -271,7 +269,6 @@ async def mark_bulk_attendance(
                     longitude=attendance_req.location.longitude
                 ) if attendance_req.location else None,
                 notes=attendance_req.notes,
-                marked_by=str(current_user.id),
                 marked_at=datetime.utcnow()
             )
 

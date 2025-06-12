@@ -7,14 +7,17 @@ The attendance system has been completely redesigned to be simpler, more intuiti
 ## Key Changes
 
 ### 1. Unified Model
+
 - **Before**: Two separate models (`AttendanceRecord` for check-in/check-out, `DailyAttendance` for status)
 - **After**: Single `Attendance` model that focuses on daily status tracking
 
 ### 2. Simplified API Endpoints
+
 - **Before**: Multiple endpoints for different attendance types
 - **After**: Clean, RESTful endpoints focused on daily attendance
 
 ### 3. Heatmap Support
+
 - **New**: Dedicated `/api/attendance/heatmap` endpoint
 - **Purpose**: Returns date-to-status mapping perfect for GitHub-style heatmaps
 - **Format**: `{"2024-01-01": "PRESENT", "2024-01-02": "LATE", ...}`
@@ -22,6 +25,7 @@ The attendance system has been completely redesigned to be simpler, more intuiti
 ## New Data Model
 
 ### Attendance Model
+
 ```python
 class Attendance(BaseDBModel):
     user_id: str
@@ -31,11 +35,11 @@ class Attendance(BaseDBModel):
     check_out_time: Optional[datetime] # When they checked out (if applicable)
     location: Optional[Location]       # Location data (optional)
     notes: Optional[str]              # Additional notes
-    marked_by: Optional[str]          # Who marked the attendance
-    marked_at: datetime               # When it was recorded
+    marked_at: datetime               # When it was recorded (self-service)
 ```
 
 ### Attendance Status Enum
+
 ```python
 class AttendanceStatus(str, Enum):
     PRESENT = "PRESENT"  # On time and present
@@ -48,10 +52,13 @@ class AttendanceStatus(str, Enum):
 ### Core Attendance Endpoints
 
 #### 1. Mark Attendance
+
 ```
 POST /api/attendance
 ```
+
 **Request Body:**
+
 ```json
 {
   "user_id": "user-123",
@@ -69,6 +76,7 @@ POST /api/attendance
 ```
 
 #### 2. Get Attendance Records
+
 ```
 GET /api/attendance
 GET /api/attendance?date_from=2024-01-01&date_to=2024-01-31
@@ -76,6 +84,7 @@ GET /api/attendance?user_id=user-123&attendance_status=PRESENT
 ```
 
 #### 3. Get Attendance Heatmap (NEW!)
+
 ```
 GET /api/attendance/heatmap
 GET /api/attendance/heatmap?user_id=user-123
@@ -83,6 +92,7 @@ GET /api/attendance/heatmap?date_from=2024-01-01&date_to=2024-12-31
 ```
 
 **Response:**
+
 ```json
 {
   "user_id": "user-123",
@@ -98,21 +108,25 @@ GET /api/attendance/heatmap?date_from=2024-01-01&date_to=2024-12-31
 ```
 
 #### 4. Update Attendance
+
 ```
 PUT /api/attendance/{attendance_id}
 ```
 
 #### 5. Delete Attendance (Admin only)
+
 ```
 DELETE /api/attendance/{attendance_id}
 ```
 
 #### 6. Bulk Mark Attendance (Admin only)
+
 ```
 POST /api/attendance/bulk
 ```
 
 #### 7. Get Attendance Summary
+
 ```
 GET /api/attendance/summary
 ```
@@ -120,11 +134,13 @@ GET /api/attendance/summary
 ### Driver-Specific Endpoints
 
 #### 1. Mark Driver Attendance
+
 ```
 POST /api/drivers/attendance
 ```
 
 #### 2. Get Driver Attendance
+
 ```
 GET /api/drivers/attendance
 ```
@@ -132,10 +148,12 @@ GET /api/drivers/attendance
 ## Database Changes
 
 ### Collection Structure
+
 - **Before**: `attendance_records` + `daily_attendance` collections
 - **After**: Single `attendance` collection
 
 ### Document Structure
+
 ```json
 {
   "_id": "attendance-uuid",
@@ -150,7 +168,6 @@ GET /api/drivers/attendance
     "address": "Office Location"
   },
   "notes": "On time today",
-  "marked_by": "admin-uuid",
   "marked_at": "2024-01-15T08:35:00Z",
   "created_at": "2024-01-15T08:35:00Z",
   "updated_at": "2024-01-15T08:35:00Z"
@@ -160,11 +177,14 @@ GET /api/drivers/attendance
 ## Frontend Integration
 
 ### Heatmap Visualization
+
 The new heatmap endpoint provides data in a format perfect for creating GitHub-style attendance heatmaps:
 
 ```javascript
 // Example frontend usage
-const response = await fetch('/api/attendance/heatmap?date_from=2024-01-01&date_to=2024-12-31');
+const response = await fetch(
+  "/api/attendance/heatmap?date_from=2024-01-01&date_to=2024-12-31"
+);
 const data = await response.json();
 
 // data.attendance_data is a simple object:
@@ -176,14 +196,15 @@ const data = await response.json();
 
 // Easy to render in a calendar grid with color coding:
 const statusColors = {
-  "PRESENT": "#22c55e",  // Green
-  "LATE": "#f59e0b",     // Amber  
-  "ABSENT": "#ef4444",   // Red
-  "NO_DATA": "#f3f4f6"   // Gray
+  PRESENT: "#22c55e", // Green
+  LATE: "#f59e0b", // Amber
+  ABSENT: "#ef4444", // Red
+  NO_DATA: "#f3f4f6", // Gray
 };
 ```
 
 ### Recommended Libraries
+
 - **D3.js**: For custom heatmap visualizations
 - **Chart.js**: For simpler chart implementations
 - **React Calendar Heatmap**: Ready-made React component
@@ -208,6 +229,7 @@ const statusColors = {
 ## Testing
 
 The redesigned system includes comprehensive tests covering:
+
 - ✅ Attendance marking for all three states (Present, Late, Absent)
 - ✅ Heatmap data generation and retrieval
 - ✅ Date range filtering
@@ -216,6 +238,7 @@ The redesigned system includes comprehensive tests covering:
 - ✅ Error handling and validation
 
 Run tests with:
+
 ```bash
 python test_attendance_redesign.py
 python attendance_heatmap_example.py
@@ -224,6 +247,7 @@ python attendance_heatmap_example.py
 ## Future Enhancements
 
 The new design makes it easy to add:
+
 - Weekly/monthly attendance summaries
 - Attendance trends and analytics
 - Integration with payroll systems
