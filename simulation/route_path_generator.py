@@ -53,34 +53,44 @@ class RoutePathGenerator:
         return waypoints
     
     def _generate_from_geometry(
-        self, 
-        geometry: Dict[str, Any], 
+        self,
+        geometry: Dict[str, Any],
         bus_stops: List[Dict[str, Any]]
     ) -> List[Dict[str, Any]]:
         """Generate waypoints from Mapbox route geometry."""
         waypoints = []
         coordinates = geometry.get('coordinates', [])
-        
+
         if not coordinates:
+            logger.warning("No coordinates in geometry, falling back to simple path")
             return self._generate_simple_path(bus_stops)
-        
-        # Convert coordinates to waypoints
+
+        logger.info(f"🗺️ Generating waypoints from Mapbox geometry with {len(coordinates)} coordinate points")
+
+        # Convert coordinates to waypoints with enhanced metadata
         for i, coord in enumerate(coordinates):
             if len(coord) >= 2:
                 waypoint = {
                     'latitude': coord[1],  # GeoJSON uses [lon, lat]
                     'longitude': coord[0],
-                    'type': 'path_point',
+                    'type': 'road_point',  # Changed from 'path_point' to indicate real road
                     'sequence': i,
                     'is_bus_stop': False,
                     'stop_id': None,
-                    'estimated_speed': self._estimate_speed_for_segment(i, len(coordinates))
+                    'stop_name': None,
+                    'estimated_speed': self._estimate_speed_for_road_segment(i, len(coordinates)),
+                    'road_type': self._classify_road_segment(i, len(coordinates)),
+                    'source': 'mapbox'  # Indicate this is from real road data
                 }
                 waypoints.append(waypoint)
-        
-        # Mark bus stop waypoints
+
+        # Mark bus stop waypoints and ensure they're properly positioned
         waypoints = self._mark_bus_stop_waypoints(waypoints, bus_stops)
-        
+
+        # Add intermediate waypoints if segments are too long
+        waypoints = self._densify_long_segments(waypoints)
+
+        logger.info(f"✅ Generated {len(waypoints)} waypoints from Mapbox geometry")
         return waypoints
     
     def _generate_simple_path(self, bus_stops: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
@@ -216,6 +226,32 @@ class RoutePathGenerator:
         else:
             # Faster in middle sections
             return random.uniform(25, 45)
+
+    def _estimate_speed_for_road_segment(self, segment_index: int, total_segments: int) -> float:
+        """Estimate appropriate speed for a road segment based on Mapbox data."""
+        # More realistic speed estimation for actual roads
+        position_ratio = segment_index / total_segments if total_segments > 0 else 0
+
+        # Urban areas (start/end of routes) - slower speeds
+        if position_ratio < 0.15 or position_ratio > 0.85:
+            return random.uniform(15, 30)  # City streets
+        # Suburban areas - medium speeds
+        elif position_ratio < 0.3 or position_ratio > 0.7:
+            return random.uniform(25, 40)  # Arterial roads
+        # Highway/main road sections - faster speeds
+        else:
+            return random.uniform(35, 50)  # Main roads/highways
+
+    def _classify_road_segment(self, segment_index: int, total_segments: int) -> str:
+        """Classify the type of road segment."""
+        position_ratio = segment_index / total_segments if total_segments > 0 else 0
+
+        if position_ratio < 0.15 or position_ratio > 0.85:
+            return "urban"
+        elif position_ratio < 0.3 or position_ratio > 0.7:
+            return "suburban"
+        else:
+            return "highway"
     
     def _get_segment_speed(self) -> float:
         """Get a random speed for a route segment."""
@@ -260,3 +296,57 @@ class RoutePathGenerator:
                 circular_waypoints.append(waypoint)
         
         return circular_waypoints
+
+    def _densify_long_segments(self, waypoints: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
+        """Add intermediate waypoints for long segments to ensure smooth movement."""
+        if len(waypoints) < 2:
+            return waypoints
+
+        from .movement_calculator import MovementCalculator
+        calc = MovementCalculator()
+
+        densified_waypoints = []
+        max_segment_distance = 0.2  # 200 meters max between waypoints
+
+        for i in range(len(waypoints)):
+            densified_waypoints.append(waypoints[i])
+
+            # Check if we need to add intermediate points to next waypoint
+            if i < len(waypoints) - 1:
+                current = waypoints[i]
+                next_wp = waypoints[i + 1]
+
+                distance = calc.calculate_distance(
+                    current['latitude'], current['longitude'],
+                    next_wp['latitude'], next_wp['longitude']
+                )
+
+                # If segment is too long, add intermediate waypoints
+                if distance > max_segment_distance:
+                    num_intermediate = int(distance / max_segment_distance)
+
+                    for j in range(1, num_intermediate + 1):
+                        fraction = j / (num_intermediate + 1)
+
+                        intermediate_lat, intermediate_lon = calc.calculate_intermediate_point(
+                            current['latitude'], current['longitude'],
+                            next_wp['latitude'], next_wp['longitude'],
+                            fraction
+                        )
+
+                        intermediate_waypoint = {
+                            'latitude': intermediate_lat,
+                            'longitude': intermediate_lon,
+                            'type': 'intermediate_road_point',
+                            'sequence': len(densified_waypoints),
+                            'is_bus_stop': False,
+                            'stop_id': None,
+                            'stop_name': None,
+                            'estimated_speed': current.get('estimated_speed', 25.0),
+                            'road_type': current.get('road_type', 'urban'),
+                            'source': 'densified'
+                        }
+                        densified_waypoints.append(intermediate_waypoint)
+
+        logger.debug(f"🔄 Densified waypoints from {len(waypoints)} to {len(densified_waypoints)}")
+        return densified_waypoints

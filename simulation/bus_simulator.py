@@ -141,16 +141,16 @@ class BusSimulator:
         return None
     
     async def _generate_route_waypoints(self, route_data: Dict[str, Any]) -> List[Dict[str, Any]]:
-        """Generate waypoints for a route."""
+        """Generate waypoints for a route using Mapbox geometry if available."""
         try:
             stop_ids = route_data.get('stop_ids', [])
             if not stop_ids:
                 return []
-            
+
             # Load bus stops
             bus_stops_cursor = self.db.bus_stops.find({"id": {"$in": stop_ids}})
             bus_stops_docs = await bus_stops_cursor.to_list(length=None)
-            
+
             # Sort bus stops according to route order
             bus_stops = []
             for stop_id in stop_ids:
@@ -158,20 +158,36 @@ class BusSimulator:
                     if stop_doc['id'] == stop_id:
                         bus_stops.append(stop_doc)
                         break
-            
+
             if len(bus_stops) < 2:
                 logger.warning(f"Route {route_data.get('name')} has insufficient stops")
                 return []
-            
-            # Generate path waypoints
+
+            # Check if we have Mapbox route geometry
             route_geometry = route_data.get('route_geometry')
-            waypoints = self.path_generator.generate_route_path(bus_stops, route_geometry)
-            
+            route_name = route_data.get('name', 'Unknown')
+
+            if route_geometry and route_geometry.get('type') == 'LineString':
+                logger.info(f"🗺️ Using Mapbox geometry for route {route_name} (real roads)")
+                waypoints = self.path_generator.generate_route_path(bus_stops, route_geometry)
+            else:
+                logger.info(f"📍 Using simple path for route {route_name} (no Mapbox geometry)")
+                waypoints = self.path_generator.generate_route_path(bus_stops, None)
+
             # Make route circular for continuous simulation
             waypoints = self.path_generator.create_circular_route(waypoints)
-            
+
+            # Log waypoint statistics
+            road_points = sum(1 for wp in waypoints if wp.get('source') == 'mapbox')
+            total_points = len(waypoints)
+
+            if road_points > 0:
+                logger.info(f"✅ Route {route_name}: {total_points} waypoints ({road_points} from real roads)")
+            else:
+                logger.info(f"📍 Route {route_name}: {total_points} waypoints (simple path)")
+
             return waypoints
-            
+
         except Exception as e:
             logger.error(f"Error generating waypoints for route {route_data.get('id')}: {e}")
             return []
