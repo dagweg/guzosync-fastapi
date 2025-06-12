@@ -386,15 +386,159 @@ All WebSocket messages follow this structure:
 }
 ```
 
-**Notification Types:**
+**Notification Types and Related Entity Structures:**
 
-- `GENERAL` - General notifications
-- `ROUTE_REALLOCATION` - Bus route reallocation notifications
-- `REALLOCATION_REQUEST_DISCARDED` - Reallocation request discarded
-- `INCIDENT_REPORTED` - Incident reported to control center
-- `CHAT_MESSAGE` - Chat message notifications
-- `TRIP_UPDATE` - Trip status updates
-- `SERVICE_ALERT` - Service alerts
+### `GENERAL`
+
+General notifications without specific related data.
+
+```json
+{
+  "related_entity": null
+}
+```
+
+### `ROUTE_REALLOCATION`
+
+Bus route reallocation notifications.
+
+```json
+{
+  "related_entity": {
+    "entity_type": "route_reallocation",
+    "bus_id": "bus_123",
+    "old_route_id": "route_001",
+    "new_route_id": "route_002",
+    "reallocated_by": "admin_456"
+  }
+}
+```
+
+### `REALLOCATION_REQUEST_DISCARDED`
+
+Reallocation request discarded notifications.
+
+```json
+{
+  "related_entity": {
+    "entity_type": "reallocation_request",
+    "request_id": "req_789",
+    "bus_id": "bus_123",
+    "status": "DISCARDED"
+  }
+}
+```
+
+### `REALLOCATION_REQUEST_SUBMITTED`
+
+New reallocation request submitted to control center.
+
+```json
+{
+  "related_entity": {
+    "entity_type": "reallocation_request",
+    "request_id": "req_456",
+    "bus_id": "bus_123",
+    "current_route_id": "route_001",
+    "requesting_regulator_id": "regulator_789",
+    "reason": "TRAFFIC_CONGESTION",
+    "priority": "HIGH"
+  }
+}
+```
+
+### `REALLOCATION_REQUEST_APPROVED`
+
+Reallocation request approved notification.
+
+```json
+{
+  "related_entity": {
+    "entity_type": "route_reallocation",
+    "bus_id": "bus_123",
+    "old_route_id": "route_001",
+    "new_route_id": "route_002",
+    "reallocated_by": "admin_456"
+  }
+}
+```
+
+### `INCIDENT_REPORTED`
+
+Incident reported to control center.
+
+```json
+{
+  "related_entity": {
+    "entity_type": "incident",
+    "incident_id": "inc_101",
+    "incident_type": "VEHICLE_ISSUE",
+    "severity": "HIGH",
+    "reported_by": "driver_123"
+  }
+}
+```
+
+### `PROXIMITY_ALERT`
+
+Bus proximity alerts for passengers.
+
+```json
+{
+  "related_entity": {
+    "entity_type": "bus_proximity",
+    "entity_id": "bus_123",
+    "bus_stop_id": "stop_001",
+    "bus_distance_meters": 450.0,
+    "passenger_distance_meters": 200.0
+  }
+}
+```
+
+### `TRIP_UPDATE`
+
+Trip status updates and delays.
+
+```json
+{
+  "related_entity": {
+    "entity_type": "trip",
+    "entity_id": "trip_456",
+    "trip_id": "trip_456",
+    "delay_minutes": 15
+  }
+}
+```
+
+### `CHAT_MESSAGE`
+
+Chat message notifications (typically handled through separate chat events).
+
+```json
+{
+  "related_entity": {
+    "entity_type": "chat_message",
+    "conversation_id": "conv_123",
+    "message_id": "msg_456",
+    "sender_id": "user_789"
+  }
+}
+```
+
+### `SERVICE_ALERT`
+
+Service-wide alerts and announcements.
+
+```json
+{
+  "related_entity": {
+    "entity_type": "service_alert",
+    "alert_id": "alert_789",
+    "affected_routes": ["route_001", "route_002"],
+    "severity": "MEDIUM"
+  }
+}
+```
 
 ## Server → Client Events
 
