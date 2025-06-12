@@ -16,7 +16,7 @@ class RealTimeAnalyticsService:
         self.db = mongodb_client
         self.websocket_manager = websocket_manager
         self.is_running = False
-        self.update_interval = 30  # seconds
+        self.update_interval = 300  # seconds - INCREASED FOR PERFORMANCE (5 minutes)
         self._tasks: List[asyncio.Task] = []
     
     async def start(self):
@@ -110,7 +110,7 @@ class RealTimeAnalyticsService:
                         }
                     )
                 
-                await asyncio.sleep(60)  # Check every minute
+                await asyncio.sleep(600)  # Check every 10 minutes - REDUCED FREQUENCY FOR PERFORMANCE
                 
             except Exception as e:
                 logger.error(f"Error in alert monitor: {str(e)}")

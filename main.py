@@ -18,7 +18,7 @@ from core.scheduled_analytics import ScheduledAnalyticsService
 # Import routers
 from routers import (
     accounts, account, notifications, config, buses, routes, feedback, issues, attendance,
-    alerts, conversations, drivers, regulators, control_center, approvals, trip, payments, websocket as websocket_router, realtime_demo, analytics, simulation
+    alerts, conversations, drivers, regulators, control_center, approvals, trip, payments, websocket as websocket_router, realtime_demo, analytics, simulation, performance
 )
 
 # Load environment variables
@@ -45,14 +45,16 @@ async def lifespan(app: FastAPI):
 
         logger.info("Connecting to MongoDB...")
 
-        # Modified: Added connection timeout and SSL configuration for Atlas
+        # PERFORMANCE OPTIMIZED: Reduced connection pool and timeouts for free tier
         app.state.mongodb_client = AsyncIOMotorClient(
             mongodb_url,
             uuidRepresentation="unspecified",
-            serverSelectionTimeoutMS=5000,  # 5 second timeout
-            connectTimeoutMS=5000,          # 5 second connection timeout
-            socketTimeoutMS=5000,           # 5 second socket timeout
-            maxPoolSize=10,                 # Limit connection pool
+            serverSelectionTimeoutMS=3000,  # 3 second timeout
+            connectTimeoutMS=3000,          # 3 second connection timeout
+            socketTimeoutMS=3000,           # 3 second socket timeout
+            maxPoolSize=3,                  # REDUCED: Limit connection pool for free tier
+            minPoolSize=1,                  # ADDED: Minimum pool size
+            maxIdleTimeMS=30000,           # ADDED: Close idle connections after 30s
             retryWrites=True
         )
         app.state.mongodb = app.state.mongodb_client[database_name]
@@ -90,33 +92,37 @@ async def lifespan(app: FastAPI):
         # Store app state in WebSocket manager for authentication
         websocket_manager.set_app_state(app.state)
 
+        # PERFORMANCE: Temporarily disable background tasks for free tier
         # Initialize background tasks for Mapbox integration
-        logger.info("Starting background tasks...")
-        from core.services.background_tasks import background_task_service
-        background_task_service.set_app_state(app.state)
-        await background_task_service.start_background_tasks()
-        logger.info("Background tasks started successfully")
+        # logger.info("Starting background tasks...")
+        # from core.services.background_tasks import background_task_service
+        # background_task_service.set_app_state(app.state)
+        # await background_task_service.start_background_tasks()
+        # logger.info("Background tasks started successfully")
+        logger.info("Background tasks disabled for performance optimization")
 
+        # PERFORMANCE: Temporarily disable analytics services for free tier
         # Initialize real-time analytics service with WebSocket
-        try:
-            app.state.realtime_analytics = RealTimeAnalyticsService(
-                mongodb_client=app.state.mongodb,
-                websocket_manager=websocket_manager
-            )
-            await app.state.realtime_analytics.start()
-            logger.info("Real-time analytics service started")
-        except Exception as e:
-            logger.error(f"Failed to start real-time analytics service: {e}")
-        
+        # try:
+        #     app.state.realtime_analytics = RealTimeAnalyticsService(
+        #         mongodb_client=app.state.mongodb,
+        #         websocket_manager=websocket_manager
+        #     )
+        #     await app.state.realtime_analytics.start()
+        #     logger.info("Real-time analytics service started")
+        # except Exception as e:
+        #     logger.error(f"Failed to start real-time analytics service: {e}")
+
         # Initialize scheduled analytics service
-        try:
-            app.state.scheduled_analytics = ScheduledAnalyticsService(
-                mongodb_client=app.state.mongodb
-            )
-            await app.state.scheduled_analytics.start()
-            logger.info("Scheduled analytics service started")
-        except Exception as e:
-            logger.error(f"Failed to start scheduled analytics service: {e}")
+        # try:
+        #     app.state.scheduled_analytics = ScheduledAnalyticsService(
+        #         mongodb_client=app.state.mongodb
+        #     )
+        #     await app.state.scheduled_analytics.start()
+        #     logger.info("Scheduled analytics service started")
+        # except Exception as e:
+        #     logger.error(f"Failed to start scheduled analytics service: {e}")
+        logger.info("Analytics services disabled for performance optimization")
 
         # Initialize bus simulation service
         try:
@@ -220,6 +226,7 @@ app.include_router(approvals.router)
 app.include_router(payments.router)
 app.include_router(analytics.router)
 app.include_router(simulation.router)
+app.include_router(performance.router)
 # Include WebSocket router for real-time features
 app.include_router(websocket_router.router)
 app.include_router(realtime_demo.router)

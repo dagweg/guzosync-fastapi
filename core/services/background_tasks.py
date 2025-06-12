@@ -77,11 +77,11 @@ class BackgroundTaskService:
         
         while self.is_running:
             try:
-                # Update route shapes every 6 hours
+                # Update route shapes every 24 hours - PERFORMANCE OPTIMIZATION
                 await route_service.update_all_route_shapes(self.app_state)
-                
-                # Wait 6 hours before next update
-                await asyncio.sleep(6 * 3600)
+
+                # Wait 24 hours before next update
+                await asyncio.sleep(24 * 3600)
                 
             except asyncio.CancelledError:
                 break
@@ -102,13 +102,13 @@ class BackgroundTaskService:
                     await asyncio.sleep(60)
                     continue
                 
-                # Get all operational buses with assigned routes
+                # Get limited operational buses with assigned routes - PERFORMANCE OPTIMIZATION
                 buses_cursor = self.app_state.mongodb.buses.find({
                     "bus_status": "OPERATIONAL",
                     "assigned_route_id": {"$exists": True, "$ne": None},
                     "current_location": {"$exists": True, "$ne": None}
-                })
-                buses = await buses_cursor.to_list(length=None)
+                }).limit(10)  # LIMIT TO 10 BUSES FOR PERFORMANCE
+                buses = await buses_cursor.to_list(length=10)
                 
                 logger.debug(f"Broadcasting ETA for {len(buses)} active buses")
                 
@@ -120,8 +120,8 @@ class BackgroundTaskService:
                     except Exception as e:
                         logger.error(f"Error broadcasting ETA for bus {bus_doc.get('id', 'unknown')}: {e}")
                 
-                # Wait 2 minutes before next broadcast
-                await asyncio.sleep(2 * 60)
+                # Wait 10 minutes before next broadcast - PERFORMANCE OPTIMIZATION
+                await asyncio.sleep(10 * 60)
                 
             except asyncio.CancelledError:
                 break
@@ -153,9 +153,9 @@ class BackgroundTaskService:
             if not stop_ids:
                 return
             
-            # Fetch bus stops
-            bus_stops_cursor = self.app_state.mongodb.bus_stops.find({"id": {"$in": stop_ids}})
-            bus_stops_docs = await bus_stops_cursor.to_list(length=None)
+            # Fetch bus stops with limit - PERFORMANCE OPTIMIZATION
+            bus_stops_cursor = self.app_state.mongodb.bus_stops.find({"id": {"$in": stop_ids}}).limit(20)
+            bus_stops_docs = await bus_stops_cursor.to_list(length=20)
             
             # Convert to BusStop objects
             route_stops = []
@@ -296,8 +296,8 @@ class BackgroundTaskService:
                 # For now, just log that cache cleaning is running
                 logger.debug("Cache cleaning cycle completed")
                 
-                # Wait 1 hour before next cleanup
-                await asyncio.sleep(3600)
+                # Wait 6 hours before next cleanup - PERFORMANCE OPTIMIZATION
+                await asyncio.sleep(6 * 3600)
                 
             except asyncio.CancelledError:
                 break
