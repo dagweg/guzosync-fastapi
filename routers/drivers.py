@@ -157,10 +157,10 @@ async def get_driver_incidents(
     current_user: User = Depends(get_current_user)
 ):
     """Get incidents reported by the driver"""
-    if current_user.role != UserRole.BUS_DRIVER:
+    if current_user.role != UserRole.BUS_DRIVER  or current_user.role != UserRole.CONTROL_ADMIN or current_user.role != UserRole.CONTROL_STAFF:
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
-            detail="Only drivers can view their incidents"
+            detail="Only DRIVER, ADMIN AND STAFF can view their incidents"
         )
     
     incidents = await request.app.state.mongodb.incidents.find(
