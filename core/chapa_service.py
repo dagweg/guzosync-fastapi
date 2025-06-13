@@ -89,7 +89,7 @@ class ChapaPaymentService:
                 "phone_number": phone_number,
                 "tx_ref": booking_id,
                 "customization": {
-                    "title": "Payment for Bus Ride",
+                    "title": "Ride Payment",
                     "description": "Bus Ride payment",
                 }
             }
